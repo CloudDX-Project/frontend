@@ -170,6 +170,9 @@ nav a:hover { color: var(--sea); }
 .stay-search { display: flex; align-items: center; gap: 8px; margin: 10px 0; padding: 10px 11px; border: 1px solid #cfe3db; border-radius: 7px; background: #fff; color: #47847a; }.stay-search input { width: 100%; border: 0; outline: 0; color: #305b55; font-size: 11px; }.stay-search input::placeholder { color: #a0b2ad; }.stay-deal { position: absolute; z-index: 2; top: 7px; left: 7px; padding: 4px 5px; border-radius: 4px; background: #eb7047; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; }.hotel-catalog > button { position: relative; }.hotel-catalog small { min-height: 22px; }.hotel-catalog > button i { color: #dc643a; font-size: 8px; font-style: normal; font-weight: 800; }
 .ai-modal-backdrop { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; padding: 20px; background: rgba(5, 42, 42, .56); backdrop-filter: blur(5px); }.ai-modal { position: relative; width: min(610px, 100%); max-height: min(770px, calc(100vh - 40px)); overflow-y: auto; padding: 30px; border: 1px solid rgba(255,255,255,.75); border-radius: 18px; background: #fffefb; box-shadow: 0 26px 70px rgba(0, 33, 32, .34); }.ai-modal > p { margin: 0; color: #1c897d; font: 800 10px 'DM Mono'; letter-spacing: .7px; }.ai-modal > h3 { margin: 13px 0 9px; color: #194e4d; font-size: 29px; letter-spacing: -2px; line-height: 1.18; }.ai-modal > span { display: block; color: #718b85; font-size: 11px; line-height: 1.6; }.modal-close { position: absolute; top: 15px; right: 17px; width: 29px; height: 29px; border: 1px solid #d6e5df; border-radius: 50%; background: #fff; color: #5c7f78; font-size: 20px; line-height: 1; }.ai-option-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 22px; }.ai-option-grid.local-options { grid-template-columns: repeat(4, 1fr); }.ai-option-grid button { display: grid; min-height: 125px; align-content: center; justify-items: center; gap: 6px; padding: 10px 6px; border: 1px solid #d7e7e1; border-radius: 11px; background: #fff; color: #47736d; }.ai-option-grid button:hover { border-color: var(--sea); background: #ecf9f3; box-shadow: inset 0 0 0 1px var(--sea); }.ai-option-grid i { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 12px; background: #e7f5ef; color: #197970; font-size: 18px; font-style: normal; }.ai-option-grid b { color: #254f4a; font-size: 11px; }.ai-option-grid small { color: #849b95; font-size: 8px; line-height: 1.3; text-align: center; }.modal-back { margin-top: 17px; border: 0; background: transparent; color: #277b70; font-size: 10px; font-weight: 800; }.flight-modal { width: min(720px, 100%); }.flight-modal .flight-catalog { margin-top: 0; }.deal-alert { display: flex; align-items: center; gap: 8px; margin: 17px 0 12px; padding: 10px 11px; border: 1px solid #ffcbb9; border-radius: 8px; background: #fff3ed; }.deal-alert b { color: #c8522b; font-size: 10px; }.deal-alert span { color: #a56b55; font-size: 9px; }.flight-deal { display: inline-block; margin-top: 5px; padding: 3px 5px; border-radius: 4px; background: #fff0e9; color: #c65c30; font-size: 8px; font-style: normal; font-weight: 800; }
 
+/* 로그인: 발표용 화면에서도 실제 서비스처럼 간결하게 입력할 수 있는 팝업 */
+.login-backdrop { z-index: 100; }.login-modal { width: min(420px, calc(100vw - 34px)); padding: 34px; }.login-modal > h3 { margin-top: 11px; font-size: 28px; }.login-modal > span { margin-bottom: 19px; }.login-modal form { display: grid; gap: 12px; margin-top: 22px; }.login-modal form label { display: grid; gap: 7px; color: #3e6d66; font-size: 11px; font-weight: 800; text-align: left; }.login-modal form input { width: 100%; min-height: 46px; padding: 0 13px; border: 1px solid #c7e0d7; border-radius: 9px; outline: 0; background: #fff; color: #174e4c; font: 600 13px 'Noto Sans KR', sans-serif; }.login-modal form input::placeholder { color: #9aaea8; }.login-modal form input:focus { border-color: #0d8679; box-shadow: 0 0 0 3px rgba(13, 134, 121, .12); }.login-modal form button { min-height: 48px; margin-top: 5px; border: 0; border-radius: 9px; background: #0b7f76; color: #fff; font-size: 13px; font-weight: 900; box-shadow: 0 9px 18px rgba(6, 110, 101, .16); }.login-modal > small { display: block; margin-top: 14px; color: #80958f; font-size: 10px; text-align: center; }
+
 @media (max-width: 760px) { .brand > strong { font-size: 21px; }.brand-mark { width: 30px; height: 30px; }.hero-inner { width: auto; margin: 0; padding-right: 20px; padding-left: 20px; }.transport-choice { grid-template-columns: 1fr; }.transport-result button { width: 100%; margin-left: 0; }.rental-catalog { grid-template-columns: 1fr; }.stay-ai-recommendation { display: grid; }.stay-ai-recommendation em { margin-left: 29px; }.ai-modal { padding: 25px 18px; }.ai-modal > h3 { font-size: 25px; }.ai-option-grid { grid-template-columns: repeat(2, 1fr); }.ai-option-grid.local-options { grid-template-columns: repeat(2, 1fr); }.ai-option-grid button { min-height: 105px; }.flight-modal { padding: 25px 16px; } }
 
 /* 입력 순서와 제휴 혜택 안내 */
@@ -241,10 +244,21 @@ main:has(.stay-picker)::after { position: fixed; z-index: 34; inset: 0; backgrou
 @media (max-width: 760px) { .brand { gap: 6px; }.brand-mark, .brand-mark svg { width: 35px; height: 31px; }.brand > strong { font-size: 22px; } }
 
 /* 미리보기와 같은 여백·크롭을 살린 메인 배너 */
-.hero { min-height: 720px; }.hero-image { background-position: center 50% !important; transform: none; }.hero-inner { padding-top: 218px; }.hero-shade { background: linear-gradient(90deg, rgba(2, 31, 34, .83) 0%, rgba(3, 54, 55, .58) 47%, rgba(2, 28, 29, .12) 78%); }.brand-text-only { min-width: 94px; }.brand-text-only > strong { letter-spacing: -2.9px; }
+.hero { min-height: 720px; }.hero-image { background-position: center 50% !important; transform: none; }.hero-inner { width: min(1200px, 90%); margin-right: auto; margin-left: max(4.5%, calc((100vw - 1320px) / 2)); padding-top: 218px; }.hero h1 { max-width: 650px; }.hero-copy { max-width: 500px; }.hero-shade { background: linear-gradient(90deg, rgba(2, 31, 34, .9) 0%, rgba(3, 54, 55, .7) 44%, rgba(2, 36, 38, .28) 63%, rgba(2, 28, 29, .06) 84%); }.brand-text-only { min-width: 94px; }.brand-text-only > strong { letter-spacing: -2.9px; }
 @media (max-width: 760px) { .hero { min-height: 640px; }.hero-inner { padding-top: 148px; }.brand-text-only > strong { font-size: 23px; } }
-.hero-image { background-repeat: no-repeat; background-size: cover; background-color: #0b5256; opacity: 0; transition: opacity .72s ease-in-out; }
+.hero-image { background-repeat: no-repeat; background-size: cover; background-color: #0b5256; opacity: 0; transition: opacity 1.1s cubic-bezier(.22, .61, .36, 1); will-change: opacity; }
 .hero-image.is-active { opacity: 1; }
+.hero-image--santorini { background-position: left 50% !important; background-size: 105% auto; }
+.hero-image--cappadocia { background-position: center 50% !important; background-size: cover; }
+.hero-image--kyoto { background-position: left 50% !important; background-size: 108% auto; }
+.hero-image--maldives { background-position: left 48% !important; background-size: 118% auto; }
+.hero-image--venice { background-position: center 50% !important; background-size: cover; }
+.hero-image--lauterbrunnen { background-position: center 52% !important; background-size: cover; }
+@media (max-width: 760px) {
+  .hero-inner { width: auto; margin: 0; padding-right: 20px; padding-left: 20px; }
+  .hero h1, .hero-copy { max-width: none; }
+  .hero-image--santorini, .hero-image--cappadocia, .hero-image--kyoto, .hero-image--maldives, .hero-image--venice, .hero-image--lauterbrunnen { background-position: center 50% !important; background-size: cover; }
+}
 .hero-pagination { position: absolute; z-index: 2; right: max(5%, calc((100vw - 1130px) / 2)); bottom: 46px; display: flex; gap: 8px; }
 .hero-pagination button { width: 28px; height: 4px; padding: 0; border: 0; border-radius: 999px; background: rgba(255, 255, 255, .38); cursor: pointer; transition: width .3s ease, background .3s ease; }
 .hero-pagination button.active { width: 54px; background: #fff; }
@@ -372,9 +386,17 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .stop-picker-backdrop { position: fixed; z-index: 80; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(5, 44, 43, .55); backdrop-filter: blur(5px); }
 .stop-picker-modal { position: relative; width: min(720px, 100%); padding: 32px; border-radius: 18px; background: #fffefa; box-shadow: 0 24px 60px rgba(4, 47, 45, .35); }
 .stop-picker-modal > p { margin: 0 0 12px; color: #0d8076; font: 800 10px 'DM Mono', monospace; letter-spacing: .6px; }.stop-picker-modal h3 { margin: 0; color: #124f4d; font-size: 31px; line-height: 1.18; letter-spacing: -2px; }.stop-picker-modal > span { display: block; margin: 12px 0 20px; color: #6c8b84; font-size: 12px; line-height: 1.6; }
-.stop-picker-modal > div { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }.stop-picker-modal > div button { display: grid; gap: 5px; min-height: 112px; padding: 14px; border: 1px solid #cfe4dc; border-radius: 10px; background: #fbfefc; color: #235c56; text-align: left; }.stop-picker-modal > div button:hover { border-color: #ed7b42; background: #fff7ed; }.stop-picker-modal > div i { font-size: 23px; font-style: normal; }.stop-picker-modal > div b { font-size: 13px; }.stop-picker-modal > div small { color: #78958e; font-size: 9px; }
+.route-place-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+.route-place-options > button { overflow: hidden; display: grid; min-height: 178px; padding: 0; border: 1px solid #cfe4dc; border-radius: 12px; background: #fbfefc; color: #235c56; text-align: left; transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease; }
+.route-place-options > button:hover { border-color: #ed7b42; box-shadow: 0 10px 20px rgba(11, 91, 82, .12); transform: translateY(-2px); }
+.route-place-options > button > img { width: 100%; height: 102px; object-fit: cover; background: #e8f2ef; }
+.route-place-photo-fallback { display: grid; width: 100%; height: 102px; place-items: center; background: linear-gradient(135deg, #e8f7f2, #d8eeec); color: #0f766e; font-size: 30px; }
+.route-place-options > button > span { position: relative; display: grid; gap: 4px; min-height: 76px; padding: 13px 12px 12px; }
+.route-place-options > button i { position: absolute; top: -20px; right: 10px; display: grid; width: 34px; height: 34px; place-items: center; border: 2px solid #fff; border-radius: 11px; background: #f0fbf7; box-shadow: 0 5px 12px rgba(10, 90, 82, .12); font-size: 17px; font-style: normal; }
+.route-place-options > button b { overflow: hidden; padding-right: 28px; color: #174f4a; font-size: 14px; line-height: 1.2; text-overflow: ellipsis; white-space: nowrap; }
+.route-place-options > button small { color: #668b82; font-size: 10px; font-weight: 700; }
 .campus-timetable .timetable-content { min-height: 960px; }.campus-timetable .timetable-hours { grid-template-rows: repeat(16, 60px); }.campus-timetable .timetable-day > i { height: 60px; }
-@media (max-width: 760px) { .date-time-range > div { grid-template-columns: minmax(0, 1fr) 92px; }.form-fields > .date-field { min-height: 150px; }.stop-picker-modal { padding: 25px 20px; }.stop-picker-modal h3 { font-size: 25px; }.stop-picker-modal > div { grid-template-columns: repeat(2, 1fr); } }
+@media (max-width: 760px) { .date-time-range > div { grid-template-columns: minmax(0, 1fr) 92px; }.form-fields > .date-field { min-height: 150px; }.stop-picker-modal { padding: 25px 20px; }.stop-picker-modal h3 { font-size: 25px; }.route-place-options { grid-template-columns: repeat(2, 1fr); } }
 
 /* 프롬프트 전송과 여행 조건 입력을 명확한 행동 단위로 정리합니다. */
 .prompt-actions { display: grid; gap: 8px; align-items: start; }
@@ -535,15 +557,15 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .full-timeline .itinerary-stop .stop-change:hover { border-color: #0f8277; background: #0f8277; color: #fff; }
 .stop-picker-backdrop { justify-items: end; }
 .stop-picker-modal { width: min(840px, calc(100vw - 88px)); margin-right: clamp(18px, 5vw, 88px); padding: 38px 40px; border: 1px solid rgba(255,255,255,.82); box-shadow: 0 30px 80px rgba(4, 47, 45, .40); }
-.stop-picker-modal > div { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
-.stop-picker-modal > div button { min-height: 128px; padding: 17px; border-radius: 12px; }.stop-picker-modal > div b { font-size: 14px; }.stop-picker-modal > div small { font-size: 10px; }
+.route-place-options { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px; }
+.route-place-options > button { min-height: 178px; padding: 0; border-radius: 12px; }.route-place-options > button b { font-size: 14px; }.route-place-options > button small { font-size: 10px; }
 
 /* 숙소 변경 재설계가 끝난 뒤 일정 전체가 위에서 아래로 새로 구성되는 인상을 줍니다. */
-.plan-rebuilt { animation: plan-reveal .78s cubic-bezier(.18,.72,.25,1) both; transform-origin: top center; }
+.plan-rebuilt { animation: plan-reveal .78s cubic-bezier(.18,.72,.25,1) both; }
 .stay-revision-loader .planning-orbit { border-top-color: #89e5cb; border-right-color: #ffd37b; }.stay-revision-loader .planning-orbit i { color: #0c7d72; }
-@keyframes plan-reveal { from { clip-path: inset(0 0 100% 0); opacity: .55; transform: translateY(-16px); } to { clip-path: inset(0 0 0 0); opacity: 1; transform: translateY(0); } }
+@keyframes plan-reveal { from { opacity: .45; } to { opacity: 1; } }
 
-@media (max-width: 760px) { .full-timeline .itinerary-stop { min-height: 148px; padding: 13px 10px; }.full-timeline .itinerary-stop > div { padding-right: 0; }.full-timeline .itinerary-stop .stop-change { position: static; min-width: 96px; min-height: 35px; margin-top: 9px; font-size: 9px; transform: none; }.stop-picker-backdrop { justify-items: center; padding: 12px; }.stop-picker-modal { width: calc(100vw - 24px); max-height: calc(100vh - 24px); margin-right: 0; padding: 27px 20px; overflow-y: auto; }.stop-picker-modal > div { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }.stop-picker-modal > div button { min-height: 105px; padding: 12px; } }
+@media (max-width: 760px) { .full-timeline .itinerary-stop { min-height: 148px; padding: 13px 10px; }.full-timeline .itinerary-stop > div { padding-right: 0; }.full-timeline .itinerary-stop .stop-change { position: static; min-width: 96px; min-height: 35px; margin-top: 9px; font-size: 9px; transform: none; }.stop-picker-backdrop { justify-items: center; padding: 12px; }.stop-picker-modal { width: calc(100vw - 24px); max-height: calc(100vh - 24px); margin-right: 0; padding: 27px 20px; overflow-y: auto; }.route-place-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; }.route-place-options > button { min-height: 166px; padding: 0; } }
 
 /* 선택한 프리미엄 로고 01: 동선(route)과 목적지 핀을 단정한 원형 실로 묶었습니다. */
 .brand-mark.brand-route-seal { width: 42px; height: 38px; background: transparent; box-shadow: none; }
@@ -583,6 +605,13 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .brand-arch-pin .arch-route { fill: none; stroke: #0c4e50; stroke-linecap: round; stroke-width: 5; }
 .brand-arch-pin .arch-pin { fill: #df7350; }
 .plan-fullscreen-head .brand-arch-pin .arch-line, .plan-fullscreen-head .brand-arch-pin .arch-route { stroke: #0c4e50; }
+
+/* 선택 로고 06: 두 여행지를 연결하는 트리 핀 심볼 */
+.brand-mark.brand-tri-pin { width: 42px; height: 38px; background: transparent; box-shadow: none; }
+.brand-mark.brand-tri-pin::before, .brand-mark.brand-tri-pin::after { display: none; }
+.brand-mark.brand-tri-pin svg { display: block; width: 42px; height: 38px; overflow: visible; transform: none; }
+.brand-tri-pin .tri-pin-a { fill: #087e78; }.brand-tri-pin .tri-pin-b { fill: #e87542; }.brand-tri-pin .tri-pin-hole { fill: #fffaf2; }.brand-tri-pin .tri-route { fill: none; stroke: #0d4f4e; stroke-width: 4.2; stroke-linecap: round; stroke-dasharray: 2 7; }
+@media (max-width: 760px) { .brand-mark.brand-tri-pin, .brand-mark.brand-tri-pin svg { width: 36px; height: 33px; } }
 
 /* 심사 화면에서는 작은 보조 문구도 또렷하게 읽히도록 대비와 크기를 통일합니다. */
 .ai-modal > span, .stay-modal-head span, .stay-ai-recommendation, .flight-route-note, .picker-date, .rental-disclaimer, .hotel-catalog small { color: #4f726b; font-weight: 600; }
@@ -638,10 +667,11 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .transition-icon-plan .plan-route { stroke: #0f766e; }
 .stay-transition-modal > h3 { max-width: 500px; font-size: 27px; }
 .stay-comparison-button { border: 1px solid #efb476 !important; background: #fff7e9 !important; color: #b65d27 !important; }
-.stay-change-prompt-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; width: min(420px, 100%); margin-top: 21px; }
-.stay-change-prompt-actions .transition-primary { width: 100%; }
-.transition-secondary { min-height: 48px; padding: 12px 16px; border: 1px solid #b8d7ce; border-radius: 9px; background: #fff; color: #286c63; font-size: 12px; font-weight: 800; }
-.stay-change-compare-modal { width: min(760px, calc(100vw - 36px)); padding: 36px 42px; }
+.stay-change-prompt-actions { display: grid; grid-template-columns: 1fr 1fr; align-items: stretch; gap: 9px; width: min(420px, 100%); margin-top: 21px; }
+.stay-change-prompt-actions .transition-primary,
+.stay-change-prompt-actions .transition-secondary { display: grid; width: 100%; min-height: 48px; margin: 0; padding: 10px 14px; place-items: center; line-height: 1.25; text-align: center; }
+.transition-secondary { border: 1px solid #b8d7ce; border-radius: 9px; background: #fff; color: #286c63; font-size: 12px; font-weight: 800; }
+.stay-change-compare-modal { width: min(940px, calc(100vw - 36px)); padding: 36px 42px; }
 .stay-change-compare-modal > p { margin: 0 0 10px; color: #087f74; font: 900 10px 'DM Mono', monospace; letter-spacing: .7px; }
 .stay-change-compare-modal h3 { margin: 0; color: #154f4d; font-size: 31px; line-height: 1.2; letter-spacing: -2px; }
 .stay-change-compare-modal > span { display: block; margin: 12px 0 21px; color: #587a73; font-size: 12px; font-weight: 600; line-height: 1.65; }
@@ -658,6 +688,13 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .stay-change-compare-note { display: grid; gap: 4px; margin: 14px 0 18px; padding: 12px 14px; border: 1px solid #bce1d5; border-radius: 9px; background: #f3fbf7; }
 .stay-change-compare-note b { color: #117d70; font-size: 11px; }.stay-change-compare-note span { color: #587a73; font-size: 10px; font-weight: 600; line-height: 1.55; }
 .stay-change-compare-modal > .transition-primary { width: 100%; }
+.stay-change-summary { margin-top: 23px; overflow: hidden; border: 1px solid #d9e9e3; border-radius: 14px; background: #fbfefd; }
+.stay-change-summary > header { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 14px 17px; border-bottom: 1px solid #dcebe5; background: linear-gradient(90deg, #f2fbf7, #fffdf8); }
+.stay-change-summary > header > div { display: grid; gap: 4px; }.stay-change-summary > header small { color: #0d8177; font: 900 9px 'DM Mono', monospace; letter-spacing: .7px; }.stay-change-summary > header b { color: #174f4c; font-size: 15px; letter-spacing: -.5px; }.stay-change-summary > header b i { margin: 0 7px; color: #d97643; font-style: normal; }.stay-change-summary > header > strong { flex: none; padding: 8px 10px; border-radius: 8px; background: #e7f7ef; color: #0e7563; font-size: 11px; }
+.stay-change-category-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 15px; }
+.stay-change-category-grid article { min-height: 178px; padding: 15px; border: 1px solid #dbe9e4; border-radius: 11px; background: #fff; box-shadow: 0 5px 13px rgba(22, 90, 81, .04); }
+.stay-change-category-grid article > header { display: flex; align-items: center; gap: 9px; margin-bottom: 11px; }.stay-change-category-grid article > header em { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 8px; background: #e9f7f2; color: #0d7e72; font: 900 10px 'DM Mono', monospace; font-style: normal; }.stay-change-category-grid article > header > div { display: grid; gap: 2px; }.stay-change-category-grid article > header small { color: #7a9690; font-size: 9px; font-weight: 900; }.stay-change-category-grid article > header b { color: #1b504c; font-size: 13px; }
+.stay-change-row { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 7px; align-items: start; padding: 7px 0; border-top: 1px solid #edf3f0; }.stay-change-row span { padding-top: 1px; font-size: 9px; font-weight: 900; }.stay-change-row del, .stay-change-row strong { font-size: 11px; line-height: 1.45; text-decoration: none; }.stay-change-row.removed span, .stay-change-row.removed del { color: #be6658; }.stay-change-row.removed del { text-decoration: line-through; text-decoration-color: #e6aaa0; }.stay-change-row.added span, .stay-change-row.added strong { color: #127561; }.stay-change-category-grid article > p { margin: 9px 0 0; color: #6a8780; font-size: 10px; font-weight: 600; line-height: 1.55; }
 .route-recalculation-overlay, .route-result-backdrop { position: fixed; z-index: 96; inset: 0; display: grid; place-items: center; padding: 24px; background: rgba(5, 45, 43, .60); backdrop-filter: blur(7px); }
 .route-recalculation-overlay > section { display: grid; justify-items: center; width: min(510px, 100%); padding: 36px; border: 1px solid rgba(255,255,255,.8); border-radius: 20px; background: #fffefa; text-align: center; box-shadow: 0 28px 70px rgba(1,37,35,.38); }
 .route-recalculation-overlay .transition-icon { margin-top: 0; }.route-recalculation-overlay p { margin: 15px 0 8px; color: #0e8277; font: 900 10px 'DM Mono', monospace; letter-spacing: .8px; }
@@ -667,4 +704,739 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .route-result-modal { display: grid; justify-items: center; width: min(560px, 100%); padding: 34px 38px; border-radius: 20px; background: #fffefa; text-align: center; box-shadow: 0 28px 70px rgba(1,37,35,.38); }.route-result-modal .transition-icon { margin-top: 0; }.route-result-modal > p { margin: 14px 0 8px; color: #0e8277; font: 900 10px 'DM Mono', monospace; letter-spacing: .8px; }.route-result-modal h3 { margin: 0; color: #174f4d; font-size: 29px; letter-spacing: -2px; }.route-result-modal > span { max-width: 390px; margin: 9px 0 18px; color: #5e7e77; font-size: 12px; font-weight: 600; line-height: 1.6; }.route-result-modal > div { display: grid; width: 100%; gap: 7px; margin-bottom: 18px; }.route-result-modal > div p { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin: 0; padding: 10px 12px; border: 1px solid #d6e8e1; border-radius: 8px; background: #fbfefc; text-align: left; }.route-result-modal > div small { color: #6d8a84; font-size: 10px; font-weight: 800; }.route-result-modal > div b, .route-result-modal > div del { color: #276a62; font-size: 11px; text-decoration: none; }.route-result-modal > div del { color: #be604c; }.route-result-modal .increase { color: #d55c35; }.route-result-modal .decrease { color: #168457; }.route-result-modal > button { width: 100%; min-height: 48px; border: 0; border-radius: 9px; background: #0c887b; color: #fff; font-size: 12px; font-weight: 900; }
 .ai-modal-backdrop:has(.stay-change-prompt-modal), .ai-modal-backdrop:has(.stay-change-compare-modal) { z-index: 97; }
 .stop-picker-backdrop { justify-items: center; }.stop-picker-modal { margin-right: 0; }
-@media (max-width: 760px) { .stay-change-prompt-actions { grid-template-columns: 1fr; }.stay-transition-modal > h3 { font-size: 23px; }.stay-change-compare-modal { padding: 29px 21px; }.stay-change-compare-modal h3 { font-size: 25px; }.stay-change-compare-grid { grid-template-columns: 1fr; }.stay-change-compare-grid > i { transform: rotate(90deg); }.route-recalculation-overlay > section, .route-result-modal { padding: 28px 21px; }.route-recalculation-overlay h2 { font-size: 24px; }.route-result-modal h3 { font-size: 25px; } }
+/* 일정 도구는 상단에 고정하고, 장소 변경 팝업은 스크롤 위치와 무관하게 화면 중앙에 배치합니다. */
+.plan-fullscreen-head > .plan-header-actions { display: flex; align-items: center; justify-items: initial; gap: 7px; }.plan-header-actions button { min-height: 36px; padding: 8px 10px; border: 1px solid #c4ddd4; border-radius: 7px; background: #fff; color: #216c65; font-size: 10px; font-weight: 800; white-space: nowrap; }.plan-header-actions button:last-child { border-color: #0c746e; background: #0c746e; color: #fff; }.plan-header-actions button:hover { border-color: #0b766d; color: #0b766d; }.plan-header-actions button:last-child:hover { color: #fff; background: #075e59; }.plan-utility-toast { position: fixed; z-index: 99; top: 88px; left: 50%; padding: 11px 16px; border: 1px solid #a8d6c8; border-radius: 9px; background: #f8fffb; color: #146f65; font-size: 11px; font-weight: 800; box-shadow: 0 9px 20px rgba(16, 89, 78, .16); transform: translateX(-50%); }.plan-fullscreen .stop-picker-backdrop { position: fixed; z-index: 110; inset: 0; display: grid; width: 100vw; height: 100vh; min-height: 100dvh; place-items: center; padding: 24px; }.plan-fullscreen .stop-picker-modal { position: relative; width: min(840px, calc(100vw - 48px)); max-height: calc(100vh - 48px); margin: 0; overflow-y: auto; }
+@media (max-width: 760px) { .stay-change-prompt-actions { grid-template-columns: 1fr; }.stay-transition-modal > h3 { font-size: 23px; }.stay-change-compare-modal { padding: 29px 21px; }.stay-change-compare-modal h3 { font-size: 25px; }.stay-change-compare-grid { grid-template-columns: 1fr; }.stay-change-compare-grid > i { transform: rotate(90deg); }.stay-change-summary > header { align-items: flex-start; flex-direction: column; gap: 9px; }.stay-change-category-grid { grid-template-columns: 1fr; gap: 9px; padding: 11px; }.stay-change-category-grid article { min-height: 0; }.route-recalculation-overlay > section, .route-result-modal { padding: 28px 21px; }.route-recalculation-overlay h2 { font-size: 24px; }.route-result-modal h3 { font-size: 25px; } }
+
+@media (max-width: 700px) { .plan-fullscreen-head > .plan-header-actions { display: flex; gap: 4px; }.plan-header-actions button { min-height: 31px; padding: 7px; font-size: 9px; }.plan-header-actions button:last-child { max-width: 104px; overflow: hidden; text-overflow: ellipsis; }.plan-utility-toast { top: 72px; width: min(320px, calc(100vw - 30px)); text-align: center; }.plan-fullscreen .stop-picker-backdrop { padding: 12px; }.plan-fullscreen .stop-picker-modal { width: calc(100vw - 24px); max-height: calc(100vh - 24px); } }
+
+/* 여행지를 고른 직후 인원을 먼저 확정해 1인 경비 계산 기준을 고정합니다. */
+.traveler-prompt-backdrop { z-index: 98; }
+.traveler-prompt-modal { display: grid; justify-items: center; width: min(560px, calc(100vw - 34px)); padding: 38px 44px; text-align: center; }
+.traveler-prompt-modal > p { margin: 0 0 13px; color: #078177; font: 900 10px 'DM Mono', monospace; letter-spacing: .85px; }
+.traveler-prompt-modal > h3 { margin: 15px 0 9px; color: #174f4d; font-size: 30px; letter-spacing: -2px; }
+.traveler-prompt-modal > span:not(.traveler-prompt-icon) { max-width: 410px; color: #587a73; font-size: 12px; font-weight: 600; line-height: 1.7; }
+.traveler-prompt-icon { display: grid; width: 78px; height: 78px; place-items: center; border: 1px solid #c8e5db; border-radius: 24px; background: #f5fbf8; color: #087f74; }
+.traveler-prompt-icon svg { width: 44px; height: 44px; fill: none; stroke: currentColor; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3.2; }
+.traveler-prompt-input { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; width: min(360px, 100%); gap: 10px; margin-top: 21px; padding: 11px 14px; border: 1px solid #abd9ca; border-radius: 10px; background: #fbfefc; text-align: left; }
+.traveler-prompt-input > span { color: #477870; font-size: 12px; font-weight: 800; }.traveler-prompt-input input { min-width: 0; border: 0; outline: 0; background: transparent; color: #174f4d; font: 900 19px 'DM Mono', monospace; }.traveler-prompt-input b { color: #256b62; font-size: 13px; }
+.traveler-prompt-modal .transition-primary { width: min(360px, 100%); margin-top: 13px; }
+.traveler-field.needs-input { border-color: #efad63 !important; background: #fffaf1 !important; animation: travelerGlow 1.7s ease-in-out infinite; }.traveler-field.needs-input .traveler-input { border-color: #e9b36d; background: #fff; }
+
+/* 총인원 안내는 입력과 분리해 짧고 한 줄로 보여줍니다. */
+.traveler-field .traveler-help {
+  min-width: 0;
+  margin: 0;
+  font-size: 0 !important;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.traveler-field .traveler-help::after {
+  content: 'AI 추천 반영';
+  color: #6f8b83;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: -0.2px;
+}
+
+.traveler-field .traveler-input {
+  width: 92px;
+  min-height: 38px;
+  gap: 7px;
+  padding: 8px 10px;
+}
+
+.traveler-field .traveler-input input {
+  width: 48px;
+  font-size: 16px;
+}
+
+/* 총인원은 보조 문구 없이 제목과 입력값만 또렷하게 보여줍니다. */
+.traveler-field {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(40px, 1fr);
+  gap: 9px;
+  min-height: 112px !important;
+  padding: 15px !important;
+}
+.traveler-field > small:first-child {
+  align-self: start;
+  color: #174f4b;
+  font-size: 16px;
+  font-weight: 900;
+  letter-spacing: -0.8px;
+}
+.traveler-field .traveler-input {
+  grid-column: 1;
+  grid-row: 2;
+  align-self: end;
+  justify-self: stretch;
+  width: auto;
+  min-height: 41px;
+  padding: 9px 12px;
+}
+.traveler-field .traveler-input input {
+  flex: 1;
+  width: auto;
+  font-size: 18px;
+  font-weight: 900;
+}
+@keyframes travelerGlow { 50% { box-shadow: 0 0 0 4px rgba(238, 145, 62, .12); } }
+
+/* 여행지 이미지는 첫 선택이므로 한눈에 크게 비교합니다. */
+.destination-menu { width: min(790px, calc(100vw - 88px)); padding: 21px; }.destination-cities { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }.destination-cities button img { height: 106px; }.destination-cities button b { padding: 11px; font-size: 13px; }.destination-types button { min-width: 120px; padding: 12px 18px; font-size: 13px; }
+
+/* 안내 팝업은 라벨·아이콘·제목을 하나의 중앙 축에 놓아 어느 단계에서도 떠 보이지 않게 합니다. */
+.ai-transition-modal,
+.traveler-prompt-modal {
+  position: relative;
+  min-height: 414px;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+}
+.ai-transition-modal > p,
+.traveler-prompt-modal > p {
+  width: 100%;
+  margin: 0 0 18px;
+  text-align: center;
+}
+.ai-transition-modal .transition-icon,
+.traveler-prompt-modal .traveler-prompt-icon {
+  flex: none;
+  margin: 0 auto 18px;
+}
+.ai-transition-modal > h3,
+.traveler-prompt-modal > h3 {
+  width: 100%;
+  margin: 0 0 11px;
+  text-align: center;
+}
+.ai-transition-modal > span:not(.transition-icon),
+.traveler-prompt-modal > span:not(.traveler-prompt-icon) {
+  width: 100%;
+  margin: 0;
+  text-align: center;
+}
+.traveler-prompt-modal .traveler-prompt-input { margin-top: 22px; }
+.traveler-prompt-modal .transition-primary { margin-top: 14px; }
+
+/* 작은 화면에서도 실제 계약 조건의 차이가 먼저 읽히도록 렌터카 정보를 정리합니다. */
+.rental-modal .rental-meta { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px 12px; }.rental-modal .rental-meta small { color: #63867f; font-size: 10px; }.rental-modal .rental-meta b { color: #087f74; font-size: 10px; }.rental-modal .rental-benefit { min-height: 43px; display: flex; align-items: center; }.rental-modal .rental-note { color: #6e8781 !important; font-size: 9px !important; }.rental-modal .rental-premium .rental-meta { border-color: #efce91; }.rental-modal .rental-premium .rental-benefit { border: 1px solid #f0c97f; background: #fff8e9; }
+
+/* 메인 화면의 테마 체크는 사진 위 오른쪽에만 하나씩 보이게 합니다. */
+.theme-cards button { position: relative; }.theme-cards button.active::before { display: none !important; content: none !important; }.theme-cards .theme-selected { top: 8px; right: 8px; width: 25px; height: 25px; border-width: 2px; transform: none; }.theme-cards button b { z-index: 1; }
+
+/* AI 로딩은 화면 전체의 초록 배경 대신, 밝은 작업 캔버스와 미니멀 경로 마크로 표현합니다. */
+.planning-overlay { background: rgba(249, 253, 251, .97); backdrop-filter: blur(12px); }.planning-loader { width: min(620px, 100%); padding: 42px 30px; border: 1px solid #d7e9e2; border-radius: 22px; background: #fff; color: #154f4d; box-shadow: 0 22px 58px rgba(13, 77, 70, .12); }.planning-orbit { width: 94px; height: 94px; margin: 0 0 22px; border: 1px solid #cbe5dc; border-radius: 28px; background: #f3fbf7; animation: aiPulse 1.65s ease-in-out infinite; }.planning-orbit::before { inset: 0; border: 0; border-radius: 28px; background: radial-gradient(circle at 50% 50%, rgba(10, 135, 120, .10), transparent 62%); }.planning-orbit svg { position: relative; z-index: 1; width: 58px; height: 58px; fill: none; stroke: #0c8378; stroke-linecap: round; stroke-linejoin: round; stroke-width: 3; }.planning-orbit svg circle { fill: #f3fbf7; }.planning-orbit .ai-spark { fill: #ed7943; stroke: #ed7943; stroke-width: 1; }.planning-loader > p { margin: 0 0 12px; color: #0b8176; font-size: 11px; }.planning-loader h2 { color: #154f4d; }.planning-loader > small { color: #5a7c75; }.planning-loader > div i { background: #c8ddd7; }.planning-loader > div i.done { background: #ea7440; }@keyframes aiPulse { 50% { transform: translateY(-3px); border-color: #7bcfbe; } }
+
+@media (max-width: 760px) { .traveler-prompt-modal { padding: 30px 22px; }.traveler-prompt-modal > h3 { font-size: 26px; }.destination-menu { width: min(calc(100vw - 34px), 680px); padding: 15px; }.destination-cities { grid-template-columns: repeat(2, minmax(0, 1fr)); }.destination-cities button img { height: 88px; }.planning-loader { padding: 34px 20px; }.planning-orbit { width: 82px; height: 82px; }.planning-loader h2 { font-size: 28px; } }
+
+/* 팝업 아이콘과 선택 표시는 장식이 아니라 상태를 읽게 하는 UI로 다시 정리합니다. */
+.ai-transition-modal .transition-icon,
+.traveler-prompt-modal .traveler-prompt-icon {
+  width: 66px;
+  height: 66px;
+  margin: 0 auto 15px;
+  border: 1px solid #c5e3d9;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #ffffff, #edf9f4);
+  box-shadow: 0 10px 22px rgba(12, 91, 83, .10);
+}
+.ai-transition-modal .transition-icon svg,
+.traveler-prompt-modal .traveler-prompt-icon svg {
+  width: 39px;
+  height: 39px;
+  stroke-width: 2.75;
+}
+.ai-transition-modal .transition-icon { color: #0b756d; }
+.ai-transition-modal .transition-icon-stay { color: #d96b3d; }
+.ai-transition-modal .transition-icon-budget { color: #b8782e; }
+.ai-transition-modal .transition-icon-plan { color: #0a7c72; }
+.ai-transition-modal .transition-icon-flight { color: #0a7275; }
+.traveler-prompt-modal {
+  width: min(480px, calc(100vw - 34px));
+  min-height: 370px;
+  padding: 29px 38px;
+}
+.traveler-prompt-modal > p { margin-bottom: 14px; }
+.traveler-prompt-modal > h3 { max-width: 340px; font-size: 27px; line-height: 1.2; }
+.traveler-prompt-modal > span:not(.traveler-prompt-icon) { max-width: 365px; font-size: 11px; line-height: 1.65; }
+.traveler-prompt-modal .traveler-prompt-input { margin-top: 17px; }
+.traveler-prompt-modal .transition-primary { min-height: 46px; margin-top: 11px; }
+
+/* 선택 완료는 녹색 동그라미가 아닌 카드 테두리와 얇은 상태 라벨로 명확히 보입니다. */
+.theme-cards button.active,
+.preference-modal-themes button.active {
+  border: 2px solid #0b7d74 !important;
+  box-shadow: 0 0 0 3px rgba(11, 125, 116, .12) !important;
+}
+.theme-cards .theme-selected,
+.preference-modal-themes .theme-modal-check {
+  top: 8px;
+  right: 8px;
+  display: inline-flex;
+  width: auto;
+  height: 22px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  border: 1px solid rgba(255,255,255,.88);
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  color: #0a6f68;
+  box-shadow: 0 3px 9px rgba(4, 48, 45, .20);
+  font-size: 9px;
+  font-style: normal;
+  font-weight: 900;
+  line-height: 1;
+}
+
+/* 로딩 마크는 회전 장식 대신 경로·노드·AI 스파크가 이어지는 브랜드형 진행 표시입니다. */
+.planning-orbit {
+  width: 104px;
+  height: 104px;
+  margin-bottom: 20px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  animation: none;
+}
+.planning-orbit::before {
+  inset: 8px;
+  border: 1px dashed #b8dcd1;
+  border-radius: 50%;
+  background: transparent;
+  animation: planningHalo 3.4s linear infinite;
+}
+.planning-orbit svg {
+  width: 86px;
+  height: 86px;
+  overflow: visible;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.planning-orbit .planning-track { fill: none; stroke: #e1f0ea; stroke-width: 1.6; }
+.planning-orbit .planning-route { fill: none; stroke: #087c73; stroke-width: 3.2; stroke-dasharray: 4 6; animation: planningRoute 1.8s linear infinite; }
+.planning-orbit .planning-node { fill: #ffffff; stroke: #087c73; stroke-width: 3; }
+.planning-orbit .planning-node-start { fill: #0b8378; }
+.planning-orbit .planning-node-end { fill: #ed7642; stroke: #ed7642; }
+.planning-orbit .planning-spark { fill: #ed7642; stroke: #ed7642; stroke-width: 1; }
+.planning-loader > div i { background: #b7dcd1; }
+.planning-loader > div i.done { background: #e87542; }
+@keyframes planningHalo { to { transform: rotate(360deg); } }
+@keyframes planningRoute { to { stroke-dashoffset: -20; } }
+
+@media (max-width: 760px) {
+  .traveler-prompt-modal { width: min(440px, calc(100vw - 28px)); min-height: 355px; padding: 27px 22px; }
+  .ai-transition-modal .transition-icon, .traveler-prompt-modal .traveler-prompt-icon { width: 62px; height: 62px; }
+  .planning-orbit { width: 90px; height: 90px; }
+  .planning-orbit svg { width: 76px; height: 76px; }
+}
+
+/* 팝업 전용 마크: 서로 다른 기능을 하나의 프리미엄 브랜드 언어로 보이게 하는 매트 라운델입니다. */
+.ai-transition-modal .transition-icon,
+.traveler-prompt-modal .traveler-prompt-icon {
+  position: relative;
+  width: 72px;
+  height: 72px;
+  border: 1px solid rgba(255,255,255,.24);
+  border-radius: 50%;
+  background: radial-gradient(circle at 31% 26%, #1a8a84 0%, #0b6465 48%, #063f46 100%);
+  color: #fffaf0;
+  box-shadow: 0 12px 26px rgba(5, 61, 64, .22), inset 0 1px 0 rgba(255,255,255,.22);
+}
+/* 아이콘의 주황 점은 상태를 설명하지 않아 장식으로만 보이므로 사용하지 않습니다. */
+.ai-transition-modal .transition-icon::after,
+.traveler-prompt-modal .traveler-prompt-icon::after {
+  display: none;
+  content: none;
+}
+.ai-transition-modal .transition-icon svg,
+.traveler-prompt-modal .traveler-prompt-icon svg {
+  width: 43px;
+  height: 43px;
+  stroke: #fffaf0;
+  stroke-width: 2.45;
+}
+.ai-transition-modal .transition-icon-stay,
+.ai-transition-modal .transition-icon-budget,
+.ai-transition-modal .transition-icon-plan,
+.ai-transition-modal .transition-icon-flight { color: #fffaf0; }
+.transition-icon-flight .return-loop,
+.transition-icon-flight .return-plane { stroke: #fffaf0; }
+.transition-icon-flight .return-arrow { stroke: #ff9f72; }
+.transition-icon-plan .plan-route { stroke: #8de1d0; }
+.transition-icon-plan .plan-spark,
+.transition-icon-stay .hotel-star { fill: #ffab78; stroke: #ffab78; }
+.traveler-prompt-modal .traveler-prompt-icon { color: #fffaf0; }
+
+@media (max-width: 760px) {
+  .ai-transition-modal .transition-icon,
+  .traveler-prompt-modal .traveler-prompt-icon { width: 66px; height: 66px; }
+  .ai-transition-modal .transition-icon svg,
+  .traveler-prompt-modal .traveler-prompt-icon svg { width: 39px; height: 39px; }
+}
+
+/* 일정 생성 로딩은 단일 링만 사용합니다. */
+.planning-orbit {
+  width: 64px;
+  height: 64px;
+  margin-bottom: 24px;
+  border: 3px solid #dcebe5;
+  border-top-color: #0b7d75;
+  border-right-color: #0b7d75;
+  border-radius: 50%;
+  background: transparent;
+  box-shadow: none;
+  animation: planningRing .85s linear infinite;
+}
+.planning-orbit::before,
+.planning-orbit::after { display: none; content: none; }
+.planning-orbit svg { display: none; }
+@keyframes planningRing { to { transform: rotate(360deg); } }
+
+@media (max-width: 760px) { .planning-orbit { width: 58px; height: 58px; } }
+
+/* 팝업 아이콘은 같은 벡터 시스템과 여백 규칙으로 통일합니다. */
+.ai-transition-modal .transition-icon,
+.traveler-prompt-modal .traveler-prompt-icon {
+  position: relative;
+  display: grid;
+  width: 64px;
+  height: 64px;
+  margin: 0 auto 17px;
+  place-items: center;
+  border: 1px solid #d5e5df;
+  border-radius: 16px;
+  background: #f8fbfa;
+  color: #0f766e;
+  box-shadow: none;
+}
+
+.ai-transition-modal .transition-icon::before,
+.ai-transition-modal .transition-icon::after,
+.traveler-prompt-modal .traveler-prompt-icon::before,
+.traveler-prompt-modal .traveler-prompt-icon::after {
+  display: none;
+  content: none;
+}
+
+.ai-transition-modal .transition-icon svg,
+.traveler-prompt-modal .traveler-prompt-icon svg {
+  width: 30px;
+  height: 30px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+}
+
+.ai-transition-modal .transition-icon-flight {
+  border-color: #cfe0ee;
+  background: #f1f8ff;
+  color: #256b86;
+}
+
+.ai-transition-modal .transition-icon-stay {
+  border-color: #f1d9c8;
+  background: #fff8f4;
+  color: #bc653a;
+}
+
+.ai-transition-modal .transition-icon-budget {
+  border-color: #cce6d5;
+  background: #f2fbf5;
+  color: #267751;
+}
+
+.ai-transition-modal .transition-icon-plan {
+  border-color: #c9e6dc;
+  background: #f3fbf8;
+  color: #0f766e;
+}
+
+.traveler-prompt-modal .traveler-prompt-icon {
+  border-color: #c9e6dc;
+  background: #f3fbf8;
+  color: #0f766e;
+}
+
+@media (max-width: 760px) {
+  .ai-transition-modal .transition-icon,
+  .traveler-prompt-modal .traveler-prompt-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+  }
+}
+
+/* 출발지와 도착지를 한눈에 비교하는 여정 선택 영역 */
+.form-fields > .route-field {
+  position: relative;
+  z-index: 9;
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: 18px 20px 20px;
+  border: 2px solid #78c9b8;
+  border-radius: 15px;
+  background: linear-gradient(125deg, #effbf7 0%, #fffefa 72%);
+  box-shadow: 0 12px 26px rgba(11, 100, 91, .09);
+}
+
+.route-field-heading,
+.route-picker-grid,
+.route-picker-trigger,
+.route-location-label,
+.route-empty-label,
+.location-menu-heading,
+.departure-region-grid button,
+.departure-detail-grid button,
+.departure-custom > div {
+  display: flex;
+}
+
+.route-field-heading {
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 13px;
+}
+
+.route-field-heading > div { display: grid; gap: 3px; }
+.route-field-heading small,
+.location-menu-heading small { color: #168178; font-size: 10px; font-weight: 800; letter-spacing: .2px; }
+.route-field-heading b { color: #164f49; font-size: 16px; letter-spacing: -.5px; }
+.route-field-heading > span { padding: 6px 9px; border-radius: 999px; background: #d8f2e9; color: #17786e; font: 800 9px 'DM Mono', monospace; letter-spacing: .25px; }
+
+.route-picker-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 42px minmax(0, 1fr);
+  align-items: end;
+  gap: 12px;
+}
+
+.route-picker { position: relative; min-width: 0; }
+.route-picker > small { display: block; margin: 0 0 7px 3px; color: #6f9289; font-size: 10px; font-weight: 800; }
+.route-picker-trigger {
+  width: 100%;
+  min-height: 74px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 13px;
+  border: 1px dashed #9fcfc1;
+  border-radius: 11px;
+  background: rgba(255,255,255,.88);
+  color: #164f49;
+  text-align: left;
+  transition: .2s ease;
+}
+.route-picker-trigger:hover,
+.route-picker-trigger.chosen { border-color: #148279; background: #fff; box-shadow: 0 7px 16px rgba(10, 102, 92, .08); }
+.route-location-label,
+.route-empty-label { min-width: 0; align-items: center; gap: 11px; }
+.route-location-label > img { width: 52px; height: 48px; flex: 0 0 auto; border-radius: 8px; object-fit: cover; object-position: center; background: #e8f2ef; }
+.route-location-label > span { display: grid; min-width: 0; gap: 3px; }
+.route-location-label b { overflow: hidden; color: #174f4a; font-size: 18px; line-height: 1.1; letter-spacing: -.7px; text-overflow: ellipsis; white-space: nowrap; }
+.route-location-label em { overflow: hidden; color: #619188; font-size: 12px; font-style: normal; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.route-empty-label { color: #8ba69f; }
+.route-empty-label > i { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: #e8f6f0; color: #148279; font-size: 18px; font-style: normal; }
+.route-empty-label b { color: #74968e; font-size: 14px; letter-spacing: -.3px; }
+.route-chevron { color: #118176; font-size: 19px; font-style: normal; }
+.route-direction { display: grid; width: 42px; height: 42px; margin-bottom: 16px; place-items: center; border-radius: 50%; background: #0e8178; color: #fff; font-size: 22px; font-style: normal; box-shadow: 0 7px 16px rgba(7, 104, 96, .19); }
+
+.route-location-menu {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 11px);
+  left: 0;
+  width: min(700px, calc(100vw - 110px));
+  padding: 19px;
+  border: 1px solid #b8ded3;
+  border-radius: 15px;
+  background: #fffefa;
+  box-shadow: 0 24px 52px rgba(15, 77, 68, .24);
+}
+
+.route-destination-picker > .route-destination-menu {
+  top: calc(100% + 11px);
+  right: 0;
+  left: auto;
+  z-index: 40;
+  width: min(700px, calc(100vw - 110px));
+}
+
+.location-menu-heading { align-items: flex-start; justify-content: space-between; gap: 16px; margin-bottom: 15px; }
+.location-menu-heading > div { display: grid; gap: 3px; }
+.location-menu-heading b { color: #174f4a; font-size: 18px; letter-spacing: -.7px; }
+.location-menu-heading > span { margin-top: 4px; color: #82a098; font-size: 11px; font-weight: 700; }
+.location-menu-heading.detail-heading { align-items: center; }
+.location-menu-heading.detail-heading > button { padding: 7px 9px; border: 1px solid #b8ded3; border-radius: 7px; background: #f6fbf8; color: #187b71; font-size: 11px; font-weight: 800; }
+
+.departure-region-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.departure-region-grid button,
+.departure-detail-grid button {
+  position: relative;
+  min-width: 0;
+  overflow: hidden;
+  align-items: center;
+  gap: 10px;
+  padding: 0;
+  border: 1px solid #d4e7e0;
+  border-radius: 10px;
+  background: #fff;
+  color: #174f4a;
+  text-align: left;
+  transition: .18s ease;
+}
+.departure-region-grid button { min-height: 114px; }
+.departure-region-grid button:hover,
+.departure-detail-grid button:hover { border-color: #138176; box-shadow: 0 8px 15px rgba(11, 103, 94, .12); transform: translateY(-1px); }
+.departure-region-grid img { width: 100%; height: 70px; object-fit: cover; object-position: center; }
+.departure-region-grid span { display: grid; gap: 3px; padding: 8px 10px 10px; }
+.departure-region-grid b,
+.departure-detail-grid b { font-size: 13px; letter-spacing: -.3px; }
+.departure-region-grid small,
+.departure-detail-grid small { color: #76978f; font-size: 9px; font-weight: 700; }
+.departure-region-grid i { position: absolute; right: 9px; bottom: 10px; color: #0c7e74; font-size: 15px; font-style: normal; }
+
+.departure-detail-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; }
+.departure-detail-grid button { min-height: 100px; padding-right: 8px; }
+.departure-detail-grid img { width: 84px; height: 100px; flex: 0 0 auto; object-fit: cover; object-position: center; }
+.departure-detail-grid span { display: grid; min-width: 0; gap: 5px; }
+
+.departure-custom { display: block; margin-top: 14px; padding-top: 13px; border-top: 1px solid #e4efeb; }
+.departure-custom > span { display: block; margin-bottom: 7px; color: #668f85; font-size: 11px; font-weight: 700; }
+.departure-custom > div { gap: 8px; }
+.departure-custom input { min-width: 0; flex: 1; min-height: 40px; padding: 0 11px; border: 1px solid #c9e1d9; border-radius: 8px; outline: 0; color: #174f4a; font: 600 12px 'Noto Sans KR', sans-serif; }
+.departure-custom input:focus { border-color: #0f8177; box-shadow: 0 0 0 3px rgba(15, 129, 119, .1); }
+.departure-custom button { min-width: 82px; border: 0; border-radius: 8px; background: #0f8177; color: #fff; font: 800 11px 'Noto Sans KR', sans-serif; }
+
+@media (max-width: 760px) {
+  .form-fields > .route-field { padding: 15px; }
+  .route-field-heading { margin-bottom: 11px; }
+  .route-field-heading b { font-size: 14px; }
+  .route-picker-grid { grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr); gap: 7px; }
+  .route-direction { width: 30px; height: 30px; margin-bottom: 18px; font-size: 16px; }
+  .route-picker-trigger { min-height: 68px; padding: 9px; gap: 7px; }
+  .route-location-label > img { width: 40px; height: 42px; }
+  .route-location-label b { font-size: 14px; }
+  .route-location-label em { font-size: 10px; }
+  .route-empty-label b { font-size: 11px; }
+  .route-empty-label > i { width: 28px; height: 28px; font-size: 14px; }
+  .route-location-menu,
+  .route-destination-picker > .route-destination-menu { width: min(calc(100vw - 36px), 680px); padding: 15px; }
+  .departure-region-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .departure-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 520px) {
+  .route-picker-grid { grid-template-columns: 1fr; gap: 9px; }
+  .route-direction { margin: -2px auto; transform: rotate(90deg); }
+  .route-location-menu,
+  .route-destination-picker > .route-destination-menu { right: auto; left: 0; width: 100%; }
+  .route-field-heading > span { display: none; }
+  .location-menu-heading { display: grid; gap: 6px; }
+  .location-menu-heading > span { margin-top: 0; }
+  .departure-detail-grid { grid-template-columns: 1fr; }
+}
+
+/* 일정 생성 후에는 처음의 AI 질문 흐름을 반복하지 않고, 필요한 항목만 다시 열 수 있도록 합니다. */
+.quick-edit-panel {
+  display: grid;
+  gap: 16px;
+  margin: 22px 0 6px;
+  padding: 20px;
+  border: 1px solid #a9dcd0;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #f8fffc 0%, #edf9f4 100%);
+  box-shadow: 0 12px 30px rgba(9, 91, 81, .08);
+}
+
+.quick-edit-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.quick-edit-heading > div { display: grid; gap: 4px; }
+.quick-edit-heading p {
+  margin: 0;
+  color: #0b8478;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: .08em;
+}
+.quick-edit-heading h3 {
+  margin: 0;
+  color: #164e49;
+  font-size: 21px;
+  line-height: 1.2;
+  letter-spacing: -.8px;
+}
+.quick-edit-heading span {
+  color: #648e85;
+  font-size: 13px;
+  font-weight: 650;
+}
+.quick-edit-heading > button {
+  flex: 0 0 auto;
+  min-height: 40px;
+  padding: 0 14px;
+  border: 1px solid #72baaa;
+  border-radius: 9px;
+  background: #fff;
+  color: #08796f;
+  font: 800 12px 'Noto Sans KR', sans-serif;
+}
+
+.quick-edit-actions {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.quick-edit-actions > button {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr) auto;
+  align-items: center;
+  min-width: 0;
+  min-height: 72px;
+  gap: 9px;
+  padding: 11px 10px;
+  border: 1px solid #c8e3da;
+  border-radius: 11px;
+  background: #fff;
+  color: #164e49;
+  text-align: left;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+}
+.quick-edit-actions > button:hover {
+  border-color: #0d897e;
+  box-shadow: 0 9px 18px rgba(14, 125, 113, .12);
+  transform: translateY(-2px);
+}
+.quick-edit-actions svg {
+  width: 32px;
+  height: 32px;
+  padding: 7px;
+  border-radius: 9px;
+  background: #e6f6f0;
+  color: #087f74;
+  stroke-width: 2.35;
+}
+.quick-edit-actions span { display: grid; min-width: 0; gap: 3px; }
+.quick-edit-actions b {
+  overflow: hidden;
+  color: #1a514c;
+  font-size: 13px;
+  letter-spacing: -.35px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quick-edit-actions small {
+  overflow: hidden;
+  color: #789a92;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: -.25px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.quick-edit-actions em {
+  color: #0d8176;
+  font-size: 10px;
+  font-style: normal;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+@media (max-width: 980px) {
+  .quick-edit-actions { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 620px) {
+  .quick-edit-panel { padding: 15px; }
+  .quick-edit-heading { display: grid; gap: 12px; }
+  .quick-edit-heading h3 { font-size: 18px; }
+  .quick-edit-heading > button { justify-self: start; }
+  .quick-edit-actions { grid-template-columns: 1fr; }
+}
+
+/* 인원 입력 뒤에는 날짜를 고를 다음 행동을 같은 화면에서 바로 안내합니다. */
+.form-fields > .date-field {
+  position: relative;
+  min-height: 122px;
+  padding-top: 17px;
+}
+.date-time-range > div > b {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 25px;
+  padding: 2px 9px;
+  border-radius: 7px;
+  background: #e8f7f1;
+  color: #076e67;
+  font-size: 15px;
+  font-weight: 950;
+  letter-spacing: -0.8px;
+  line-height: 1;
+}
+.date-ai-guide {
+  position: absolute;
+  z-index: 1;
+  top: 12px;
+  right: 15px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 238px);
+  padding: 7px 10px;
+  border: 1px solid #8acfbf;
+  border-radius: 9px;
+  background: #f1fffa;
+  box-shadow: 0 5px 13px rgba(15, 120, 107, .08);
+  color: #126b63;
+  line-height: 1;
+}
+.date-ai-guide::after {
+  position: absolute;
+  bottom: -5px;
+  left: 18px;
+  width: 8px;
+  height: 8px;
+  border-right: 1px solid #8acfbf;
+  border-bottom: 1px solid #8acfbf;
+  background: #f1fffa;
+  content: '';
+  transform: rotate(45deg);
+}
+.date-ai-guide > span {
+  position: static !important;
+  color: #e16d3d !important;
+  font: 900 9px/1 'DM Mono', 'Noto Sans KR', sans-serif !important;
+  letter-spacing: .25px;
+}
+.date-ai-guide > b {
+  margin: 0 !important;
+  color: #126b63 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+  letter-spacing: -.35px;
+  white-space: nowrap;
+}
+
+@media (max-width: 760px) {
+  .form-fields > .date-field { min-height: 156px; padding-top: 44px; }
+  .date-ai-guide {
+    top: 10px;
+    left: 15px;
+    right: auto;
+    max-width: calc(100% - 30px);
+  }
+  .date-time-range > div > b { font-size: 14px; }
+}
