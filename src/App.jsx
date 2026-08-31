@@ -11,6 +11,7 @@ import {
   departureRegions,
   destinationCoordinatesByName,
   jejuRegionCoordinates,
+  koreanRegions,
   toApiLocation,
 } from "./data/locationCatalog";
 import jejuCoastPhoto from "./assets/jeju-main-hero.jpeg";
@@ -209,11 +210,11 @@ const jejuRegionOptions = [
   },
 ];
 const outboundOptions = [
-  { id: "CAR", icon: "🚙", title: "자차·선박", text: "내 차와 함께 이동" },
-  { id: "FLIGHT", icon: "✈", title: "항공", text: "가장 빠른 제주 이동" },
-  { id: "KTX", icon: "🚆", title: "KTX", text: "기차와 선박 연계" },
-  { id: "BUS", icon: "🚌", title: "고속버스", text: "버스와 선박 연계" },
-  { id: "OTHER", icon: "＋", title: "기타", text: "직접 입력·나중에 결정" },
+  { id: "CAR", icon: "🚙", title: "자차", text: "유류비·통행료까지 계산" },
+  { id: "KTX", icon: "🚆", title: "KTX", text: "철도 시간표 기반 비교" },
+  { id: "FLIGHT", icon: "✈", title: "항공", text: "가는 편·오는 편 따로 비교" },
+  { id: "BUS", icon: "🚌", title: "고속·시외버스", text: "노선과 환승 시간을 비교" },
+  { id: "FERRY", icon: "⛴", title: "배", text: "여객선 시간표를 비교" },
 ];
 const localOptions = [
   { id: "RENTAL", icon: "🚗", title: "렌터카", text: "자유로운 동선 추천" },
@@ -256,6 +257,93 @@ const returnTimeOptions = [
 ];
 const transportName = (id, options) =>
   options.find((option) => option.id === id)?.title || "미선택";
+
+// API가 붙기 전에도 선택값에 따라 서로 다른 견적을 보여 주는 계산용 기준입니다.
+// 실서비스에서는 routingApi / costApi 응답으로 같은 출력 구조만 교체합니다.
+const toRadians = (value) => (Number(value) * Math.PI) / 180;
+const distanceBetween = (from, to) => {
+  if (!from || !to || from.latitude == null || to.latitude == null) return 180;
+  const earthRadiusKm = 6371;
+  const latitudeDelta = toRadians(to.latitude - from.latitude);
+  const longitudeDelta = toRadians(to.longitude - from.longitude);
+  const a =
+    Math.sin(latitudeDelta / 2) ** 2 +
+    Math.cos(toRadians(from.latitude)) *
+      Math.cos(toRadians(to.latitude)) *
+      Math.sin(longitudeDelta / 2) ** 2;
+  return Math.max(25, Math.round(earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a))));
+};
+
+const estimateIntercityFare = ({ mode, origin, destination, travelers = 1 }) => {
+  const distance = distanceBetween(origin, destination);
+  const party = Math.max(1, Number(travelers) || 1);
+  const roundTripDistance = distance * 2;
+  if (mode === "CAR") {
+    const fuel = Math.round((roundTripDistance / 12.5) * 1750);
+    const toll = Math.round(roundTripDistance * 74);
+    return Math.ceil((fuel + toll) / party);
+  }
+  if (mode === "KTX") return Math.max(18000, Math.round(distance * 210 + 13000));
+  if (mode === "BUS") return Math.max(12000, Math.round(distance * 145 + 9000));
+  if (mode === "FERRY") return Math.max(28000, Math.round(distance * 180 + 22000));
+  if (mode === "OTHER") return Math.max(0, Math.round(distance * 125));
+  return 0;
+};
+
+const demoStayImages = [
+  "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=1200&q=90",
+  "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?auto=format&fit=crop&w=1200&q=90",
+  "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?auto=format&fit=crop&w=1200&q=90",
+  "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=90",
+];
+
+const demoStaysForLocation = (location) => {
+  if (!location || location.regionCode === "KR-49") return stays;
+  const area = location.detail || location.region || "선택 지역";
+  return demoStayImages.map((image, index) => ({
+    id: `mock-stay-${location.id || area}-${index}`,
+    area,
+    name: `${area} ${["스테이", "호텔", "레지던스", "부티크 호텔"][index]}`,
+    price: [126000, 148000, 171000, 196000][index],
+    image,
+    rating: (4.82 - index * 0.05).toFixed(2),
+    reviewCount: 1240 + index * 853,
+    deal: index === 0 || index === 2,
+    left: 2 + index,
+    insight: `${area} 동선과 선택한 여행 기간을 기준으로 만든 시연 숙소 견적이에요.`,
+    isMock: true,
+  }));
+};
+
+const demoRentalsForLocation = (location) => {
+  if (!location || location.regionCode === "KR-49") return rentals;
+  const area = location.detail || location.region || "선택 지역";
+  return [
+    ["현지 렌터카 특가", "경차 · 2박 3일", 96800, "완전자차 선택 가능", "영업소 10분 내 인수", "24시간 전 무료", "4.71"],
+    ["지역 제휴 렌터카", "준중형 · 2박 3일", 132000, "일반자차 · 면책 30만원", "도심 영업소 인수", "48시간 전 무료", "4.78"],
+    ["프리미엄 모빌리티", "SUV · 2박 3일", 176000, "완전자차 · 면책 0원", "숙소 배송 옵션", "24시간 전 무료", "4.86"],
+  ].map(([company, car, price, insurance, pickup, cancellation, score], index) => ({
+    id: `mock-rental-${location.id || area}-${index}`,
+    company,
+    car,
+    price,
+    originalPrice: Math.round(price * 1.26),
+    discount: index === 0 ? 21 : 0,
+    badge: index === 0 ? "시연 특가" : index === 1 ? "균형 추천" : "편의 추천",
+    left: 3 + index,
+    note: "2박 3일 · 48시간 · 더미 견적",
+    insurance,
+    fuel: "동일 연료 또는 충전량 반납",
+    pickup,
+    cancellation,
+    score,
+    reviews: 1800 + index * 901,
+    age: "만 21세 · 1년",
+    benefit: `${area} 기준으로 생성한 시연 차량 견적입니다. 실제 계약 전 보장 범위와 반납 조건을 확인하세요.`,
+    image: rentalImages[["billycar", "jeju-pass", "lotte-rent"][index]],
+    isMock: true,
+  }));
+};
 const rentals = [
   {
     id: "billycar",
@@ -1193,7 +1281,7 @@ const stayProfileFor = (stay) => {
     };
   return stayProfileFor({ area: "애월", name: stayName });
 };
-const makeDayPlans = (arrivalTime, endTime, stay, flight) => {
+const makeJejuDayPlans = (arrivalTime, endTime, stay, flight) => {
   const profile = stayProfileFor(stay);
   const arrivalAt = timeToMinutes(arrivalTime);
   const outboundCode = flight?.code?.split("·")[0]?.trim();
@@ -1355,6 +1443,428 @@ const makeDayPlans = (arrivalTime, endTime, stay, flight) => {
     ),
   ];
 };
+
+// 지역을 선택한 뒤에는 특정 발표 시나리오가 아니라, 선택한 권역을 중심으로
+// 기본 동선을 만듭니다. 실제 서비스에서는 이 프로필을 한국관광공사·지도 경로
+// API 응답으로 대체할 수 있도록 장소/이동 시간을 분리해 두었습니다.
+const regionalTripProfiles = {
+  "서울특별시": {
+    focus: "서울 도심",
+    arrival: ["🏯", "경복궁", "궁궐과 북촌을 한 동선으로 둘러보기 좋아요.", "85분", 20],
+    dinner: ["🍽", "익선동 저녁", "도보 이동이 편한 골목 식당가에서 첫날을 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["☕", "성수동 카페 거리", "서울숲과 함께 여유롭게 둘러보는 오전 동선이에요.", "75분", 25],
+      ["🌿", "서울숲", "도심 속 산책과 휴식 시간을 확보해요.", "80분", 30],
+      ["🍜", "한강 인근 점심", "오후 동선 전, 이동이 편한 권역에서 식사해요.", "70분", 35],
+      ["🌇", "남산서울타워", "해 질 무렵 서울 전경을 감상하는 일정이에요.", "95분", 25],
+      ["🍽", "을지로 저녁", "숙소 복귀가 편한 도심 식당가를 추천해요.", "90분", 15],
+    ],
+    departure: ["🛍", "광장시장", "귀가 전 간식과 선물을 둘러보기 좋은 마지막 동선이에요.", "75분", 35],
+  },
+  "부산광역시": {
+    focus: "부산 해안",
+    arrival: ["🌊", "해운대해수욕장", "바다를 보며 첫날 이동 피로를 가볍게 풀어요.", "80분", 25],
+    dinner: ["🍽", "해운대 로컬 저녁", "숙소와 가까운 해운대권 식당가에서 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏘", "감천문화마을", "아침 혼잡을 피해 골목 풍경을 먼저 둘러봐요.", "95분", 40],
+      ["🌉", "송도해상케이블카", "해안 경관을 즐기며 이동 시간을 줄인 코스예요.", "75분", 35],
+      ["🍜", "남포동 점심", "시장과 관광지 사이에서 식사 시간을 확보해요.", "70분", 30],
+      ["🌁", "광안리 해변", "노을 전 광안대교 풍경을 즐겨요.", "85분", 20],
+      ["🍽", "광안리 저녁", "해변 인근에서 하루를 마무리해요.", "90분", 20],
+    ],
+    departure: ["🛍", "국제시장", "귀가 전 부산 간식과 선물을 살펴봐요.", "75분", 35],
+  },
+  "대구광역시": {
+    focus: "대구 도심",
+    arrival: ["🎵", "김광석다시그리기길", "도심 산책으로 여행의 첫 리듬을 만들어요.", "75분", 20],
+    dinner: ["🍽", "동성로 저녁", "숙소와 이동이 편한 중심 상권에서 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🌿", "앞산전망대", "오전 시간대에 대구 전경을 여유롭게 감상해요.", "95분", 35],
+      ["🏛", "대구근대골목", "도보로 이어지는 근대문화 동선을 즐겨요.", "85분", 25],
+      ["🍜", "서문시장 점심", "시장 먹거리와 함께 점심 시간을 확보해요.", "75분", 30],
+      ["💡", "수성못", "저녁 전 호수 산책으로 이동 피로를 풀어요.", "80분", 25],
+      ["🍽", "수성구 저녁", "숙소 복귀 동선을 고려한 저녁이에요.", "90분", 20],
+    ],
+    departure: ["🛍", "서문시장", "귀가 전 지역 먹거리와 선물을 둘러봐요.", "70분", 30],
+  },
+  "인천광역시": {
+    focus: "인천 항구 도시",
+    arrival: ["🏮", "인천 차이나타운", "개항장 역사 거리부터 가볍게 둘러봐요.", "80분", 20],
+    dinner: ["🍽", "개항로 저녁", "개항장 인근 식당가에서 첫날을 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏛", "개항장 문화지구", "역사 건축과 전시를 한 동선으로 둘러봐요.", "85분", 25],
+      ["🌳", "송도센트럴파크", "수변 산책과 휴식 시간을 확보해요.", "90분", 25],
+      ["🍜", "송도 점심", "공원 인근에서 이동을 줄여 식사해요.", "70분", 35],
+      ["🌉", "월미도", "바다 전망과 야경을 즐기기 좋은 오후 코스예요.", "85분", 25],
+      ["🍽", "인천항 저녁", "항구 인근에서 하루를 마무리해요.", "90분", 20],
+    ],
+    departure: ["🛍", "신포국제시장", "공항·역 이동 전 간식과 선물을 준비해요.", "70분", 30],
+  },
+  "광주광역시": {
+    focus: "광주 문화",
+    arrival: ["🏘", "양림동 역사문화마을", "고즈넉한 골목에서 첫날을 시작해요.", "80분", 20],
+    dinner: ["🍽", "동명동 저녁", "카페·식당이 모인 동명동에서 여유롭게 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏛", "국립아시아문화전당", "전시 관람 시간을 충분히 확보한 오전 일정이에요.", "100분", 20],
+      ["🌿", "푸른길공원", "도심 산책으로 전시 뒤 휴식을 이어가요.", "70분", 30],
+      ["🍜", "충장로 점심", "중심 상권에서 식사와 이동을 함께 해결해요.", "75분", 35],
+      ["🏯", "무등산 증심사", "오후의 자연·문화 동선을 가볍게 즐겨요.", "95분", 35],
+      ["🍽", "광주 로컬 저녁", "숙소 복귀가 편한 권역에서 마무리해요.", "90분", 15],
+    ],
+    departure: ["🛍", "1913송정역시장", "이동 전 시장 먹거리와 기념품을 둘러봐요.", "75분", 35],
+  },
+  "대전광역시": {
+    focus: "대전 과학·도심",
+    arrival: ["🌳", "한밭수목원", "도심 속 산책으로 가볍게 여행을 시작해요.", "75분", 20],
+    dinner: ["🍽", "둔산동 저녁", "숙소와 가까운 중심 상권에서 첫날을 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🔬", "국립중앙과학관", "관람 시간을 넉넉히 잡은 과학 문화 코스예요.", "100분", 20],
+      ["🌿", "엑스포과학공원", "수변 산책과 사진 시간을 함께 확보해요.", "80분", 25],
+      ["🍜", "대전역 인근 점심", "오후 동선 전, 이동이 편한 곳에서 식사해요.", "70분", 30],
+      ["☕", "소제동 카페 거리", "근대 건축과 카페를 함께 즐기는 휴식 코스예요.", "80분", 20],
+      ["🍽", "은행동 저녁", "도심에서 하루를 여유롭게 마무리해요.", "90분", 20],
+    ],
+    departure: ["🥖", "성심당 본점", "이동 전 대표 빵과 선물을 준비해요.", "55분", 30],
+  },
+  "울산광역시": {
+    focus: "울산 바다·산업",
+    arrival: ["🌊", "대왕암공원", "해안 산책로를 따라 첫날 바다 풍경을 즐겨요.", "85분", 25],
+    dinner: ["🍽", "일산해수욕장 저녁", "바다 인근에서 이동을 줄여 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🌊", "간절곶", "해가 좋은 오전에 동해안 풍경을 감상해요.", "95분", 40],
+      ["🏛", "장생포고래문화마을", "울산만의 해양·산업 이야기를 만나는 코스예요.", "90분", 35],
+      ["🍜", "태화강 점심", "강변 인근에서 여유롭게 식사해요.", "70분", 25],
+      ["🌿", "태화강국가정원", "오후 산책과 휴식을 위한 코스예요.", "85분", 25],
+      ["🍽", "삼산동 저녁", "숙소 복귀가 편한 중심 상권에서 마무리해요.", "90분", 20],
+    ],
+    departure: ["🛍", "울산중앙시장", "귀가 전 지역 먹거리와 선물을 둘러봐요.", "65분", 30],
+  },
+  "세종특별자치시": {
+    focus: "세종 호수·정원",
+    arrival: ["🌊", "세종호수공원", "수변 산책으로 여유롭게 첫날을 시작해요.", "80분", 20],
+    dinner: ["🍽", "나성동 저녁", "생활권 중심 식당가에서 첫날을 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🌿", "국립세종수목원", "온실과 정원을 충분히 즐기는 오전 코스예요.", "100분", 25],
+      ["🏛", "국립세종도서관", "건축과 전시를 함께 즐기는 휴식 일정이에요.", "65분", 20],
+      ["🍜", "어진동 점심", "이동이 편한 정부청사 인근에서 식사해요.", "70분", 25],
+      ["🌳", "금강보행교", "금강 풍경을 따라 오후 산책을 즐겨요.", "75분", 25],
+      ["🍽", "세종 로컬 저녁", "숙소 주변에서 편안하게 마무리해요.", "90분", 15],
+    ],
+    departure: ["🛍", "세종전통시장", "이동 전 지역 먹거리와 선물을 살펴봐요.", "60분", 25],
+  },
+  "경기도": {
+    focus: "경기 근교",
+    arrival: ["🌳", "지역 대표 공원", "선택한 시·군과 가까운 산책 명소부터 가볍게 시작해요.", "80분", 25],
+    dinner: ["🍽", "지역 로컬 저녁", "숙소와 가까운 생활권 식당에서 첫날을 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏛", "지역 문화 명소", "선택한 시·군의 대표 문화 공간을 여유롭게 둘러봐요.", "90분", 30],
+      ["🌿", "지역 자연 산책", "도심과 자연을 함께 즐기는 동선으로 구성했어요.", "80분", 25],
+      ["🍜", "지역 로컬 점심", "오후 이동 전 가까운 권역에서 식사해요.", "70분", 35],
+      ["☕", "지역 카페 거리", "여행 취향에 맞춘 휴식 시간을 확보해요.", "70분", 25],
+      ["🍽", "지역 특색 저녁", "숙소 복귀 동선을 고려한 저녁이에요.", "90분", 20],
+    ],
+    departure: ["🛍", "지역 전통시장", "귀가 전 기념품과 간식을 둘러봐요.", "65분", 30],
+  },
+  "강원특별자치도": {
+    focus: "강원 자연",
+    arrival: ["🌊", "속초해변", "동해 바다를 보며 첫날 이동 피로를 풀어요.", "80분", 25],
+    dinner: ["🍽", "속초 로컬 저녁", "숙소와 가까운 해안권 식당에서 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏔", "설악산 국립공원", "오전 시간대에 자연 풍경을 여유롭게 즐겨요.", "110분", 45],
+      ["🌊", "영금정", "동해안 전망과 산책을 이어가는 코스예요.", "75분", 25],
+      ["🍜", "속초 중앙시장 점심", "시장 먹거리로 식사와 간식을 함께 해결해요.", "75분", 30],
+      ["☕", "청초호 카페", "호수 전망을 보며 오후 휴식을 가져요.", "70분", 25],
+      ["🍽", "강원 로컬 저녁", "숙소 권역에서 이동을 줄여 마무리해요.", "90분", 15],
+    ],
+    departure: ["🛍", "속초관광수산시장", "귀가 전 강원 특산품을 살펴봐요.", "65분", 30],
+  },
+  "충청북도": {
+    focus: "충북 호수·도시",
+    arrival: ["🌊", "청남대", "대청호 풍경과 함께 여유롭게 첫날을 시작해요.", "85분", 30],
+    dinner: ["🍽", "청주 로컬 저녁", "숙소와 가까운 청주 중심권에서 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏛", "국립청주박물관", "지역 역사와 문화를 만나는 오전 일정이에요.", "90분", 25],
+      ["🌿", "상당산성", "성곽 산책과 도시 전망을 함께 즐겨요.", "85분", 25],
+      ["🍜", "성안길 점심", "도심 상권에서 식사와 휴식을 이어가요.", "70분", 30],
+      ["🍷", "청주공예비엔날레 권역", "전시·카페 등 취향에 맞춘 오후 시간을 보내요.", "80분", 25],
+      ["🍽", "충북 로컬 저녁", "숙소 복귀 동선을 고려한 저녁이에요.", "90분", 15],
+    ],
+    departure: ["🛍", "육거리종합시장", "이동 전 지역 먹거리와 선물을 둘러봐요.", "65분", 30],
+  },
+  "충청남도": {
+    focus: "충남 바다·역사",
+    arrival: ["🏛", "공주 공산성", "역사 유적을 따라 가볍게 첫날을 시작해요.", "85분", 25],
+    dinner: ["🍽", "공주 로컬 저녁", "숙소와 가까운 지역 식당에서 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏛", "국립부여박물관", "백제 문화권을 이해하는 오전 코스예요.", "90분", 25],
+      ["🌿", "궁남지", "호수 산책과 사진 시간을 확보해요.", "75분", 25],
+      ["🍜", "부여 로컬 점심", "오후 이동 전 가까운 권역에서 식사해요.", "70분", 35],
+      ["🌊", "대천해수욕장", "서해 풍경을 즐기며 여유로운 오후를 보내요.", "85분", 35],
+      ["🍽", "충남 로컬 저녁", "숙소 복귀가 편한 곳에서 마무리해요.", "90분", 15],
+    ],
+    departure: ["🛍", "공주산성시장", "귀가 전 지역 특산품을 둘러봐요.", "65분", 30],
+  },
+  "전북특별자치도": {
+    focus: "전북 한옥·미식",
+    arrival: ["🏯", "전주한옥마을", "골목 산책으로 전주의 첫 풍경을 만나봐요.", "90분", 20],
+    dinner: ["🍽", "전주 한정식 저녁", "한옥마을과 가까운 곳에서 첫날을 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏛", "경기전", "한옥마을 안에서 역사와 건축을 함께 즐겨요.", "75분", 15],
+      ["🌿", "전주향교", "조용한 골목으로 이어지는 오전 산책이에요.", "70분", 20],
+      ["🍜", "남부시장 점심", "지역 먹거리로 식사와 간식을 함께 해결해요.", "75분", 30],
+      ["☕", "자만벽화마을", "오후 사진·카페 시간을 확보해요.", "80분", 25],
+      ["🍽", "전주 로컬 저녁", "숙소와 가까운 권역에서 마무리해요.", "90분", 15],
+    ],
+    departure: ["🛍", "전주남부시장", "귀가 전 전주 간식과 기념품을 살펴봐요.", "65분", 25],
+  },
+  "전라남도": {
+    focus: "전남 해안",
+    arrival: ["🌊", "여수 해상케이블카", "바다와 섬 풍경을 보며 첫날을 시작해요.", "80분", 25],
+    dinner: ["🍽", "여수 낭만포차 거리", "해안 야경과 함께 첫날을 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🌿", "오동도", "동백숲과 해안 산책을 여유롭게 즐겨요.", "95분", 30],
+      ["🏛", "여수 예술랜드", "바다 전망과 체험을 함께 즐기는 코스예요.", "85분", 25],
+      ["🍜", "여수 게장 점심", "지역 대표 메뉴로 점심 시간을 확보해요.", "75분", 35],
+      ["🌉", "돌산대교 전망", "노을 전 해안 드라이브·산책을 즐겨요.", "75분", 25],
+      ["🍽", "전남 로컬 저녁", "숙소 권역에서 편안하게 마무리해요.", "90분", 15],
+    ],
+    departure: ["🛍", "여수수산시장", "귀가 전 해산물 간식과 선물을 둘러봐요.", "65분", 30],
+  },
+  "경상북도": {
+    focus: "경북 역사",
+    arrival: ["🏯", "불국사", "고즈넉한 사찰 풍경으로 첫날을 시작해요.", "90분", 25],
+    dinner: ["🍽", "황리단길 저녁", "숙소와 가까운 경주 중심 상권에서 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🏛", "대릉원", "오전 산책으로 신라 문화권을 천천히 둘러봐요.", "80분", 20],
+      ["🏯", "첨성대", "도보로 이어지는 대표 유적 동선이에요.", "65분", 20],
+      ["🍜", "황리단길 점심", "오후 이동 전 지역 식사를 즐겨요.", "75분", 25],
+      ["🌊", "동궁과 월지", "해질 무렵 야경이 아름다운 역사 명소예요.", "80분", 25],
+      ["🍽", "경주 로컬 저녁", "숙소 복귀 동선을 고려한 저녁이에요.", "90분", 15],
+    ],
+    departure: ["🛍", "경주중앙시장", "귀가 전 지역 먹거리와 선물을 둘러봐요.", "65분", 30],
+  },
+  "경상남도": {
+    focus: "경남 항구·자연",
+    arrival: ["🌊", "동피랑 벽화마을", "항구를 내려다보는 골목에서 첫날을 시작해요.", "80분", 20],
+    dinner: ["🍽", "통영 중앙시장 저녁", "해산물과 지역 음식을 즐기며 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🌊", "미륵산 케이블카", "오전 바다와 섬 풍경을 감상하는 코스예요.", "100분", 35],
+      ["🏛", "통영 강구안", "항구 풍경과 문화공간을 둘러봐요.", "75분", 20],
+      ["🍜", "통영 로컬 점심", "시장 인근에서 지역 메뉴를 즐겨요.", "75분", 30],
+      ["🌿", "이순신공원", "바다 전망 산책으로 오후 여유를 가져요.", "85분", 25],
+      ["🍽", "경남 로컬 저녁", "숙소와 가까운 권역에서 마무리해요.", "90분", 15],
+    ],
+    departure: ["🛍", "통영중앙시장", "귀가 전 지역 특산품을 살펴봐요.", "65분", 30],
+  },
+  default: {
+    focus: "선택한 여행지",
+    arrival: ["📍", "지역 대표 명소", "도착 후 선택한 여행지의 중심 명소부터 시작해요.", "80분", 25],
+    dinner: ["🍽", "지역 로컬 저녁", "숙소와 가까운 식당에서 첫날을 마무리해요.", "90분", 15],
+    dayTwo: [
+      ["🌿", "지역 자연 명소", "여행지의 대표 자연 경관을 여유롭게 즐겨요.", "90분", 30],
+      ["🏛", "지역 문화 명소", "문화·역사 공간을 한 동선으로 묶었어요.", "85분", 25],
+      ["🍜", "지역 로컬 점심", "오후 일정 전 가까운 곳에서 식사해요.", "70분", 35],
+      ["☕", "지역 카페 거리", "취향에 맞춘 휴식 시간을 확보해요.", "75분", 25],
+      ["🍽", "지역 특색 저녁", "숙소 복귀가 편한 곳에서 마무리해요.", "90분", 15],
+    ],
+    departure: ["🛍", "지역 전통시장", "귀가 전 지역 먹거리와 기념품을 둘러봐요.", "65분", 30],
+  },
+};
+
+const locationLabel = (location, fallback = "선택한 여행지") =>
+  location?.detail || location?.name || location?.region || fallback;
+
+const profileForLocation = (destinationLocation) => {
+  const region = destinationLocation?.region || destinationLocation?.name;
+  const detail = destinationLocation?.detail || "";
+  if (region === "경기도" && detail.includes("파주")) {
+    return {
+      ...regionalTripProfiles["경기도"],
+      focus: "파주 평화·예술",
+      arrival: ["🕊", "임진각 평화누리", "파주의 대표 평화 문화 공간에서 여행을 시작해요.", "85분", 25],
+      dinner: ["🍽", "헤이리 로컬 저녁", "예술마을 인근에서 이동을 줄여 마무리해요.", "90분", 15],
+      dayTwo: [
+        ["🏛", "헤이리 예술마을", "전시·서점·카페를 취향에 맞춰 즐겨요.", "100분", 25],
+        ["🌳", "마장호수 출렁다리", "호수 전망 산책을 충분히 즐기는 자연 코스예요.", "90분", 35],
+        ["🍜", "파주 로컬 점심", "오후 이동 전 가까운 권역에서 식사해요.", "70분", 30],
+        ["☕", "출판도시 카페", "책과 건축을 함께 즐기는 휴식 시간이에요.", "75분", 20],
+        ["🍽", "파주 로컬 저녁", "숙소 복귀가 편한 동선으로 마무리해요.", "90분", 15],
+      ],
+      departure: ["🛍", "파주 프리미엄 아울렛", "귀가 전 쇼핑·휴식 시간을 선택할 수 있어요.", "65분", 30],
+    };
+  }
+  if (region === "경기도" && detail.includes("수원")) {
+    return {
+      ...regionalTripProfiles["경기도"],
+      focus: "수원 역사·도심",
+      arrival: ["🏯", "수원화성", "성곽 산책으로 수원의 첫 풍경을 만나봐요.", "85분", 20],
+      dinner: ["🍽", "행궁동 저녁", "행리단길 인근에서 첫날을 마무리해요.", "90분", 15],
+      dayTwo: [
+        ["🏛", "화성행궁", "오전 관람으로 역사 동선을 여유 있게 시작해요.", "90분", 20],
+        ["☕", "행궁동 카페 거리", "골목 카페와 편집숍을 함께 즐겨요.", "80분", 20],
+        ["🍜", "수원 로컬 점심", "오후 이동 전 지역 메뉴를 즐겨요.", "70분", 25],
+        ["🌿", "광교호수공원", "호수 산책으로 휴식 시간을 확보해요.", "85분", 25],
+        ["🍽", "수원 갈비 저녁", "숙소 복귀 동선을 고려한 대표 메뉴 저녁이에요.", "90분", 15],
+      ],
+      departure: ["🛍", "팔달문시장", "귀가 전 지역 먹거리와 선물을 둘러봐요.", "65분", 25],
+    };
+  }
+  return regionalTripProfiles[region] || regionalTripProfiles.default;
+};
+
+const makeRegionalDayPlans = (
+  arrivalTime,
+  endTime,
+  stay,
+  flight,
+  destinationLocation,
+  originLocation,
+  transport,
+) => {
+  const profile = profileForLocation(destinationLocation);
+  const destination = locationLabel(destinationLocation);
+  const origin = locationLabel(originLocation, "출발지");
+  const arrivalAt = timeToMinutes(arrivalTime || "10:00");
+  const arrivalTransport = transport || (flight ? "항공" : "선택한 교통수단");
+  const flightCode = flight?.code?.split("·")[0]?.trim();
+  const arrivalName = flight
+    ? `${destination} 도착 · ${flight.airline}${flightCode ? ` ${flightCode}` : ""}`
+    : `${destination} 도착`;
+  const arrivalDetail = flight
+    ? `${origin}에서 출발한 ${flight.out || "선택 항공편"}을 기준으로 도착·수하물 수령 시간을 반영했어요.`
+    : `${origin}에서 ${arrivalTransport}으로 이동한 뒤, 선택한 지역의 실제 이동 시간을 반영해 여행을 시작해요.`;
+  const arrivalRows = [scheduleEvent("✈", arrivalName, arrivalDetail, "30분", 25)];
+  if (stay) {
+    arrivalRows.push(
+      scheduleEvent(
+        stay?.area ? "🚗" : "🧭",
+        stay?.area ? "현지 이동 · 체크인 준비" : "숙소 권역 이동 준비",
+        "교통수단·숙소 위치를 기준으로 첫 이동 시간을 연결해요.",
+        "35분",
+        30,
+      ),
+    );
+  }
+  if (arrivalAt <= 15 * 60 + 30) {
+    arrivalRows.push(
+      scheduleEvent(profile.arrival[0], profile.arrival[1], profile.arrival[2], profile.arrival[3], profile.arrival[4]),
+    );
+  }
+  if (stay) {
+    arrivalRows.push(
+      scheduleEvent(
+        "⌂",
+        `${stay.name} 체크인`,
+        `${stay.area || destination} 숙소를 기준으로 짐을 풀고 잠시 쉬어가요.`,
+        "55분",
+        15,
+      ),
+    );
+  }
+  arrivalRows.push(
+    scheduleEvent(profile.dinner[0], profile.dinner[1], profile.dinner[2], profile.dinner[3], profile.dinner[4]),
+  );
+
+  const departureMinutes = timeToMinutes(endTime || "18:00");
+  const earlyReturn = departureMinutes <= 13 * 60;
+  const departureRows = earlyReturn
+    ? [
+        scheduleEvent("⌂", "체크아웃 · 짐 정리", "귀국·귀가 시간이 이른 편이라 짐과 이동 준비를 먼저 마쳐요.", "35분", 25),
+        scheduleEvent("🧭", "마지막 이동 · 출발지 이동", `${destination}에서 출발지로 돌아가기 위한 이동 시간을 반영했어요.`, "65분", 0),
+      ]
+    : [
+        scheduleEvent("⌂", "체크아웃 · 짐 정리", "숙소에서 짐을 정리한 뒤 마지막 동선을 시작해요.", "35분", 20),
+        scheduleEvent(profile.departure[0], profile.departure[1], profile.departure[2], profile.departure[3], profile.departure[4]),
+        scheduleEvent("🍜", "출발 전 로컬 점심", "터미널·역·공항 이동 전 여유 있게 식사 시간을 확보해요.", "65분", 40),
+        scheduleEvent("🧭", "출발지 이동 준비", `${origin}으로 돌아가는 ${arrivalTransport} 탑승·환승 시간을 반영했어요.`, "50분", 0),
+      ];
+  const departureStart = earlyReturn
+    ? Math.max(7 * 60 + 30, departureMinutes - 190)
+    : Math.max(8 * 60 + 30, departureMinutes - 420);
+
+  return [
+    makeSequentialPlan(
+      `${destination}에 도착한 첫날`,
+      `${origin}에서 출발한 ${arrivalTransport} 일정과 ${destination} 권역의 첫 이동을 연결했어요.`,
+      minutesToTime(arrivalAt),
+      arrivalRows,
+    ),
+    makeSequentialPlan(
+      `${profile.focus} 중심의 하루`,
+      "선택한 여행지의 대표 명소를 되돌아가지 않도록 같은 권역으로 묶었어요.",
+      "09:00",
+      [
+        scheduleEvent("🥐", "숙소 조식 · 출발 준비", "숙소 위치와 다음 관광지의 이동 시간을 고려해 여유 있게 시작해요.", "60분", 20),
+        ...profile.dayTwo.map(([icon, name, detail, duration, travel]) => scheduleEvent(icon, name, detail, duration, travel)),
+      ],
+    ),
+    makeSequentialPlan(
+      `${destination}을 담아 돌아가는 날`,
+      `${arrivalTransport} 출발 시각 전 이동·탑승 준비 시간을 반영해 마지막 동선을 설계했어요.`,
+      minutesToTime(departureStart),
+      departureRows,
+    ),
+  ];
+};
+
+const makeDayPlans = (
+  arrivalTime,
+  endTime,
+  stay,
+  flight,
+  destinationLocation,
+  originLocation,
+  transport,
+) => {
+  const isJejuDestination =
+    destinationLocation?.regionCode === "KR-49" ||
+    /제주/.test(`${destinationLocation?.region || ""} ${destinationLocation?.detail || ""}`);
+  if (isJejuDestination || !destinationLocation)
+    return makeJejuDayPlans(arrivalTime, endTime, stay, flight);
+  return makeRegionalDayPlans(
+    arrivalTime,
+    endTime,
+    stay,
+    flight,
+    destinationLocation,
+    originLocation,
+    transport,
+  );
+};
+
+const regionalPlaceAlternatives = {
+  "서울특별시": [
+    { icon: "🏯", name: "북촌한옥마을", detail: "궁궐과 가까운 전통 골목으로 동선을 다시 계산해요.", duration: "80분", travel: 25 },
+    { icon: "🌳", name: "서울숲", detail: "성수권 자연 산책을 넣어 휴식 시간을 조정해요.", duration: "85분", travel: 30 },
+    { icon: "🌇", name: "남산서울타워", detail: "도심 전망 코스로 바꾸고 이동·입장 시간을 반영해요.", duration: "95분", travel: 35 },
+    { icon: "🛍", name: "광장시장", detail: "시장 먹거리와 간식 비용을 포함해 다시 설계해요.", duration: "75분", travel: 25 },
+  ],
+  "부산광역시": [
+    { icon: "🌊", name: "해운대해수욕장", detail: "해안 산책을 넣어 부산 동선을 조정해요.", duration: "85분", travel: 25 },
+    { icon: "🏘", name: "감천문화마을", detail: "골목 관광과 이동 시간을 함께 반영해요.", duration: "95분", travel: 40 },
+    { icon: "🌉", name: "광안리 해변", detail: "야경·해변 산책 중심으로 오후 동선을 바꿔요.", duration: "80분", travel: 30 },
+    { icon: "🛍", name: "국제시장", detail: "시장 방문과 간식 예산을 반영해요.", duration: "75분", travel: 25 },
+  ],
+  "경기도": [
+    { icon: "🕊", name: "임진각 평화누리", detail: "파주 평화 문화권으로 이동 시간을 다시 계산해요.", duration: "85분", travel: 35 },
+    { icon: "🏛", name: "헤이리 예술마을", detail: "전시·카페 중심으로 오후 동선을 조정해요.", duration: "95분", travel: 30 },
+    { icon: "🌳", name: "마장호수 출렁다리", detail: "호수 산책을 넣어 자연 체험 시간을 반영해요.", duration: "90분", travel: 45 },
+    { icon: "🏯", name: "수원화성", detail: "수원 역사 동선과 입장·이동 시간을 다시 계산해요.", duration: "90분", travel: 35 },
+  ],
+  default: [
+    { icon: "📍", name: "지역 대표 관광지", detail: "한국관광공사 기반 대표 관광지 후보로 동선을 다시 계산해요.", duration: "90분", travel: 35 },
+    { icon: "🌿", name: "지역 자연 명소", detail: "자연·휴식 취향을 반영해 이동 시간을 조정해요.", duration: "85분", travel: 30 },
+    { icon: "🏛", name: "지역 문화 명소", detail: "전시·역사 공간을 포함해 일정과 경비를 재계산해요.", duration: "90분", travel: 30 },
+    { icon: "🛍", name: "지역 전통시장", detail: "시장 식사·간식·선물 예산을 포함해 반영해요.", duration: "75분", travel: 25 },
+  ],
+};
+
+const getPlaceAlternatives = (destinationLocation) => {
+  const region = destinationLocation?.region || destinationLocation?.name;
+  const fallback = regionalPlaceAlternatives.default;
+  return regionalPlaceAlternatives[region] || fallback;
+};
+
 const placeAlternatives = [
   {
     icon: "🌅",
@@ -1498,12 +2008,11 @@ const applyPlanEdits = (plans, edits) =>
     return [day[0], day[1], rows];
   });
 const placeEntryCost = (name) => {
-  if (name.includes("아르떼뮤지엄")) return 20000;
-  if (name.includes("카멜리아힐")) return 10000;
-  if (name.includes("동문시장")) return 14000;
-  if (name.includes("오설록")) return 12000;
-  if (name.includes("카페")) return 10000;
-  if (name.includes("성산일출봉")) return 8000;
+  if (/아르떼뮤지엄|케이블카|서울타워|과학관|수목원/.test(name)) return 20000;
+  if (/카멜리아힐|한림공원|박물관|화성행궁|경기전|공산성|불국사/.test(name)) return 10000;
+  if (/동문시장|국제시장|광장시장|서문시장|남부시장|전통시장|중앙시장/.test(name)) return 14000;
+  if (/오설록|카페/.test(name)) return 10000;
+  if (/성산일출봉|공원|해수욕장|해안|호수|산책|전망/.test(name)) return 5000;
   return 0;
 };
 const eventPrice = (
@@ -1512,8 +2021,9 @@ const eventPrice = (
 ) => {
   // 항공·렌터카·숙소는 해당 비용이 처음 발생하는 지점에서 한 번만 보여 줍니다.
   // 이렇게 해야 일정 카드의 금액과 오른쪽 1인 예산의 합계가 달라지지 않습니다.
-  if (name.includes("제주국제공항 도착")) return selectedFlight?.fare || 0;
-  if (name.includes("렌터카 수령"))
+  if ((name.includes("도착 ·") || name.includes("공항 도착")) && selectedFlight)
+    return selectedFlight.fare || 0;
+  if (name.includes("렌터카 수령") || name.includes("현지 이동 ·"))
     return selectedRental ? selectedRental.price / party : 0;
   if (name.includes("렌터카 반납")) return selectedRental ? 52000 / party : 0;
   if (name.includes("체크인"))
@@ -1521,6 +2031,8 @@ const eventPrice = (
   if (name.includes("숙소 조식")) return 0;
   if (name.includes("이춘옥")) return 26000;
   if (name.includes("카페")) return 10000;
+  if (name.includes("점심")) return 22000;
+  if (name.includes("저녁")) return 30000;
   if (name.includes("한림 로컬 저녁") || name.includes("중문 로컬 저녁"))
     return 30000;
   if (name.includes("한림 로컬 점심") || name.includes("중문 로컬 점심"))
@@ -1571,22 +2083,28 @@ const destinationImageByName = {
   시드니:
     "https://images.unsplash.com/photo-1523482580672-f109ba8cb9be?auto=format&fit=crop&w=1400&q=90",
 };
-function RouteMap({ activeDay, dayPlans }) {
+function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation }) {
   const selectedDay = dayPlans[activeDay] || dayPlans[0];
+  const destinationContext = locationLabel(destinationLocation, "대한민국");
+  const originContext = locationLabel(originLocation, "출발지");
   const route = {
-    label: selectedDay?.[0] || "제주 여행 동선",
+    label: selectedDay?.[0] || `${destinationContext} 여행 동선`,
     stops: (selectedDay?.[2] || [])
       .map(([, , name]) => name)
       .filter(
-        (name) => !name.includes("체크아웃") && !name.includes("출발 준비"),
+        (name) =>
+          !/체크아웃|출발 준비|짐 정리|수령 · 출발 준비|이동 준비/.test(name),
       )
       .slice(0, 6),
   };
-  const encodedStops = route.stops.map((stop) =>
-    encodeURIComponent(`${stop}, 제주특별자치도`),
+  const searchStops = (route.stops.length ? route.stops : [destinationContext]).map(
+    (stop) =>
+      encodeURIComponent(
+        `${stop}, ${destinationLocation?.apiSearchKeyword || destinationContext}`,
+      ),
   );
-  const mapUrl = `https://www.google.com/maps?output=embed&f=d&saddr=${encodedStops[0]}&daddr=${encodedStops.slice(1).join("+to:")}`;
-  const openMapUrl = `https://www.google.com/maps/dir/${route.stops.map((stop) => encodeURIComponent(`${stop}, 제주특별자치도`)).join("/")}`;
+  const mapUrl = `https://www.google.com/maps?output=embed&f=d&saddr=${searchStops[0]}&daddr=${searchStops.slice(1).join("+to:")}`;
+  const openMapUrl = `https://www.google.com/maps/dir/${searchStops.join("/")}`;
 
   return (
     <section
@@ -1605,7 +2123,7 @@ function RouteMap({ activeDay, dayPlans }) {
       <div className="route-map-frame">
         <iframe
           src={mapUrl}
-          title={`DAY ${activeDay + 1} 제주 동선 지도`}
+          title={`DAY ${activeDay + 1} ${destinationContext} 동선 지도`}
           loading="lazy"
         />
         <b>DAY {activeDay + 1} ROUTE</b>
@@ -1617,6 +2135,9 @@ function RouteMap({ activeDay, dayPlans }) {
             </span>
           ))}
         </div>
+        <small className="route-map-context">
+          {originContext} → {destinationContext} · 선택한 장소 기준
+        </small>
       </div>
     </section>
   );
@@ -1694,6 +2215,7 @@ function PlanFullscreen({
   costDetails,
   dates,
   dayPlans,
+  destinationLocation,
   endTime,
   eventCost,
   money,
@@ -1702,6 +2224,7 @@ function PlanFullscreen({
   onOpenStayComparison,
   placeOptions,
   planRevision,
+  originLocation,
   selectedFlight,
   selectedRental,
   selectedStay,
@@ -1711,6 +2234,7 @@ function PlanFullscreen({
   startTime,
   stayChange,
   total,
+  transport,
   travelers,
 }) {
   const day = dayPlans[activeDay];
@@ -1721,18 +2245,16 @@ function PlanFullscreen({
   const [routeRecalculation, setRouteRecalculation] = useState(null);
   const [routeResult, setRouteResult] = useState(null);
   const [utilityMessage, setUtilityMessage] = useState("");
-  const isJungmunStay = selectedStay?.area === "중문·서귀포";
-  const tripTitle = isJungmunStay ? (
+  const destinationName = locationLabel(destinationLocation);
+  const originName = locationLabel(originLocation, "출발지");
+  const destinationRegion =
+    destinationLocation?.region || destinationLocation?.countryCode || "TRAVEL";
+  const nightCount = Math.max(0, dates.length - 1);
+  const tripTitle = (
     <>
-      폭포와 바다를 담은
+      {destinationName}에서 완성하는
       <br />
-      중문·서귀포 제주 여행
-    </>
-  ) : (
-    <>
-      바다와 맛집을 담은
-      <br />
-      친구들과의 제주 여행
+      나만의 여행
     </>
   );
   const showUtilityMessage = (message) => {
@@ -1744,7 +2266,7 @@ function PlanFullscreen({
       window.localStorage.setItem(
         "eolmagil-saved-itinerary",
         JSON.stringify({
-          title: dayPlans[0]?.[0] || "제주 2박 3일 여행",
+          title: dayPlans[0]?.[0] || `${destinationName} 여행`,
           dates,
           travelers,
           total,
@@ -1757,7 +2279,7 @@ function PlanFullscreen({
     }
   };
   const sharePlan = async () => {
-    const text = `얼마길 여행 일정 · ${dayPlans[0]?.[0] || "제주 2박 3일"}\n1인 예상 경비 ${money(total)}원 · ${travelers}명 여행`;
+    const text = `얼마길 여행 일정 · ${dayPlans[0]?.[0] || `${destinationName} 여행`}\n1인 예상 경비 ${money(total)}원 · ${travelers}명 여행`;
     try {
       if (navigator.share) {
         await navigator.share({
@@ -1804,7 +2326,7 @@ function PlanFullscreen({
       className={`plan-fullscreen ${stayChange ? "plan-rebuilt" : ""}`}
       role="dialog"
       aria-modal="true"
-      aria-label="제주 전체 여행 일정"
+      aria-label={`${destinationName} 전체 여행 일정`}
     >
       <header className="plan-fullscreen-head">
         <a
@@ -1821,7 +2343,9 @@ function PlanFullscreen({
         </a>
         <div>
           <span>AI TRIP PLAN · REV {planRevision}</span>
-          <b>제주 2박 3일 상세 일정</b>
+          <b>
+            {destinationName} {nightCount}박 {dates.length}일 상세 일정
+          </b>
         </div>
         <div className="plan-header-actions">
           <button type="button" onClick={savePlan}>
@@ -1842,10 +2366,10 @@ function PlanFullscreen({
       )}
       <div className="plan-fullscreen-body">
         <aside className="full-trip-aside">
-          <p>JEJU, KOREA</p>
+          <p>{destinationRegion}</p>
           <h2>{tripTitle}</h2>
           <span>
-            {dateLabel(dates[0])} {timeLabel(startTime)} —{" "}
+            {originName} → {destinationName} · {dateLabel(dates[0])} {timeLabel(startTime)} —{" "}
             {dateLabel(dates[dates.length - 1])} {timeLabel(endTime)}
           </span>
           <div className="full-booking-list">
@@ -1853,12 +2377,12 @@ function PlanFullscreen({
               ✈{" "}
               {selectedFlight
                 ? `${selectedFlight.airline} 왕복`
-                : "항공편 미선택"}
+                : `${transport || "교통수단"} 미선택`}
             </b>
             <b>
               ⌂{" "}
               {selectedStay
-                ? `${selectedStay.name} · ${dates.length - 1}박`
+                ? `${selectedStay.name} · ${nightCount}박`
                 : "숙소 미선택"}
             </b>
             <b>
@@ -2013,7 +2537,12 @@ function PlanFullscreen({
           )}
         </main>
         <aside className="full-budget">
-          <RouteMap activeDay={activeDay} dayPlans={dayPlans} />
+          <RouteMap
+            activeDay={activeDay}
+            dayPlans={dayPlans}
+            destinationLocation={destinationLocation}
+            originLocation={originLocation}
+          />
           <section className="full-budget-summary">
             <div className="full-budget-top">
               <span>선택한 예약 기준 · 1인 예상 경비</span>
@@ -2341,98 +2870,94 @@ function JejuRegionModal({
   );
 }
 
-function DepartureRegionMenu({
+function RegionLocationMenu({
   activeRegionId,
-  customDeparture,
+  customValue,
+  kind = "departure",
   onBack,
   onChooseCustom,
   onChooseDistrict,
   onChooseRegion,
-  onCustomDepartureChange,
+  onCustomValueChange,
 }) {
-  const activeRegion = departureRegions.find(
-    (region) => region.id === activeRegionId,
-  );
+  const activeRegion = koreanRegions.find((region) => region.id === activeRegionId);
+  const isDeparture = kind === "departure";
+  const title = isDeparture ? "출발지" : "도착지";
+  const question = isDeparture ? "어디서 출발하시나요?" : "어디로 여행을 떠나시나요?";
+  const customPlaceholder = isDeparture
+    ? "예: 경기도 파주시"
+    : "예: 강원특별자치도 강릉시";
 
   return (
-    <section
-      className="route-location-menu departure-location-menu"
-      aria-label="출발지 선택"
-    >
+    <section className="route-location-menu korea-location-menu" aria-label={`${title} 선택`}>
       {activeRegion ? (
         <>
           <header className="location-menu-heading detail-heading">
-            <button type="button" onClick={onBack}>
-              ← 권역 다시 고르기
-            </button>
+            <button type="button" onClick={onBack}>← 권역 다시 고르기</button>
             <div>
-              <small>출발지 세부 선택</small>
-              <b>{activeRegion.region}에서 어디서 출발하시나요?</b>
+              <small>{title} 세부 선택</small>
+              <b>{activeRegion.name}에서 {isDeparture ? "어디서 출발하시나요?" : "어디를 방문하시나요?"}</b>
             </div>
           </header>
-          <div className="departure-detail-grid">
+          <div className="district-selector-grid">
             {activeRegion.districts.map((district) => (
               <button
                 type="button"
                 key={district.id}
                 onClick={() => onChooseDistrict(activeRegion, district)}
               >
-                <img src={district.image || activeRegion.image} alt="" />
+                <span className="district-pin" aria-hidden="true">⌖</span>
                 <span>
                   <b>{district.detail}</b>
-                  <small>
-                    {district.airportCode === "ICN" ? "인천공항" : "김포공항"} 기준
-                    항공편 비교
-                  </small>
+                  <small>{district.apiSearchKeyword}</small>
+                  <em>{district.latitude.toFixed(4)}, {district.longitude.toFixed(4)}</em>
                 </span>
+                <i>선택 →</i>
               </button>
             ))}
           </div>
         </>
       ) : (
         <>
-          <header className="location-menu-heading">
+          <header className="location-menu-heading korea-map-heading">
             <div>
-              <small>출발지 권역</small>
-              <b>어디서 출발하시나요?</b>
+              <small>{title} 권역 지도</small>
+              <b>{question}</b>
             </div>
-            <span>시·도 → 세부 지역 순서로 선택</span>
+            <span>대한민국 17개 시·도 → 세부 지역 순서로 선택</span>
           </header>
-          <div className="departure-region-grid">
-            {departureRegions.map((region) => (
+          <div className="korea-region-map" role="list" aria-label={`대한민국 ${title} 권역`}>
+            {koreanRegions.map((region) => (
               <button
                 type="button"
+                role="listitem"
                 key={region.id}
+                className={`map-region map-region-${region.id}`}
                 onClick={() => onChooseRegion(region.id)}
+                title={`${region.name} 세부 지역 선택`}
               >
-                <img src={region.image} alt={`${region.region} 대표 관광지`} />
-                <span>
-                  <b>{region.region}</b>
-                  <small>{region.districts.length}개 세부 지역 선택</small>
-                </span>
-                <i>→</i>
+                <b>{region.name.replace("특별자치도", "").replace("특별시", "").replace("광역시", "")}</b>
+                <small>{region.districts.length}개</small>
               </button>
             ))}
           </div>
         </>
       )}
-      <label className="departure-custom">
-        <span>원하는 출발지를 직접 입력할 수도 있어요.</span>
+      <label className="departure-custom location-custom-input">
+        <span>원하는 {title}를 직접 입력할 수도 있어요.</span>
         <div>
           <input
-            value={customDeparture}
-            onChange={(event) => onCustomDepartureChange(event.target.value)}
+            value={customValue}
+            onChange={(event) => onCustomValueChange(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === "Enter") {
                 event.preventDefault();
                 onChooseCustom();
               }
             }}
-            placeholder="예: 충청남도 천안시"
+            placeholder={customPlaceholder}
           />
-          <button type="button" onClick={onChooseCustom}>
-            직접 선택
-          </button>
+          <button type="button" onClick={onChooseCustom}>직접 선택</button>
         </div>
       </label>
     </section>
@@ -2443,6 +2968,7 @@ function App() {
   const [destinationType, setDestinationType] = useState("");
   const [destination, setDestination] = useState("");
   const [destinationLocation, setDestinationLocation] = useState(null);
+  const [destinationRegionId, setDestinationRegionId] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDestination, setCustomDestination] = useState("");
   const [departureLocation, setDepartureLocation] = useState(null);
@@ -2477,16 +3003,16 @@ function App() {
   }, []);
   useEffect(() => {
     if (
-      destination === "제주도" &&
+      destinationLocation &&
       departureLocation &&
       endDate &&
       transportPromptReady
     ) {
-      setTransportStep("flight-question");
+      setTransportStep("mode");
       setTransportModalOpen(true);
       setTransportPromptReady(false);
     }
-  }, [departureLocation, destination, endDate, transportPromptReady]);
+  }, [departureLocation, destinationLocation, endDate, transportPromptReady]);
   useEffect(() => {
     if (!jejuAreaModalOpen) return;
     setJejuAreaModalOpen(false);
@@ -2495,7 +3021,7 @@ function App() {
   const [transport, setTransport] = useState("");
   const [localTransport, setLocalTransport] = useState("");
   const [transportModalOpen, setTransportModalOpen] = useState(false);
-  const [transportStep, setTransportStep] = useState("flight-question");
+  const [transportStep, setTransportStep] = useState("mode");
   const [origin, setOrigin] = useState("GMP");
   const [flightOpen, setFlightOpen] = useState(false);
   const [flightPickerLeg, setFlightPickerLeg] = useState("outbound");
@@ -2555,7 +3081,12 @@ function App() {
     if (input && input.value !== stayCustomArea) input.value = stayCustomArea;
     return undefined;
   }, [stayArea, stayCustomArea, stayOpen]);
-  const isJeju = destination === "제주도";
+  const isJeju = destinationLocation?.regionCode === "KR-49";
+  const hasDomesticDestination = destinationLocation?.countryCode === "KR";
+  const destinationAirport =
+    destinationLocation?.airportCode ||
+    destinationLocation?.airportCodes?.[0] ||
+    (hasDomesticDestination ? "CJU" : "INTL");
   const selectedOutboundFlight = flights.find(
     (flight) => flight.id === flightId,
   );
@@ -2587,8 +3118,16 @@ function App() {
       ),
     };
   }, [origin, selectedOutboundFlight, selectedReturnFlight]);
-  const selectedRental = rentals.find((rental) => rental.id === rentalId);
-  const selectedStay = stays.find((stay) => stay.id === stayId);
+  const stayCatalog = useMemo(
+    () => demoStaysForLocation(destinationLocation),
+    [destinationLocation],
+  );
+  const rentalCatalog = useMemo(
+    () => demoRentalsForLocation(destinationLocation),
+    [destinationLocation],
+  );
+  const selectedRental = rentalCatalog.find((rental) => rental.id === rentalId);
+  const selectedStay = stayCatalog.find((stay) => stay.id === stayId);
   const isJungmunStay = selectedStay?.area === "중문·서귀포";
   const dates = getDates(startDate, endDate);
   const nights = Math.max(1, dates.length - 1);
@@ -2606,8 +3145,19 @@ function App() {
         scheduledEndTime,
         selectedStay,
         selectedFlight,
+        destinationLocation,
+        departureLocation,
+        transport,
       ),
-    [scheduledArrivalTime, scheduledEndTime, selectedFlight, selectedStay],
+    [
+      scheduledArrivalTime,
+      scheduledEndTime,
+      selectedFlight,
+      selectedStay,
+      destinationLocation,
+      departureLocation,
+      transport,
+    ],
   );
   const dayPlans = useMemo(
     () => applyPlanEdits(baseDayPlans, planEdits),
@@ -2634,10 +3184,19 @@ function App() {
       : timeToMinutes(flightTimeForLeg(a)) -
           timeToMinutes(flightTimeForLeg(b)) || oneWayFare(a) - oneWayFare(b);
   });
-  const filteredStays = stays
+  const stayAreas = ["전체", ...new Set(stayCatalog.map((stay) => stay.area))];
+  const isInPriceBand = (price) => {
+    if (priceBand === "0-5") return price < 50000;
+    if (priceBand === "5-10") return price >= 50000 && price < 100000;
+    if (priceBand === "10-20") return price >= 100000 && price < 200000;
+    if (priceBand === "20-30") return price >= 200000 && price < 300000;
+    if (priceBand === "30+") return price >= 300000;
+    return true;
+  };
+  const filteredStays = stayCatalog
     .filter(
       (stay) =>
-        priceBand === "10-20" &&
+        isInPriceBand(stay.price) &&
         (stayArea === "전체" ||
           stayArea === "기타 지역" ||
           stay.area === stayArea) &&
@@ -2650,80 +3209,172 @@ function App() {
           Number(b.rating) - Number(a.rating) ||
           b.reviewCount - a.reviewCount,
     );
-  const mealRows = isJungmunStay
-    ? [
-        ["중문 로컬 점심 · 1일차", 26000, "중문권 1인 식사 예상"],
-        [
-          "중문 흑돼지 저녁 · 1일차",
-          55000,
-          "첫날 숙소 인근 흑돼지 180g + 곁들임 기준",
-        ],
-        ["중문 로컬 점심 · 2일차", 20000, "둘째 날 이동 전 가벼운 식사 기준"],
-        ["중문 흑돼지 저녁 · 2일차", 55000, "중문 숙소 인근 저녁 1인 기준"],
-        ["동문시장 간식·선물", 14000, "간식과 소형 기념품 1인 예상"],
-        ["제주시 로컬 점심", 26000, "공항 이동 전 1인 식사 기준"],
-      ]
-    : [
-        ["이춘옥 원조고등어쌈밥", 26000, "고등어쌈밥 1인 정식 예상"],
-        ["애월 카페 · 음료", 10000, "바다 전망 카페 음료 1잔 기준"],
-        ["한림 로컬 저녁", 30000, "첫날 숙소 인근 로컬 메뉴 1인 기준"],
-        ["한림 로컬 점심", 20000, "국수·해산물 식사 1회 기준"],
-        ["한림 흑돼지 저녁", 55000, "흑돼지 180g + 곁들임 1인 기준"],
-        ["동문시장 간식·선물", 14000, "간식과 소형 기념품 1인 예상"],
-        ["제주시 로컬 점심", 26000, "공항 이동 전 1인 식사 기준"],
-      ];
-  const activityRows = isJungmunStay
-    ? [
-        ["카멜리아힐 입장·체험", 10000, "계절 정원 입장권 1인 기준"],
-        ["천제연폭포·색달해변", 0, "산책 중심의 무료 관광 일정"],
-      ]
-    : [
-        ["오설록 티 체험", 12000, "티 라운지 시음·디저트 1인 기준"],
-        ["새별오름 노을 산책", 20000, "주차·간식·현지 체험비 포함"],
-        ["협재·금능 해변 산책", 0, "해변 산책 중심의 무료 일정"],
-      ];
-  const foodTotal = isJeju
-    ? mealRows.reduce((sum, [, value]) => sum + value, 0)
-    : 0;
-  const activityTotal = isJeju
-    ? Math.max(
-        0,
-        activityRows.reduce((sum, [, value]) => sum + value, 0) +
-          placeEditAdjustment,
-      )
-    : 0;
+  // 비용은 특정 지역·시나리오가 아니라 현재 선택한 출발지, 도착지, 이동수단을
+  // 기준으로 계산합니다. 이후 백엔드에서는 동일한 출력 구조에 실제 견적 API만
+  // 연결하면 되도록 더미 계산을 한 곳에 모았습니다.
+  const originLabel =
+    departureLocation?.detail ||
+    departureLocation?.name ||
+    departureLocation?.region ||
+    "출발지";
+  const destinationLabel =
+    destinationLocation?.detail ||
+    destinationLocation?.name ||
+    destinationLocation?.region ||
+    "선택한 여행지";
+  const selectedTransportMode = transport || (selectedFlight ? "FLIGHT" : "");
+  const selectedTransportLabel = transportName(
+    selectedTransportMode,
+    outboundOptions,
+  );
+  const selectedLocalTransportLabel = transportName(
+    localTransport,
+    localOptions,
+  );
+  const routeDistanceKm = distanceBetween(departureLocation, destinationLocation);
+  const intercityTransportTotal =
+    selectedTransportMode === "FLIGHT"
+      ? selectedFlight?.fare || 0
+      : selectedTransportMode
+        ? estimateIntercityFare({
+            mode: selectedTransportMode,
+            origin: departureLocation,
+            destination: destinationLocation,
+            travelers: party,
+          })
+        : 0;
+  const itineraryDistanceKm = Math.max(
+    45,
+    Math.round(nights * 72 + Object.keys(planEdits).length * 18),
+  );
+  const localFuelAndParkingTotal = Math.round(
+    (itineraryDistanceKm / 11.5) * 1750 + nights * 9000,
+  );
+  const usesRental = localTransport === "RENTAL" && Boolean(selectedRental);
+  const rentalFeePerPerson = usesRental ? selectedRental.price / party : 0;
+  const localFuelAndParkingPerPerson =
+    usesRental || selectedTransportMode === "CAR"
+      ? localFuelAndParkingTotal / party
+      : 0;
+  const localTransitTotal =
+    localTransport === "TRANSIT"
+      ? Math.max(6000, nights * 12000 + 5000)
+      : localTransport === "TAXI"
+        ? Math.max(18000, nights * 28000 + 10000)
+        : 0;
+  const localTravelTotal =
+    rentalFeePerPerson + localFuelAndParkingPerPerson + localTransitTotal;
+  const tripDurationLabel = `${nights}박 ${Math.max(1, nights + 1)}일`;
+  const mealRows = [
+    [`${destinationLabel} 로컬 점심 · 1일차`, 23000, "현지 식당 1인 식사 예상"],
+    [
+      `${destinationLabel} 로컬 저녁 · 1일차`,
+      33000,
+      "숙소 또는 주요 동선 인근 1인 식사 예상",
+    ],
+    [`${destinationLabel} 카페·간식`, 12000, "음료와 간식 1회 기준"],
+    [
+      `${destinationLabel} 로컬 점심 · ${Math.max(2, nights)}일차`,
+      22000,
+      "둘째 날 이동 전 1인 식사 예상",
+    ],
+    [
+      `${destinationLabel} 지역 특색 저녁`,
+      35000,
+      "여행지 대표 메뉴와 곁들임 1인 기준",
+    ],
+    [`${destinationLabel} 간식·기념품`, 15000, "간식과 소형 기념품 1인 예상"],
+  ];
+  const activityRows = [
+    [
+      `${destinationLabel} 대표 관광지 입장·체험`,
+      12000,
+      "대표 관광지 1곳의 입장 또는 체험 1인 기준",
+    ],
+    [
+      `${destinationLabel} 지역 체험`,
+      18000,
+      "현지 문화·자연 체험 1회 1인 기준",
+    ],
+    [`${destinationLabel} 자유 산책`, 0, "공원·거리·자연 경관을 즐기는 무료 일정"],
+  ];
+  const foodTotal = mealRows.reduce((sum, [, value]) => sum + value, 0);
+  const activityTotal = Math.max(
+    0,
+    activityRows.reduce((sum, [, value]) => sum + value, 0) +
+      placeEditAdjustment,
+  );
   const stayTotal = selectedStay
     ? (selectedStay.price * nights * rooms) / party
     : 0;
-  const driveTotal = selectedRental
-    ? (selectedRental.price + 52000) / party
-    : 0;
+  const driveTotal = localTravelTotal;
   const items = useMemo(
     () => [
       {
-        name: "항공",
-        total: selectedFlight ? selectedFlight.fare : 0,
+        name:
+          selectedTransportMode === "FLIGHT"
+            ? "항공"
+            : selectedTransportMode
+              ? `${selectedTransportLabel} 이동`
+              : "출발 이동",
+        total: intercityTransportTotal,
         color: "flight",
       },
       { name: "숙소", total: stayTotal, color: "stay" },
-      { name: "렌터카·주유", total: driveTotal, color: "drive" },
+      {
+        name: usesRental
+          ? "렌터카·현지 이동"
+          : localTransport
+            ? `${selectedLocalTransportLabel} 현지 이동`
+            : "현지 이동",
+        total: driveTotal,
+        color: "drive",
+      },
       { name: "식비", total: foodTotal, color: "food" },
       { name: "관광·체험", total: activityTotal, color: "play" },
     ],
-    [activityTotal, driveTotal, foodTotal, selectedFlight, stayTotal],
+    [
+      activityTotal,
+      driveTotal,
+      foodTotal,
+      intercityTransportTotal,
+      localTransport,
+      selectedLocalTransportLabel,
+      selectedTransportLabel,
+      selectedTransportMode,
+      stayTotal,
+      usesRental,
+    ],
   );
   const costDetails = useMemo(
     () => [
       {
-        group: "개인 비용",
+        group: "1인 이동·식사 비용",
         rows: [
           [
-            "왕복 항공권",
-            selectedFlight ? selectedFlight.fare : 0,
-            selectedFlight
-              ? `${selectedFlight.origin === "GMP" ? "김포" : "인천"} ↔ 제주 · 왕복 1인`
-              : "항공편 미선택",
+            selectedTransportMode === "FLIGHT"
+              ? "왕복 항공권"
+              : `${selectedTransportLabel} 이동`,
+            intercityTransportTotal,
+            selectedTransportMode === "FLIGHT"
+              ? selectedFlight
+                ? `${originLabel} ↔ ${destinationLabel} · 왕복 1인`
+                : "가는 편과 오는 편을 모두 선택하면 반영됩니다."
+              : selectedTransportMode === "CAR"
+                ? `${originLabel} ↔ ${destinationLabel} · 왕복 약 ${routeDistanceKm * 2}km · 유류비·통행료 ${party}명 분할`
+                : selectedTransportMode
+                  ? `${originLabel} → ${destinationLabel} · 왕복 1인 예상`
+                  : "출발 이동수단 미선택",
           ],
+          ...(localTransport && !usesRental && localTravelTotal
+            ? [
+                [
+                  `${destinationLabel} ${selectedLocalTransportLabel}`,
+                  localTravelTotal,
+                  `${tripDurationLabel} 현지 이동 1인 예상`,
+                ],
+              ]
+            : []),
           ...mealRows,
           ...activityRows,
         ],
@@ -2731,18 +3382,28 @@ function App() {
       {
         group: `공통 비용 · ${party}명 N/1`,
         rows: [
-          [
-            "렌터카 48시간",
-            selectedRental ? selectedRental.price / party : 0,
-            selectedRental
-              ? `${selectedRental.company} · ${selectedRental.car} · ${party}명 분할`
-              : "렌터카 미선택",
-          ],
-          [
-            "주유·주차",
-            selectedRental ? 52000 / party : 0,
-            `${isJungmunStay ? "중문·서귀포권 약 150km" : "서부권 약 120km"} · 공항·관광지 주차 포함 · ${party}명 분할`,
-          ],
+          ...(usesRental
+            ? [
+                [
+                  `${selectedRental.company} 렌터카 · ${tripDurationLabel}`,
+                  rentalFeePerPerson,
+                  `${selectedRental.car} · ${party}명 분할`,
+                ],
+                [
+                  "현지 주유·주차",
+                  localFuelAndParkingPerPerson,
+                  `${destinationLabel} 일정 약 ${itineraryDistanceKm}km · ${party}명 분할`,
+                ],
+              ]
+            : selectedTransportMode === "CAR"
+              ? [
+                  [
+                    "현지 주유·주차",
+                    localFuelAndParkingPerPerson,
+                    `${destinationLabel} 일정 약 ${itineraryDistanceKm}km · ${party}명 분할`,
+                  ],
+                ]
+              : []),
           [
             selectedStay ? `${selectedStay.name} · ${nights}박` : "선택 숙소",
             stayTotal,
@@ -2773,17 +3434,30 @@ function App() {
     [
       activityRows,
       baseDayPlans,
-      isJungmunStay,
+      destinationLabel,
+      intercityTransportTotal,
+      itineraryDistanceKm,
+      localFuelAndParkingPerPerson,
+      localTransport,
+      localTravelTotal,
       mealRows,
       money,
       nights,
+      originLabel,
       party,
       planEdits,
+      rentalFeePerPerson,
       rooms,
+      routeDistanceKm,
       selectedFlight,
+      selectedLocalTransportLabel,
       selectedRental,
       selectedStay,
+      selectedTransportLabel,
+      selectedTransportMode,
       stayTotal,
+      tripDurationLabel,
+      usesRental,
     ],
   );
   const total = items.reduce((sum, item) => sum + item.total, 0);
@@ -2799,21 +3473,29 @@ function App() {
     if (!prompt.trim()) return notify("원하는 여행을 한 문장으로 적어주세요.");
     notify("AI가 입력한 여행 취향을 일정 추천에 반영할게요.");
   };
+  const resetRouteBookings = () => {
+    setFlightId("");
+    setReturnFlightId("");
+    setRentalId("");
+    setStayId("");
+    setTransport("");
+    setLocalTransport("");
+    setPlanEdits({});
+  };
   const chooseDepartureDistrict = (region, district) => {
     setDepartureLocation({
       ...district,
-      region: region.region,
-      image: district.image || region.image,
+      region: region.name || region.region,
+      name: district.name || district.detail,
+      detail: district.detail || district.name,
+      airportCode: district.airportCode || district.airportCodes?.[0] || region.airportCode || "GMP",
     });
     setDepartureRegionId(region.id);
     setDepartureMenuOpen(false);
-    setOrigin(district.airportCode || "GMP");
-    setFlightId("");
-    setReturnFlightId("");
-    setTransport("");
-    setLocalTransport("");
+    setOrigin(district.airportCode || district.airportCodes?.[0] || region.airportCode || "GMP");
+    resetRouteBookings();
     setTransportPromptReady(false);
-    notify(`${region.region} ${district.detail} 출발 기준으로 항공편을 이어서 비교할게요.`);
+    notify(`${region.name || region.region} ${district.detail || district.name} 출발을 저장했어요. 날짜와 이동수단을 이어서 선택해 주세요.`);
   };
   const chooseCustomDeparture = () => {
     const detail = customDeparture.trim();
@@ -2822,18 +3504,52 @@ function App() {
       id: `custom-departure-${detail}`,
       region: detail,
       detail,
+      countryCode: "KR",
+      regionCode: null,
       latitude: null,
       longitude: null,
       airportCode: "GMP",
+      airportCodes: ["GMP", "ICN"],
       needsGeocoding: true,
-      image: departureRegions[0].image,
     });
     setDepartureRegionId("");
     setCustomDeparture("");
     setDepartureMenuOpen(false);
     setOrigin("GMP");
+    resetRouteBookings();
     setTransportPromptReady(false);
     notify(`${detail} 출발 정보를 저장했어요. API 연동 시 좌표를 자동으로 찾을 수 있어요.`);
+  };
+  const chooseDestinationDistrict = (region, district) => {
+    if (!departureLocation) {
+      setMenuOpen(false);
+      setDepartureMenuOpen(true);
+      return notify("도착지보다 먼저 출발지를 선택해 주세요.");
+    }
+    const nextLocation = {
+      ...district,
+      region: region.name || region.region,
+      name: district.name || district.detail,
+      detail: district.detail || district.name,
+      countryCode: district.countryCode || "KR",
+      regionCode: district.regionCode || region.regionCode,
+      airportCode: district.airportCode || district.airportCodes?.[0] || region.airportCode || null,
+      airportCodes: district.airportCodes || region.airportCodes || [],
+      apiSearchKeyword: district.apiSearchKeyword || `${region.name || region.region} ${district.detail || district.name}`,
+      needsGeocoding: false,
+    };
+    setDestination(nextLocation.detail);
+    setDestinationLocation(nextLocation);
+    setDestinationType("국내");
+    setDestinationRegionId(region.id);
+    setMenuOpen(false);
+    setJejuBaseArea(nextLocation.regionCode === "KR-49" ? nextLocation.detail : "");
+    setStayArea(nextLocation.regionCode === "KR-49" ? nextLocation.detail : "전체");
+    setStaySearch("");
+    resetRouteBookings();
+    setTransportPromptReady(Boolean(endDate && travelers && departureLocation));
+    if (!travelers) setTravelerPromptOpen(true);
+    notify(`${nextLocation.region} ${nextLocation.detail} 기준으로 이동·숙소·일정 검색 조건을 설정했어요.`);
   };
   const chooseDestination = (place) => {
     if (!departureLocation) {
@@ -2841,27 +3557,25 @@ function App() {
       setDepartureMenuOpen(true);
       return notify("도착지보다 먼저 출발지를 선택해 주세요.");
     }
-    setDestination(place);
-    setDestinationLocation(
+    const nextLocation =
       destinationCoordinatesByName[place] || {
         id: `custom-destination-${place}`,
+        countryCode: destinationType === "해외" ? "INTL" : "KR",
+        regionCode: null,
         region: place,
         detail: place,
         latitude: null,
         longitude: null,
+        airportCodes: [],
         needsGeocoding: true,
-      },
-    );
+      };
+    setDestination(place);
+    setDestinationLocation(nextLocation);
     setMenuOpen(false);
-    if (place === "제주도") {
-      setJejuBaseArea("");
-      setJejuRegionGuideOpen(true);
-      setTransportPromptReady(false);
-      return;
-    }
-    setJejuBaseArea("");
-    setStayArea("전체");
-    setTransportPromptReady(false);
+    setJejuBaseArea(nextLocation.regionCode === "KR-49" ? nextLocation.detail : "");
+    setStayArea(nextLocation.regionCode === "KR-49" ? nextLocation.detail : "전체");
+    resetRouteBookings();
+    setTransportPromptReady(Boolean(endDate && travelers && departureLocation));
     if (!travelers) setTravelerPromptOpen(true);
   };
   const chooseJejuBaseArea = (area, linkedStayArea = area) => {
@@ -2935,27 +3649,39 @@ function App() {
       setDepartureMenuOpen(true);
       return notify("출발지를 먼저 선택해 주세요.");
     }
-    setTransportStep("flight-question");
+    if (!destinationLocation) {
+      setMenuOpen(true);
+      return notify("도착지와 세부지역을 먼저 선택해 주세요.");
+    }
+    if (!endDate) {
+      const dateInput = document.querySelector("#trip-end-date");
+      dateInput?.scrollIntoView({ behavior: "smooth", block: "center" });
+      dateInput?.focus();
+      return notify("출발일과 귀국일을 먼저 선택해 주세요.");
+    }
+    setTransportStep("mode");
     setTransportModalOpen(true);
   };
   const confirmSeoulOrigin = () => {
-    setTransportStep("flight-question");
+    setTransportStep("mode");
   };
-  const chooseFlightQuestion = (isFlight) => {
-    if (isFlight) {
+  const chooseTransportMode = (mode) => {
+    const selectedMode = outboundOptions.find((option) => option.id === mode);
+    setTransport(mode);
+    setLocalTransport("");
+    if (mode === "FLIGHT") {
       setTransport("FLIGHT");
       setShowTimeFields(false);
       setFlightPickerLeg("outbound");
       setTransportModalOpen(false);
       setFlightOpen(true);
-    } else {
-      setTransport("OTHER");
-      setShowTimeFields(true);
-      setTransportModalOpen(false);
-      notify(
-        "출발·귀국 시간을 직접 설정한 뒤 원하는 교통수단을 이어서 고를 수 있어요.",
-      );
+      return;
     }
+    setShowTimeFields(true);
+    setTransportStep("local");
+    notify(
+      `${selectedMode?.title || "선택한 교통수단"} 기준으로 출발·귀국 시간을 설정해 주세요. 이후 현지 이동수단도 이어서 고를 수 있어요.`,
+    );
   };
   const chooseLocal = (mode) => {
     setLocalTransport(mode);
@@ -3073,6 +3799,74 @@ function App() {
       setStayOpen(true);
     }
   };
+  const focusBookingPrerequisite = (target) => {
+    const targetName = {
+      transport: "교통수단",
+      flight: "항공편",
+      rental: "렌터카",
+      stay: "숙소",
+    }[target] || "비교 항목";
+
+    if (!departureLocation) {
+      setMenuOpen(false);
+      setDepartureMenuOpen(true);
+      document
+        .querySelector("#departure-route-picker")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      notify(`${targetName} 비교 전에 출발지를 먼저 선택해 주세요.`);
+      return false;
+    }
+    if (!destinationLocation) {
+      setDepartureMenuOpen(false);
+      setMenuOpen(true);
+      document
+        .querySelector(".route-destination-picker")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      notify(`${targetName} 비교 전에 도착지와 세부지역을 먼저 선택해 주세요.`);
+      return false;
+    }
+    if (!travelers) {
+      setTravelerPromptOpen(true);
+      notify(`${targetName} 견적을 정확히 계산하려면 총인원을 먼저 입력해 주세요.`);
+      return false;
+    }
+    if (!startDate || !endDate) {
+      document
+        .querySelector("#trip-end-date")
+        ?.scrollIntoView({ behavior: "smooth", block: "center" });
+      window.setTimeout(() => {
+        document.querySelector("#trip-end-date")?.focus();
+      }, 180);
+      notify(`${targetName} 비교 전에 출발일과 귀국일을 먼저 선택해 주세요.`);
+      return false;
+    }
+    return true;
+  };
+  const openIndependentBooking = (target) => {
+    if (!focusBookingPrerequisite(target)) return;
+
+    if (target === "transport") {
+      setTransportStep("mode");
+      setTransportModalOpen(true);
+      return;
+    }
+    if (target === "flight") {
+      setTransport("FLIGHT");
+      setShowTimeFields(false);
+      setFlightPickerLeg(selectedOutboundFlight ? "return" : "outbound");
+      setFlightOpen(true);
+      return;
+    }
+    if (target === "rental") {
+      setLocalTransport("RENTAL");
+      setRentalOpen(true);
+      return;
+    }
+    if (target === "stay") {
+      setStayArea(destinationLocation?.detail || destinationLocation?.region || "전체");
+      setStayOpen(true);
+    }
+  };
   const changePlanStop = (dayIndex, stopIndex, place) => {
     setPlanEdits((current) => ({
       ...current,
@@ -3099,11 +3893,10 @@ function App() {
     }
     if (!destinationLocation)
       return notify("도착지와 세부지역을 먼저 선택해 주세요.");
-    if (!isJeju) return notify("국내 여행지에서 제주도를 먼저 선택해 주세요.");
     if (!endDate) return notify("귀국일을 먼저 선택해 주세요.");
     if (!travelers) return notify("총인원을 입력해 주세요.");
     if (!transport || !localTransport)
-      return notify("AI 교통편 질문에서 출발과 제주 현지 이동을 골라주세요.");
+      return notify("이동수단 선택에서 출발 이동과 현지 이동을 골라주세요.");
     if (transport === "FLIGHT" && !selectedFlight)
       return notify("가는 편과 오는 편 항공편을 모두 선택해 주세요.");
     if (!selectedStay) return notify("숙소를 선택해 주세요.");
@@ -3121,7 +3914,7 @@ function App() {
         },
         flightSearch: {
           departureAirportCode: departureLocation.airportCode || origin,
-          arrivalAirportCode: isJeju ? "CJU" : null,
+          arrivalAirportCode: destinationAirport,
         },
         staySearch: {
           near: toApiLocation(destinationLocation),
@@ -3406,8 +4199,8 @@ function App() {
                       }}
                     >
                       {departureLocation ? (
-                        <span className="route-location-label">
-                          <img src={departureLocation.image} alt="" />
+                        <span className="route-location-label route-location-text">
+                          <span className="route-location-marker" aria-hidden="true">⌖</span>
                           <span>
                             <b>{departureLocation.region}</b>
                             <em>{departureLocation.detail}</em>
@@ -3422,14 +4215,15 @@ function App() {
                       <i className="route-chevron">⌄</i>
                     </button>
                     {departureMenuOpen && (
-                      <DepartureRegionMenu
+                      <RegionLocationMenu
                         activeRegionId={departureRegionId}
-                        customDeparture={customDeparture}
+                        customValue={customDeparture}
+                        kind="departure"
                         onBack={() => setDepartureRegionId("")}
                         onChooseCustom={chooseCustomDeparture}
                         onChooseDistrict={chooseDepartureDistrict}
                         onChooseRegion={setDepartureRegionId}
-                        onCustomDepartureChange={setCustomDeparture}
+                        onCustomValueChange={setCustomDeparture}
                       />
                     )}
                   </div>
@@ -3448,37 +4242,17 @@ function App() {
                           notify("먼저 출발지를 선택해 주세요.");
                           return;
                         }
-                        if (destination === "제주도" && jejuBaseArea) {
-                          setMenuOpen(false);
-                          setJejuRegionGuideOpen(true);
-                        } else {
-                          setMenuOpen(!menuOpen);
-                          setDepartureMenuOpen(false);
-                        }
+                        setMenuOpen(!menuOpen);
+                        setDepartureMenuOpen(false);
+                        if (!destinationType) setDestinationType("국내");
                       }}
                     >
                       {destination ? (
-                        <span className="route-location-label">
-                          <img
-                            src={
-                              destinationLocation?.image ||
-                              destinationCoordinatesByName[destination]?.image ||
-                              destinationImageByName[destination] ||
-                              jejuCoastPhoto
-                            }
-                            alt=""
-                          />
+                        <span className="route-location-label route-location-text">
+                          <span className="route-location-marker destination" aria-hidden="true">◎</span>
                           <span>
-                            <b>
-                              {destination === "제주도"
-                                ? "제주도"
-                                : destinationLocation?.region || destination}
-                            </b>
-                            <em>
-                              {destination === "제주도" && jejuBaseArea
-                                ? jejuBaseArea
-                                : destinationLocation?.detail || destination}
-                            </em>
+                            <b>{destinationLocation?.region || destination}</b>
+                            <em>{destinationLocation?.detail || destination}</em>
                           </span>
                         </span>
                       ) : (
@@ -3507,61 +4281,41 @@ function App() {
                             해외
                           </button>
                         </div>
-                        {destinationType ? (
-                          <>
-                            <div className="destination-cities">
-                              {(destinationType === "국내"
-                                ? domestic
-                                : overseas
-                              ).map((place, index) => (
-                                <button
-                                  type="button"
-                                  key={place}
-                                  onClick={() => chooseDestination(place)}
-                                >
-                                  <img
-                                    src={
-                                      destinationCoordinatesByName[place]
-                                        ?.image ||
-                                      destinationImageByName[place] ||
-                                      placePhotos[index % placePhotos.length]
-                                    }
-                                    alt={`${place} 대표 관광지`}
-                                    loading="lazy"
-                                  />
-                                  <b>{place}</b>
-                                </button>
+                        {destinationType === "국내" ? (
+                          <RegionLocationMenu
+                            activeRegionId={destinationRegionId}
+                            customValue={customDestination}
+                            kind="destination"
+                            onBack={() => setDestinationRegionId("")}
+                            onChooseCustom={chooseCustomDestination}
+                            onChooseDistrict={chooseDestinationDistrict}
+                            onChooseRegion={setDestinationRegionId}
+                            onCustomValueChange={setCustomDestination}
+                          />
+                        ) : destinationType === "해외" ? (
+                          <div className="global-destination-picker">
+                            <p>해외 도시는 직접 검색하거나 아래 대표 도시를 선택해 주세요.</p>
+                            <div>
+                              {overseas.map((place) => (
+                                <button type="button" key={place} onClick={() => chooseDestination(place)}>{place}</button>
                               ))}
                             </div>
-                            <div className="destination-custom">
+                            <label>
                               <input
                                 value={customDestination}
-                                onChange={(event) =>
-                                  setCustomDestination(event.target.value)
-                                }
+                                onChange={(event) => setCustomDestination(event.target.value)}
                                 onKeyDown={(event) => {
                                   if (event.key === "Enter") {
                                     event.preventDefault();
                                     chooseCustomDestination();
                                   }
                                 }}
-                                placeholder={
-                                  destinationType === "국내"
-                                    ? "원하는 국내 여행지를 입력하세요"
-                                    : "원하는 해외 여행지를 입력하세요"
-                                }
+                                placeholder="예: 일본 삿포로, 프랑스 파리"
                               />
-                              <button
-                                type="button"
-                                onClick={chooseCustomDestination}
-                              >
-                                직접 선택
-                              </button>
-                            </div>
-                          </>
-                        ) : (
-                          <p>국내 또는 해외를 먼저 선택해 주세요.</p>
-                        )}
+                              <button type="button" onClick={chooseCustomDestination}>직접 선택</button>
+                            </label>
+                          </div>
+                        ) : null}
                       </div>
                     )}
                   </div>
@@ -3648,8 +4402,7 @@ function App() {
                           setReturnFlightId("");
                           setTransportPromptReady(
                             !showPlan &&
-                              destination === "제주도" &&
-                              Boolean(jejuBaseArea) &&
+                              Boolean(destinationLocation) &&
                               Boolean(travelers) &&
                               Boolean(departureLocation),
                           );
@@ -3727,9 +4480,9 @@ function App() {
                 </label>
               </div>
             </div>
-            {!isJeju && (
+            {!destinationLocation && (
               <div className="waiting-booking">
-                <b>지역을 선택하면 항공편과 숙소를 비교할 수 있어요.</b>
+                <b>도착 권역을 선택하면 이동수단·숙소·일정을 각각 바로 비교할 수 있어요.</b>
               </div>
             )}
             <section className="preference-area">
@@ -3779,84 +4532,14 @@ function App() {
                 </span>
               </div>
             </section>
-            {showPlan && (
-              <section className="quick-edit-panel" aria-label="여행 조건 빠른 수정">
-                <div className="quick-edit-heading">
-                  <div>
-                    <p>AI PLAN · QUICK EDIT</p>
-                    <h3>필요한 항목만 다시 선택하세요.</h3>
-                    <span>
-                      이미 고른 다른 조건은 유지하고, 수정한 항목만 일정과 1인
-                      경비에 반영해요.
-                    </span>
-                  </div>
-                  <button
-                    type="button"
-                    onClick={() => setPlanViewOpen(true)}
-                  >
-                    현재 일정 보기 →
-                  </button>
-                </div>
-                <div className="quick-edit-actions">
-                  <button type="button" onClick={() => openQuickEdit("dates")}>
-                    <CalendarCheck2 aria-hidden="true" />
-                    <span>
-                      <b>여행 날짜</b>
-                      <small>
-                        {endDate
-                          ? `${dateLabel(startDate)} ~ ${dateLabel(endDate)}`
-                          : "날짜 미선택"}
-                      </small>
-                    </span>
-                    <em>수정</em>
-                  </button>
-                  <button type="button" onClick={() => openQuickEdit("flight")}>
-                    <Plane aria-hidden="true" />
-                    <span>
-                      <b>왕복 항공편</b>
-                      <small>
-                        {selectedFlight
-                          ? `${selectedOutboundFlight.airline} · ${selectedReturnFlight.airline}`
-                          : "항공편 재선택 필요"}
-                      </small>
-                    </span>
-                    <em>변경</em>
-                  </button>
-                  <button type="button" onClick={() => openQuickEdit("rental")}>
-                    <BadgeDollarSign aria-hidden="true" />
-                    <span>
-                      <b>제주 렌터카</b>
-                      <small>
-                        {selectedRental
-                          ? `${selectedRental.company} · ${money(selectedRental.price)}원`
-                          : "렌터카 미선택"}
-                      </small>
-                    </span>
-                    <em>변경</em>
-                  </button>
-                  <button type="button" onClick={() => openQuickEdit("stay")}>
-                    <Hotel aria-hidden="true" />
-                    <span>
-                      <b>숙소</b>
-                      <small>
-                        {selectedStay
-                          ? `${selectedStay.area} · ${selectedStay.name}`
-                          : "숙소 미선택"}
-                      </small>
-                    </span>
-                    <em>변경</em>
-                  </button>
-                </div>
-              </section>
-            )}
-            {isJeju ? (
+            {destinationLocation ? (
               <>
                 <section className="transport-choice">
                   <div>
                     <p>1. AI 교통편 설계</p>
                     <small>
-                      출발지는 서울인지 먼저 확인하고, 항공을 고르면 가는
-                      편·오는 편을 각각 비교해요.
+                      출발지와 도착지, 여행 기간을 기준으로 항공·KTX·자차·버스·배를
+                      비교하고 가장 적합한 이동수단을 선택해요.
                     </small>
                   </div>
                   <div className="transport-result">
@@ -3870,11 +4553,33 @@ function App() {
                     </span>
                     <i>→</i>
                     <span>
-                      제주 <b>{transportName(localTransport, localOptions)}</b>
+                      {destinationLocation.detail} <b>{transportName(localTransport, localOptions)}</b>
                     </span>
                     <button type="button" onClick={beginOriginQuestion}>
                       AI에게 교통편 물어보기
                     </button>
+                  </div>
+                  <div className="independent-booking-tools">
+                    <div>
+                      <b>필요한 항목부터 직접 비교할 수도 있어요.</b>
+                      <small>
+                        AI 추천 흐름을 기다리지 않아도 교통·항공·렌터카·숙소를 원하는 순서로 열어 볼 수 있어요.
+                      </small>
+                    </div>
+                    <span>
+                      <button type="button" onClick={() => openIndependentBooking("transport")}>
+                        교통 비교
+                      </button>
+                      <button type="button" onClick={() => openIndependentBooking("flight")}>
+                        항공편
+                      </button>
+                      <button type="button" onClick={() => openIndependentBooking("rental")}>
+                        렌터카
+                      </button>
+                      <button type="button" onClick={() => openIndependentBooking("stay")}>
+                        숙소
+                      </button>
+                    </span>
                   </div>
                 </section>
                 {transport === "FLIGHT" && (
@@ -3890,7 +4595,7 @@ function App() {
                       </div>
                       <em>
                         {selectedFlight
-                          ? `${selectedFlight.origin} → CJU 왕복 선택됨`
+                          ? `${selectedFlight.origin} → ${destinationAirport} 왕복 선택됨`
                           : `${selectedOutboundFlight ? "오는 편 선택 필요" : "가는 편 미선택"}`}
                       </em>
                     </div>
@@ -3900,8 +4605,8 @@ function App() {
                         <div>
                           <small>
                             {selectedFlight
-                              ? `${selectedFlight.origin === "GMP" ? "김포" : "인천"} ↔ 제주 · 왕복`
-                              : "서울 출발 · 가는 편과 오는 편 각각 선택"}
+                              ? `${departureLocation?.detail || selectedFlight.origin} ↔ ${destinationLocation.detail} · 왕복`
+                              : "가는 편과 오는 편을 각각 선택"}
                           </small>
                           <b>
                             {selectedFlight
@@ -3942,7 +4647,7 @@ function App() {
                     <div className="booking-heading">
                       <div>
                         <p>
-                          {transport === "FLIGHT" ? "3." : "2."} 제주 렌터카
+                          {transport === "FLIGHT" ? "3." : "2."} 현지 렌터카
                           선택
                         </p>
                         <small>
@@ -3968,7 +4673,7 @@ function App() {
                           <small>
                             {selectedRental
                               ? `${selectedRental.car} · 2박 3일 48시간 총 대여료`
-                              : "제주 현지 이동 수단"}
+                            : `${destinationLocation.detail} 현지 이동 수단`}
                           </small>
                           <b>
                             {selectedRental
@@ -4001,7 +4706,7 @@ function App() {
                 <b>지역을 선택하면 항공편과 숙소를 비교할 수 있어요.</b>
               </div>
             )}
-            {isJeju && (
+            {destinationLocation && (
               <section className="booking-section">
                 <div className="booking-heading">
                   <div>
@@ -4012,7 +4717,7 @@ function App() {
                       숙소 선택
                     </p>
                     <small>
-                      가격대와 제주 권역을 고른 뒤 숙소를 선택하세요.
+                      가격대와 도착 권역을 고른 뒤 숙소를 선택하세요.
                     </small>
                   </div>
                   <em>
@@ -4028,7 +4733,7 @@ function App() {
                       <small>
                         {selectedStay
                           ? `${selectedStay.area} · 객실 ${rooms}개`
-                          : "제주 전역 숙소"}
+                          : `${destinationLocation.region} 숙소`}
                       </small>
                       <b>
                         {selectedStay
@@ -4425,9 +5130,9 @@ function App() {
               ✦ 얼마길 AI ·{" "}
               {transportStep === "origin"
                 ? "QUESTION 01"
-                : transportStep === "flight-question"
-                  ? "QUESTION 02"
-                  : "QUESTION 03"}
+                : transportStep === "mode"
+                  ? "TRAVEL MODE"
+                  : "LOCAL MOVE"}
             </p>
             {transportStep === "origin" ? (
               <>
@@ -4462,59 +5167,56 @@ function App() {
                   </button>
                 </div>
               </>
-            ) : transportStep === "flight-question" ? (
+            ) : transportStep === "mode" ? (
               <>
                 <h3 id="ai-transport-title">
-                  {departureLocation
-                    ? `${departureLocation.region} ${departureLocation.detail}에서 제주까지`
-                    : "제주까지"}
+                  {departureLocation?.detail || "출발지"}에서
                   <br />
-                  항공으로 이동할까요?
+                  {destinationLocation?.detail || "도착지"}까지
+                  <br />
+                  어떤 방법으로 이동할까요?
                 </h3>
                 <span>
-                  선택한 출발지와 여행 날짜를 기준으로 항공편을 비교할게요. ‘예’를
-                  고르면 가는 편과 오는 편을 각각 선택해요.
+                  선택한 출발지·도착지·여행 날짜를 바탕으로 이동수단을 비교해요.
+                  항공을 고르면 가는 편과 오는 편을 각각 선택할 수 있어요.
                 </span>
-                <div className="ai-confirm-grid">
-                  <button
-                    type="button"
-                    className="yes"
-                    onClick={() => chooseFlightQuestion(true)}
-                  >
-                    <i>✈</i>
-                    <b>예, 항공으로 갈게요</b>
-                    <small>가는 편 → 오는 편을 차례로 선택합니다.</small>
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => chooseFlightQuestion(false)}
-                  >
-                    <i>◷</i>
-                    <b>아니오</b>
-                    <small>출발·귀국 시간을 직접 설정할게요.</small>
-                  </button>
+                <div className="ai-option-grid travel-mode-options">
+                  {outboundOptions.map((option) => (
+                    <button
+                      type="button"
+                      key={option.id}
+                      className={option.id === "FLIGHT" ? "option-highlight" : ""}
+                      onClick={() => chooseTransportMode(option.id)}
+                    >
+                      <i>{option.icon}</i>
+                      <b>{option.title}</b>
+                      <small>{option.text}</small>
+                    </button>
+                  ))}
                 </div>
                 <button
                   type="button"
                   className="modal-back"
                   onClick={() => {
                     setTransportModalOpen(false);
-                    setDepartureMenuOpen(true);
+                    document
+                      .querySelector(".route-picker")
+                      ?.scrollIntoView({ behavior: "smooth", block: "center" });
                   }}
                 >
-                  ← 출발지 변경하기
+                  ← 출발지·도착지 다시 보기
                 </button>
               </>
             ) : (
               <>
                 <h3 id="ai-transport-title">
-                  제주에서는
+                  {destinationLocation?.detail || destinationLocation?.region || "도착지"}에서는
                   <br />
                   어떻게 이동할까요?
                 </h3>
                 <span>
-                  가는 편과 오는 편 항공을 모두 골랐어요. 제주 현지에서 편한
-                  이동 수단을 선택해 주세요.
+                  {transportName(transport, outboundOptions)} 이동을 선택했어요. 도착 후
+                  여행 동선에 맞는 현지 이동수단을 선택해 주세요.
                 </span>
                 <div className="ai-option-grid local-options">
                   {localOptions.map((option) => (
@@ -4533,12 +5235,18 @@ function App() {
                   type="button"
                   className="modal-back"
                   onClick={() => {
-                    setTransportModalOpen(false);
-                    setFlightPickerLeg("return");
-                    setFlightOpen(true);
+                    if (transport === "FLIGHT") {
+                      setTransportModalOpen(false);
+                      setFlightPickerLeg(returnFlightId ? "return" : "outbound");
+                      setFlightOpen(true);
+                      return;
+                    }
+                    setTransportStep("mode");
                   }}
                 >
-                  ← 왕복 항공편 다시 보기
+                  {transport === "FLIGHT"
+                    ? "← 왕복 항공편 다시 보기"
+                    : "← 이동수단 다시 고르기"}
                 </button>
               </>
             )}
@@ -4763,7 +5471,7 @@ function App() {
                   setFlightPickerLeg("outbound");
                 } else {
                   setFlightOpen(false);
-                  setTransportStep("flight-question");
+                  setTransportStep("mode");
                   setTransportModalOpen(true);
                 }
               }}

@@ -164,7 +164,7 @@ nav a:hover { color: var(--sea); }
 
 /* 얼마길의 길·연결 심볼과 AI 선택 경험 */
 .brand { display: inline-flex; align-items: center; gap: 9px; }.brand > strong { color: #0b5556; font: 800 24px/1 'Noto Sans KR', sans-serif; letter-spacing: -1.8px; }.brand-mark { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 12px; background: linear-gradient(135deg, #f49358, #dd6336); box-shadow: 0 4px 10px rgba(223, 97, 49, .23); }.brand-mark svg { width: 27px; height: 27px; overflow: visible; }.brand-mark path { fill: none; stroke: #fff8ef; stroke-linecap: round; stroke-width: 4; }.brand-mark path:first-child { stroke-dasharray: 4 4; }.brand-mark circle { fill: #fff8ef; }.hero-image { background-position: center 61% !important; }.hero-shade { background: linear-gradient(90deg, rgba(1, 37, 42, .85) 0%, rgba(5, 61, 66, .58) 41%, rgba(2, 30, 31, .1) 72%, rgba(1, 25, 26, .22) 100%); }.hero-inner { max-width: 1130px; margin-left: max(5%, calc((100vw - 1130px) / 2)); padding-top: 106px; }
-.transport-choice { grid-template-columns: minmax(220px, .75fr) minmax(0, 1.25fr); }.transport-result { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }.transport-result > span { display: grid; gap: 2px; padding: 7px 10px; border: 1px solid #d5e7df; border-radius: 7px; background: #fff; color: #829a94; font-size: 9px; }.transport-result > span b { color: #24645e; font-size: 11px; }.transport-result > i { color: #72a198; font-style: normal; }.transport-result button { margin-left: auto; padding: 9px 11px; border: 0; border-radius: 6px; background: var(--deep); color: #fff; font-size: 10px; font-weight: 700; }
+.transport-choice { grid-template-columns: minmax(220px, .75fr) minmax(0, 1.25fr); }.transport-result { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }.transport-result > span { display: grid; gap: 2px; padding: 7px 10px; border: 1px solid #d5e7df; border-radius: 7px; background: #fff; color: #829a94; font-size: 9px; }.transport-result > span b { color: #24645e; font-size: 11px; }.transport-result > i { color: #72a198; font-style: normal; }.transport-result button { margin-left: auto; padding: 9px 11px; border: 0; border-radius: 6px; background: var(--deep); color: #fff; font-size: 10px; font-weight: 700; }.independent-booking-tools { display: flex; grid-column: 1 / -1; align-items: center; justify-content: space-between; gap: 15px; margin-top: -3px; padding: 12px 13px; border: 1px solid #d6e9e1; border-radius: 10px; background: linear-gradient(100deg, #f5fcf8, #fff); }.independent-booking-tools > div { display: grid; gap: 3px; }.independent-booking-tools b { color: #23645d; font-size: 11px; }.independent-booking-tools small { color: #78958e; font-size: 9px; line-height: 1.45; }.independent-booking-tools > span { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }.independent-booking-tools button { padding: 8px 10px; border: 1px solid #b8ddd1; border-radius: 6px; background: #fff; color: #16776d; font-size: 10px; font-weight: 800; white-space: nowrap; }.independent-booking-tools button:hover { border-color: var(--sea); background: #eaf8f2; box-shadow: inset 0 0 0 1px var(--sea); }
 .rental-section { margin-top: 18px; padding-top: 18px; border-top: 1px solid #dbe9e3; }.rental-ai-tip, .stay-ai-recommendation { display: flex; gap: 9px; align-items: start; margin: 10px 0; padding: 10px 12px; border: 1px solid #cce5dc; border-radius: 8px; background: linear-gradient(90deg, #edf9f3, #f9fffb); }.rental-ai-tip > span, .stay-ai-recommendation > span { display: grid; width: 20px; height: 20px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: var(--sea); color: #fff; font-size: 10px; }.rental-ai-tip p, .stay-ai-recommendation p { margin: 0; color: #4c716b; font-size: 10px; line-height: 1.55; }.rental-ai-tip b, .stay-ai-recommendation b { color: #16746a; }.stay-ai-recommendation em { margin-left: auto; color: #d46c36; font-size: 9px; font-style: normal; white-space: nowrap; }
 .rental-catalog { display: grid; grid-template-columns: repeat(3, 1fr); gap: 9px; }.rental-catalog button { position: relative; display: grid; gap: 5px; padding: 13px; border: 1px solid #d9e8e2; border-radius: 9px; background: #fff; color: #557770; text-align: left; }.rental-catalog button.selected { border-color: var(--sea); box-shadow: inset 0 0 0 1px var(--sea); background: #f5fffa; }.rental-catalog span { width: fit-content; padding: 4px 6px; border-radius: 4px; background: #fff0e9; color: #c75e2f; font-size: 8px; font-weight: 800; }.rental-catalog b { color: #274e49; font-size: 12px; }.rental-catalog small { color: #78948e; font-size: 9px; }.rental-catalog strong { color: var(--sea); font: 800 13px 'DM Mono'; }.rental-catalog em { color: #849b95; font-size: 8px; font-style: normal; }.rental-catalog i { position: absolute; top: 13px; right: 12px; color: #d9633b; font-size: 8px; font-style: normal; }
 .stay-search { display: flex; align-items: center; gap: 8px; margin: 10px 0; padding: 10px 11px; border: 1px solid #cfe3db; border-radius: 7px; background: #fff; color: #47847a; }.stay-search input { width: 100%; border: 0; outline: 0; color: #305b55; font-size: 11px; }.stay-search input::placeholder { color: #a0b2ad; }.stay-deal { position: absolute; z-index: 2; top: 7px; left: 7px; padding: 4px 5px; border-radius: 4px; background: #eb7047; color: #fff; font-size: 8px; font-style: normal; font-weight: 800; }.hotel-catalog > button { position: relative; }.hotel-catalog small { min-height: 22px; }.hotel-catalog > button i { color: #dc643a; font-size: 8px; font-style: normal; font-weight: 800; }
@@ -173,7 +173,7 @@ nav a:hover { color: var(--sea); }
 /* 로그인: 발표용 화면에서도 실제 서비스처럼 간결하게 입력할 수 있는 팝업 */
 .login-backdrop { z-index: 100; }.login-modal { width: min(420px, calc(100vw - 34px)); padding: 34px; }.login-modal > h3 { margin-top: 11px; font-size: 28px; }.login-modal > span { margin-bottom: 19px; }.login-modal form { display: grid; gap: 12px; margin-top: 22px; }.login-modal form label { display: grid; gap: 7px; color: #3e6d66; font-size: 11px; font-weight: 800; text-align: left; }.login-modal form input { width: 100%; min-height: 46px; padding: 0 13px; border: 1px solid #c7e0d7; border-radius: 9px; outline: 0; background: #fff; color: #174e4c; font: 600 13px 'Noto Sans KR', sans-serif; }.login-modal form input::placeholder { color: #9aaea8; }.login-modal form input:focus { border-color: #0d8679; box-shadow: 0 0 0 3px rgba(13, 134, 121, .12); }.login-modal form button { min-height: 48px; margin-top: 5px; border: 0; border-radius: 9px; background: #0b7f76; color: #fff; font-size: 13px; font-weight: 900; box-shadow: 0 9px 18px rgba(6, 110, 101, .16); }.login-modal > small { display: block; margin-top: 14px; color: #80958f; font-size: 10px; text-align: center; }
 
-@media (max-width: 760px) { .brand > strong { font-size: 21px; }.brand-mark { width: 30px; height: 30px; }.hero-inner { width: auto; margin: 0; padding-right: 20px; padding-left: 20px; }.transport-choice { grid-template-columns: 1fr; }.transport-result button { width: 100%; margin-left: 0; }.rental-catalog { grid-template-columns: 1fr; }.stay-ai-recommendation { display: grid; }.stay-ai-recommendation em { margin-left: 29px; }.ai-modal { padding: 25px 18px; }.ai-modal > h3 { font-size: 25px; }.ai-option-grid { grid-template-columns: repeat(2, 1fr); }.ai-option-grid.local-options { grid-template-columns: repeat(2, 1fr); }.ai-option-grid button { min-height: 105px; }.flight-modal { padding: 25px 16px; } }
+@media (max-width: 760px) { .brand > strong { font-size: 21px; }.brand-mark { width: 30px; height: 30px; }.hero-inner { width: auto; margin: 0; padding-right: 20px; padding-left: 20px; }.transport-choice { grid-template-columns: 1fr; }.transport-result button { width: 100%; margin-left: 0; }.independent-booking-tools { display: grid; }.independent-booking-tools > span { justify-content: flex-start; }.rental-catalog { grid-template-columns: 1fr; }.stay-ai-recommendation { display: grid; }.stay-ai-recommendation em { margin-left: 29px; }.ai-modal { padding: 25px 18px; }.ai-modal > h3 { font-size: 25px; }.ai-option-grid { grid-template-columns: repeat(2, 1fr); }.ai-option-grid.local-options { grid-template-columns: repeat(2, 1fr); }.ai-option-grid button { min-height: 105px; }.flight-modal { padding: 25px 16px; } }
 
 /* 입력 순서와 제휴 혜택 안내 */
 .form-area > .prompt-area { margin-top: 0; }.prompt-area + .early-budget { margin-top: 28px; }.prompt-area > label { display: block; }.prompt-area .prompt-box { margin-bottom: 0; }.form-fields { margin-top: 18px; }.preference-area + .waiting-booking { display: none; }.form-fields + .waiting-booking { margin-top: -10px; margin-bottom: 18px; border-color: #c9e1d8; background: #f5fbf8; }.form-fields + .waiting-booking b::before { margin-right: 7px; color: var(--sea); content: '✦ AI 안내'; font: 800 9px 'DM Mono'; }
@@ -1214,6 +1214,192 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .departure-custom input:focus { border-color: #0f8177; box-shadow: 0 0 0 3px rgba(15, 129, 119, .1); }
 .departure-custom button { min-width: 82px; border: 0; border-radius: 8px; background: #0f8177; color: #fff; font: 800 11px 'Noto Sans KR', sans-serif; }
 
+/* 사진 없이도 빠르게 비교할 수 있는 전국 권역·세부 지역 선택기 */
+.route-location-text { min-width: 0; }
+.route-location-text .route-location-marker {
+  display: grid;
+  width: 50px;
+  height: 48px;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #bfe2d8;
+  border-radius: 12px;
+  background: linear-gradient(145deg, #edf9f4, #dff3eb);
+  color: #087b71;
+  font-size: 24px;
+  font-style: normal;
+  font-weight: 800;
+  line-height: 1;
+}
+.route-location-text .route-location-marker.destination {
+  border-color: #f0c9b2;
+  background: linear-gradient(145deg, #fff7ef, #ffead8);
+  color: #d96832;
+}
+
+.korea-location-menu {
+  width: min(790px, calc(100vw - 92px));
+  max-height: min(670px, calc(100vh - 118px));
+  overflow: auto;
+  scrollbar-color: #a9d8cd transparent;
+  scrollbar-width: thin;
+}
+.korea-location-menu::-webkit-scrollbar { width: 8px; }
+.korea-location-menu::-webkit-scrollbar-thumb { border: 2px solid #fffefa; border-radius: 999px; background: #b4dbd1; }
+.korea-map-heading { margin-bottom: 17px; }
+.korea-map-heading > span {
+  max-width: 230px;
+  padding: 7px 9px;
+  border: 1px solid #d5e9e2;
+  border-radius: 999px;
+  background: #f4fbf8;
+  color: #5b877d;
+  font-size: 10px;
+  line-height: 1.3;
+  text-align: center;
+}
+
+/* 실제 지도 좌표를 그대로 그리지는 않지만, 17개 시·도의 상대 위치를 반영한 지도형 선택 레이아웃입니다. */
+.korea-region-map {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-rows: repeat(6, 72px);
+  gap: 7px;
+  min-height: 470px;
+  padding: 13px;
+  border: 1px solid #d5e9e2;
+  border-radius: 15px;
+  background:
+    radial-gradient(circle at 80% 8%, rgba(174, 226, 211, .52), transparent 30%),
+    linear-gradient(145deg, #f8fdfb 0%, #edf8f4 100%);
+}
+.map-region {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  place-content: center;
+  gap: 2px;
+  padding: 7px 6px;
+  overflow: hidden;
+  border: 1px solid #bbddd2;
+  border-radius: 13px;
+  background: rgba(255, 255, 255, .9);
+  color: #155d55;
+  text-align: center;
+  transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease, background .18s ease;
+}
+.map-region::after {
+  position: absolute;
+  inset: auto -18px -23px auto;
+  width: 58px;
+  height: 58px;
+  border-radius: 50%;
+  background: rgba(39, 166, 148, .1);
+  content: "";
+  pointer-events: none;
+}
+.map-region:hover,
+.map-region:focus-visible {
+  z-index: 2;
+  border-color: #087d72;
+  outline: none;
+  background: #0e8479;
+  box-shadow: 0 10px 18px rgba(7, 112, 100, .19);
+  color: #fff;
+  transform: translateY(-2px) scale(1.02);
+}
+.map-region b { position: relative; z-index: 1; font-size: 13px; line-height: 1.1; letter-spacing: -.4px; word-break: keep-all; }
+.map-region small { position: relative; z-index: 1; color: #6e978d; font-size: 9px; font-weight: 800; }
+.map-region:hover small,
+.map-region:focus-visible small { color: rgba(255,255,255,.75); }
+.map-region-seoul { grid-column: 2; grid-row: 1; }
+.map-region-incheon { grid-column: 1; grid-row: 1; }
+.map-region-gyeonggi { grid-column: 1 / span 2; grid-row: 2; }
+.map-region-gangwon { grid-column: 4 / span 3; grid-row: 1 / span 2; border-radius: 27px 14px 14px 16px; }
+.map-region-chungnam { grid-column: 1 / span 2; grid-row: 3; }
+.map-region-sejong { grid-column: 3; grid-row: 3; }
+.map-region-chungbuk { grid-column: 4; grid-row: 3; }
+.map-region-gyeongbuk { grid-column: 5 / span 2; grid-row: 3; border-radius: 15px 22px 15px 15px; }
+.map-region-daejeon { grid-column: 3; grid-row: 4; }
+.map-region-jeonbuk { grid-column: 1 / span 2; grid-row: 4; }
+.map-region-daegu { grid-column: 5; grid-row: 4; }
+.map-region-ulsan { grid-column: 6; grid-row: 4; }
+.map-region-gwangju { grid-column: 1; grid-row: 5; }
+.map-region-jeonnam { grid-column: 2 / span 2; grid-row: 5; border-radius: 14px 14px 22px 18px; }
+.map-region-gyeongnam { grid-column: 4 / span 2; grid-row: 5; }
+.map-region-busan { grid-column: 6; grid-row: 5; border-radius: 14px 14px 20px 14px; }
+.map-region-jeju { grid-column: 1 / span 2; grid-row: 6; border-radius: 30px 18px 24px 20px; }
+
+.district-selector-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.district-selector-grid button {
+  display: grid;
+  grid-template-columns: 38px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  min-height: 92px;
+  padding: 13px;
+  border: 1px solid #cfe5de;
+  border-radius: 12px;
+  background: #fff;
+  color: #174f49;
+  text-align: left;
+  transition: .18s ease;
+}
+.district-selector-grid button:hover,
+.district-selector-grid button:focus-visible {
+  border-color: #0d8176;
+  outline: none;
+  box-shadow: 0 8px 17px rgba(7, 111, 100, .12);
+  transform: translateY(-1px);
+}
+.district-selector-grid button > span:not(.district-pin) { display: grid; min-width: 0; gap: 4px; }
+.district-selector-grid b { overflow: hidden; color: #164f49; font-size: 14px; letter-spacing: -.4px; text-overflow: ellipsis; white-space: nowrap; }
+.district-selector-grid small { overflow: hidden; color: #638f85; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.district-selector-grid em { overflow: hidden; color: #8ca69f; font: 700 9px 'DM Mono', monospace; font-style: normal; letter-spacing: -.15px; text-overflow: ellipsis; white-space: nowrap; }
+.district-selector-grid i { color: #0d7c71; font-size: 10px; font-style: normal; font-weight: 800; white-space: nowrap; }
+.district-pin {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  place-items: center;
+  border-radius: 11px;
+  background: #e7f7f0;
+  color: #078075;
+  font-size: 20px;
+  font-style: normal;
+  font-weight: 800;
+}
+.location-custom-input { margin-bottom: 1px; }
+.location-menu-heading.detail-heading { align-items: flex-start; }
+.location-menu-heading.detail-heading > button {
+  flex: 0 0 auto;
+  order: 2;
+  margin-top: 1px;
+  white-space: nowrap;
+}
+.location-menu-heading.detail-heading > div { min-width: 0; }
+.location-menu-heading.detail-heading b { line-height: 1.3; }
+
+.global-destination-picker { display: grid; gap: 12px; }
+.global-destination-picker > p { margin: 0; color: #638f85; font-size: 12px; font-weight: 700; }
+.global-destination-picker > div { display: flex; flex-wrap: wrap; gap: 8px; }
+.global-destination-picker button {
+  min-width: 90px;
+  padding: 11px 13px;
+  border: 1px solid #cce3dc;
+  border-radius: 10px;
+  background: #fff;
+  color: #185850;
+  font: 800 12px 'Noto Sans KR', sans-serif;
+  transition: .18s ease;
+}
+.global-destination-picker button:hover { border-color: #0b8175; background: #f0fbf7; color: #08766d; }
+
 @media (max-width: 760px) {
   .form-fields > .route-field { padding: 15px; }
   .route-field-heading { margin-bottom: 11px; }
@@ -1230,6 +1416,16 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
   .route-destination-picker > .route-destination-menu { width: min(calc(100vw - 36px), 680px); padding: 15px; }
   .departure-region-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .departure-detail-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .route-location-text .route-location-marker { width: 40px; height: 42px; border-radius: 10px; font-size: 20px; }
+  .korea-location-menu { width: min(calc(100vw - 36px), 680px); max-height: calc(100vh - 86px); }
+  .korea-map-heading > span { max-width: 185px; font-size: 9px; }
+  .korea-region-map { grid-template-columns: repeat(4, minmax(0, 1fr)); grid-template-rows: none; grid-auto-rows: 68px; min-height: 0; padding: 10px; }
+  .map-region { grid-column: auto !important; grid-row: auto !important; border-radius: 11px !important; }
+  .map-region b { font-size: 12px; }
+  .district-selector-grid { gap: 8px; }
+  .district-selector-grid button { grid-template-columns: 34px minmax(0, 1fr); min-height: 82px; padding: 10px; }
+  .district-selector-grid i { display: none; }
+  .district-pin { width: 34px; height: 34px; border-radius: 9px; font-size: 18px; }
 }
 
 @media (max-width: 520px) {
@@ -1241,6 +1437,18 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
   .location-menu-heading { display: grid; gap: 6px; }
   .location-menu-heading > span { margin-top: 0; }
   .departure-detail-grid { grid-template-columns: 1fr; }
+  .korea-location-menu { width: 100%; }
+  .korea-map-heading { display: grid; gap: 8px; }
+  .korea-map-heading > span { max-width: none; border-radius: 8px; text-align: left; }
+  .korea-region-map { grid-template-columns: repeat(2, minmax(0, 1fr)); grid-auto-rows: 62px; gap: 7px; padding: 8px; }
+  .map-region b { font-size: 12px; }
+  .map-region small { font-size: 8px; }
+  .district-selector-grid { grid-template-columns: 1fr; }
+  .district-selector-grid button { min-height: 76px; }
+  .location-menu-heading.detail-heading { display: flex; gap: 8px; }
+  .location-menu-heading.detail-heading b { font-size: 15px; }
+  .location-menu-heading.detail-heading > button { padding: 6px 7px; font-size: 10px; }
+  .global-destination-picker button { min-width: calc(50% - 4px); flex: 1; }
 }
 
 /* 일정 생성 후에는 처음의 AI 질문 흐름을 반복하지 않고, 필요한 항목만 다시 열 수 있도록 합니다. */

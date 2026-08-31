@@ -1,13 +1,15 @@
-import axios from 'axios'
+import { apiClient } from './apiClient';
+import { API_ENDPOINTS } from './contracts';
 
-// 백엔드 주소가 정해지면 VITE_API_BASE_URL만 .env 파일에 넣으면 됩니다.
-const client = axios.create({
-  baseURL: import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080',
-  withCredentials: true,
-})
-
-export async function requestTripPlan(payload) {
-  // Spring Boot API가 준비되면 이 주소만 실제 명세에 맞게 조정하면 됩니다.
-  const { data } = await client.post('/api/v1/trips/plans', payload)
-  return data
+/**
+ * 일정 생성 BFF 호출.
+ * axios를 별도로 쓰지 않고 다른 API 어댑터와 같은 인증·오류 처리 규칙을 사용한다.
+ * 현재 화면은 VITE_USE_MOCK=false일 때만 이 함수를 호출한다.
+ */
+export async function requestTripPlan(payload, { signal } = {}) {
+  return apiClient.request(API_ENDPOINTS.plans.generate, {
+    method: 'POST',
+    body: payload,
+    signal,
+  });
 }
