@@ -1,0 +1,112 @@
+.korea-svg-map-shell {
+  position: relative;
+  width: min(100%, 720px);
+  margin: 0 auto;
+  padding: clamp(0.45rem, 1.2vw, 0.9rem);
+  border: 1px solid rgba(12, 130, 121, 0.18);
+  border-radius: 1.35rem;
+  background:
+    radial-gradient(circle at 20% 8%, rgba(233, 246, 241, 0.92), transparent 37%),
+    linear-gradient(145deg, #f9fcfb 0%, #eff9f6 100%);
+}
+
+.korea-svg-map {
+  display: block;
+  width: 100%;
+  max-height: min(71vh, 690px);
+  min-height: 330px;
+  overflow: visible;
+}
+
+.korea-map-coastline {
+  fill: rgba(18, 128, 117, 0.035);
+  stroke: rgba(15, 118, 110, 0.24);
+  stroke-width: 3;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.korea-map-region {
+  cursor: pointer;
+  outline: none;
+}
+
+.korea-map-region path {
+  fill: #fdfefd;
+  stroke: #63b9ac;
+  stroke-width: 2.2;
+  stroke-linejoin: round;
+  transition: fill 160ms ease, stroke 160ms ease, filter 160ms ease, transform 160ms ease;
+  transform-origin: center;
+}
+
+.korea-map-region text {
+  fill: #095c56;
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: central;
+}
+
+.korea-map-region .korea-map-region-count {
+  fill: #4d827d;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0;
+}
+
+.korea-map-region:hover path,
+.korea-map-region:focus-visible path {
+  fill: #dff5ee;
+  stroke: #078a80;
+  stroke-width: 3.25;
+  filter: drop-shadow(0 7px 9px rgba(9, 115, 105, 0.18));
+}
+
+.korea-map-region:focus-visible path {
+  stroke: #e86f3e;
+}
+
+.korea-map-region.is-selected path {
+  fill: #078a80;
+  stroke: #056b64;
+  stroke-width: 3.25;
+  filter: drop-shadow(0 7px 10px rgba(3, 100, 92, 0.25));
+}
+
+.korea-map-region.is-selected text {
+  fill: #fff;
+}
+
+.korea-map-region.is-selected .korea-map-region-count {
+  fill: #d7f7ed;
+}
+
+.korea-map-a11y-note {
+  margin: 0.15rem 0 0.05rem;
+  color: #63817e;
+  font-size: 0.76rem;
+  text-align: center;
+}
+
+@media (max-width: 560px) {
+  .korea-svg-map-shell {
+    border-radius: 1rem;
+    padding: 0.35rem;
+  }
+
+  .korea-svg-map {
+    min-height: 285px;
+  }
+
+  .korea-map-region text {
+    font-size: 13px;
+  }
+
+  .korea-map-region .korea-map-region-count {
+    font-size: 9px;
+  }
+}
