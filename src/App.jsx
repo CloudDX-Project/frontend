@@ -3,6 +3,7 @@ import { koreanRegions } from "./data/locationCatalog";
 import {
   dateLabel,
   departureTimeOptions,
+  destinations,
   destinationExplorerItems,
   heroSlides,
   hotelGroups,
@@ -14,6 +15,8 @@ import {
   outboundOptions,
   paceOptions,
   placeAlternatives,
+  quickLinks,
+  rentalImages,
   rentals,
   returnTimeOptions,
   stayChangeSummaryFor,
