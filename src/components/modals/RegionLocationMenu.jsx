@@ -1,5 +1,6 @@
 import { koreanRegions } from "../../data/locationCatalog";
 import KoreaRegionMap from "../KoreaRegionMap";
+import RegionDetailMap from "../RegionDetailMap";
 
 export default function RegionLocationMenu({
   activeRegionId,
@@ -31,23 +32,11 @@ export default function RegionLocationMenu({
               <b>{activeRegion.name}에서 {isDeparture ? "어디서 출발하시나요?" : "어디를 방문하시나요?"}</b>
             </div>
           </header>
-          <div className="district-selector-grid">
-            {activeRegion.districts.map((district) => (
-              <button
-                type="button"
-                key={district.id}
-                onClick={() => onChooseDistrict(activeRegion, district)}
-              >
-                <span className="district-pin" aria-hidden="true">⌖</span>
-                <span>
-                  <b>{district.detail}</b>
-                  <small>{district.apiSearchKeyword}</small>
-                  <em>{district.latitude.toFixed(4)}, {district.longitude.toFixed(4)}</em>
-                </span>
-                <i>선택 →</i>
-              </button>
-            ))}
-          </div>
+          <RegionDetailMap
+            region={activeRegion}
+            selectDistrict={(district) => onChooseDistrict(activeRegion, district)}
+            ariaLabel={`${activeRegion.name} ${title} 세부 시군구 선택 지도`}
+          />
         </>
       ) : (
         <>

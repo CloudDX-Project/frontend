@@ -117,9 +117,10 @@
 .destination-visual-heading > button:hover { background: #dff4ea; }
 
 .destination-visual-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 13px; }
-.destination-visual-card { min-width: 0; padding: 0; overflow: hidden; border: 1px solid #cde4dc; border-radius: 16px; background: #fff; color: #1b5750; text-align: left; cursor: pointer; box-shadow: 0 4px 10px rgba(9, 94, 84, .04); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
+.destination-visual-card { position: relative; min-width: 0; padding: 0; overflow: hidden; border: 1px solid #cde4dc; border-radius: 16px; background: #fff; color: #1b5750; text-align: left; box-shadow: 0 4px 10px rgba(9, 94, 84, .04); transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease; }
 .destination-visual-card:hover { transform: translateY(-4px); border-color: #59bba9; box-shadow: 0 14px 24px rgba(9, 104, 94, .14); }
 .destination-visual-card.is-selected { border: 2px solid #078a80; box-shadow: 0 0 0 3px rgba(10, 142, 128, .12); }
+.destination-card-main { display: block; width: 100%; padding: 0; border: 0; background: transparent; color: inherit; text-align: left; cursor: pointer; }
 .destination-card-image { position: relative; display: block; height: 128px; overflow: hidden; background: linear-gradient(135deg, #6cc7b9, #d7f2e8); }
 .destination-card-image img { width: 100%; height: 100%; object-fit: cover; transition: transform 260ms ease; }.destination-visual-card:hover .destination-card-image img { transform: scale(1.06); }
 .destination-card-shade { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 38%, rgba(0, 37, 33, .48) 100%); }
@@ -128,6 +129,40 @@
 .destination-image-fallback { display: grid; width: 100%; height: 100%; place-items: center; color: #087e74; }
 .destination-card-content { display: grid; gap: 4px; padding: 12px; }.destination-card-content b { color: #15574f; font-size: 15px; letter-spacing: -.045em; }.destination-card-content > small { overflow: hidden; color: #75938e; font-size: 11px; font-weight: 600; text-overflow: ellipsis; white-space: nowrap; }
 .destination-card-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 3px; }.destination-card-tags em { padding: 3px 5px; border-radius: 4px; background: #eff8f4; color: #4c837a; font-size: 9px; font-style: normal; font-weight: 800; }
+
+.destination-theme-chips { display: flex; gap: 8px; margin: 0 0 17px; padding: 2px 1px 6px; overflow-x: auto; scrollbar-width: thin; }
+.destination-theme-chips button { flex: 0 0 auto; padding: 9px 14px; border: 1px solid #c3ded6; border-radius: 999px; background: #fff; color: #60827c; font: 800 12px "Noto Sans KR", sans-serif; cursor: pointer; transition: background 150ms ease, border-color 150ms ease, color 150ms ease, transform 150ms ease; }
+.destination-theme-chips button:hover { border-color: #55b6a8; color: #087b71; transform: translateY(-1px); }
+.destination-theme-chips button.is-active { border-color: #0c877d; background: #0c877d; color: #fff; box-shadow: 0 6px 12px rgba(12, 135, 125, .18); }
+
+.destination-subspot-overlay { display: none; }
+
+@media (min-width: 761px) {
+  .destination-visual-card.has-sub-spots { min-height: 238px; }
+  .destination-subspot-overlay {
+    position: absolute;
+    z-index: 3;
+    inset: 0;
+    display: flex;
+    align-items: stretch;
+    justify-content: center;
+    flex-direction: column;
+    gap: 5px;
+    padding: 15px;
+    visibility: hidden;
+    opacity: 0;
+    background: rgba(4, 27, 25, .82);
+    backdrop-filter: blur(2px);
+    transform: translateY(5px);
+    transition: all .3s ease;
+  }
+  .destination-visual-card.has-sub-spots:hover .destination-subspot-overlay,
+  .destination-visual-card.has-sub-spots:focus-within .destination-subspot-overlay { visibility: visible; opacity: 1; transform: translateY(0); }
+  .destination-subspot-overlay strong { margin-bottom: 3px; color: #fff; font-size: 12px; text-align: center; }
+  .destination-subspot-overlay button { display: flex; min-height: 34px; align-items: center; justify-content: space-between; gap: 7px; padding: 7px 10px; border: 1px solid rgba(255, 255, 255, .24); border-radius: 8px; background: rgba(255, 255, 255, .09); color: #fff; font: 750 11px "Noto Sans KR", sans-serif; text-align: left; cursor: pointer; transition: all .18s ease; }
+  .destination-subspot-overlay button:hover,
+  .destination-subspot-overlay button:focus-visible { border-color: #8ce2d2; outline: 0; background: #0c877d; transform: translateX(2px); }
+}
 
 .destination-region-heading { display: flex; align-items: center; gap: 11px; margin: 0 0 15px; }.destination-region-heading > span { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: #dff5ec; color: #07877b; }.destination-region-heading b, .destination-region-heading small { display: block; }.destination-region-heading b { font-size: 17px; }.destination-region-heading small { margin-top: 3px; color: #71908a; font-size: 12px; font-weight: 600; }
 .destination-region-panel .korea-svg-map-shell { width: min(100%, 655px); margin: 0 auto; }

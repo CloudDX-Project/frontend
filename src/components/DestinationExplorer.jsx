@@ -2,20 +2,37 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import {
   ArrowRight,
   Compass,
-  Globe2,
   MapPinned,
   Search,
   Sparkles,
   X,
 } from "lucide-react";
 import KoreaRegionMap from "./KoreaRegionMap";
+import RegionDetailMap from "./RegionDetailMap";
 import "./destination-explorer.css";
 
 const TAB = {
-  POPULAR: "popular",
-  REGIONS: "regions",
-  OVERSEAS: "overseas",
+  TRENDING: "trending",
+  MAP: "map",
+  THEME: "theme",
 };
+
+const THEME_OPTIONS = ["전체", "바다", "힐링", "맛집·카페", "야경", "자연·숲"];
+
+export const TRENDING_DESTINATIONS = [
+  { id: "destination-jeju", title: "제주도", subtitle: "제주시 · 협재 · 성산", region: "제주특별자치도", regionCode: "KR-49", latitude: 33.4996, longitude: 126.5312, tags: ["바다", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1579169326371-ccb4e63f7889?auto=format&fit=crop&w=1200&q=88", subSpots: ["성산일출봉", "애월 한담해안산책로", "오설록 티뮤지엄", "동문시장"] },
+  { id: "destination-busan", title: "부산", subtitle: "해운대 · 광안리", region: "부산광역시", regionCode: "KR-26", latitude: 35.1796, longitude: 129.0756, tags: ["바다", "맛집·카페", "야경"], image: "https://media.grandvoyage.com/__sized__/voyages/Viaje_a_Corea_del_Sur_de_9_dias__de_Seul_a_Busan_pM5Y5VD_urjfjJv-thumbnail_webp-1920x960.webp", subSpots: ["해운대 블루라인파크", "흰여울문화마을", "해동용궁사", "광안리 해수욕장"] },
+  { id: "destination-gangneung", title: "강릉", subtitle: "경포 · 안목", region: "강원특별자치도", regionCode: "KR-42", latitude: 37.7519, longitude: 128.8761, tags: ["바다", "맛집·카페", "힐링"], image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=88", subSpots: ["경포대", "아르떼뮤지엄", "안목해변 커피거리", "강릉 중앙시장"] },
+  { id: "destination-sokcho", title: "속초", subtitle: "설악산 · 영랑호", region: "강원특별자치도", regionCode: "KR-42", latitude: 38.207, longitude: 128.5918, tags: ["자연·숲", "바다", "힐링"], image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=88", subSpots: ["설악산 케이블카", "속초아이 대관람차", "아바이마을", "속초관광수산시장"] },
+  { id: "destination-yeosu", title: "여수", subtitle: "오동도 · 낭만포차", region: "전라남도", regionCode: "KR-46", latitude: 34.7604, longitude: 127.6622, tags: ["바다", "야경", "맛집·카페"], image: "https://img.einet.kr/P202101006/travel/42924/01.jpg?v=1684740236", subSpots: ["오동도", "여수 해상케이블카", "향일암", "이순신광장"] },
+  { id: "destination-gyeongju", title: "경주", subtitle: "황리단길 · 대릉원", region: "경상북도", regionCode: "KR-47", latitude: 35.8562, longitude: 129.2247, tags: ["힐링", "맛집·카페", "야경"], image: "https://cdn.welfarehello.com/naver-blog/production/gyeongju_e/2025-05/223857733508/gyeongju_e_223857733508_2.jpg?f=webp&q=80&w=1200", subSpots: ["대릉원", "황리단길", "불국사", "동궁과 월지"] },
+  { id: "destination-jeonju", title: "전주", subtitle: "한옥마을 · 남부시장", region: "전북특별자치도", regionCode: "KR-45", latitude: 35.8242, longitude: 127.148, tags: ["맛집·카페", "힐링", "야경"], image: "https://tour.jeonju.go.kr/images/visitjj/contents/streetmap/img_hanok00.jpg", subSpots: ["전주한옥마을", "객리단길", "덕진공원", "남부시장"] },
+  { id: "destination-gapyeong-chuncheon", title: "가평·춘천", subtitle: "남이섬 · 의암호", region: "경기도·강원특별자치도", regionCode: "KR-41", latitude: 37.8564, longitude: 127.62, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://a.travel-assets.com/findyours-php/viewfinder/images/res70/463000/463964-Nami-Island.jpg?h=500&impolicy=fcrop&q=medium&w=1200", subSpots: ["남이섬", "아침고요수목원", "레고랜드", "구봉산 카페거리"] },
+  { id: "destination-taean", title: "태안·안면도", subtitle: "꽃지 · 신두리", region: "충청남도", regionCode: "KR-44", latitude: 36.7456, longitude: 126.2979, tags: ["바다", "자연·숲", "힐링"], image: "https://images.unsplash.com/photo-1455729552865-3658a5d39692?auto=format&fit=crop&w=1200&q=88", subSpots: ["꽃지해수욕장", "신두리 해안사구", "천리포수목원", "안면도 수산시장"] },
+  { id: "destination-danyang", title: "단양", subtitle: "도담삼봉 · 남한강", region: "충청북도", regionCode: "KR-43", latitude: 36.9847, longitude: 128.365, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=88", subSpots: ["도담삼봉", "패러글라이딩 활공장", "만천하스카이워크", "단양 구경시장"] },
+  { id: "destination-suncheon-boseong", title: "순천·보성", subtitle: "순천만 · 녹차밭", region: "전라남도", regionCode: "KR-46", latitude: 34.9006, longitude: 127.287, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=88", subSpots: ["순천만습지", "순천만국가정원", "대한다원 녹차밭", "낙안읍성 민속마을"] },
+  { id: "destination-pohang", title: "포항", subtitle: "호미곶 · 영일대", region: "경상북도", regionCode: "KR-47", latitude: 36.019, longitude: 129.3435, tags: ["바다", "야경", "맛집·카페"], image: "https://images.unsplash.com/photo-1530789253388-582c481c54b0?auto=format&fit=crop&w=1200&q=88", subSpots: ["호미곶", "스페이스워크", "구룡포 일본인가옥거리", "영일대 해수욕장"] },
+];
 
 const normalizedText = (value) => String(value || "").replace(/\s+/g, " ").trim().toLocaleLowerCase("ko-KR");
 
@@ -32,11 +49,6 @@ const getTags = (destination) => {
   return [];
 };
 
-const isOverseas = (destination) => {
-  if (destination?.scope === "overseas" || destination?.type === "overseas" || destination?.isOverseas) return true;
-  return Boolean(destination?.countryCode && destination.countryCode !== "KR");
-};
-
 const destinationSearchText = (destination) =>
   normalizedText([
     getTitle(destination),
@@ -45,12 +57,13 @@ const destinationSearchText = (destination) =>
     destination?.name,
     destination?.detail,
     ...getTags(destination),
+    ...(destination?.subSpots || []),
   ].filter(Boolean).join(" "));
 
 /**
  * 도착지에 특화된 탐색 모달입니다.
  *
- * - `destinations`: API 또는 더미 데이터로 받은 여행지 배열
+ * - 국내 12개 핵심 권역과 48개 세부 관광지를 2 Depth로 탐색합니다.
  * - `regions`: 대한민국 17개 시·도 배열 (KoreaRegionMap에 전달)
  * - `onSelect(location)`: 시각 카드/자동완성에서 최종 도착지 선택 시 호출
  * - `onSelectRegion(region)`: 권역별 찾기에서 시·도 선택 시 호출
@@ -59,13 +72,12 @@ const destinationSearchText = (destination) =>
  */
 export default function DestinationExplorer({
   open = true,
-  destinations = [],
   regions = [],
   selectedId = null,
   selectedRegionId = null,
   title = "어디로 떠나볼까요?",
   subtitle = "도시·관광지 이름을 검색하거나, 인기 여행지에서 바로 골라보세요.",
-  initialTab = TAB.POPULAR,
+  initialTab = TAB.TRENDING,
   onSelect,
   onSelectRegion,
   onAiRecommend,
@@ -76,12 +88,10 @@ export default function DestinationExplorer({
   const [query, setQuery] = useState("");
   const [activeResult, setActiveResult] = useState(-1);
   const [activeRegionId, setActiveRegionId] = useState(selectedRegionId);
+  const [selectedTheme, setSelectedTheme] = useState("전체");
   const inputRef = useRef(null);
 
-  const validDestinations = useMemo(
-    () => (Array.isArray(destinations) ? destinations.filter(Boolean) : []),
-    [destinations],
-  );
+  const validDestinations = TRENDING_DESTINATIONS;
 
   const matchingDestinations = useMemo(() => {
     const keyword = normalizedText(query);
@@ -91,17 +101,14 @@ export default function DestinationExplorer({
       .slice(0, 6);
   }, [query, validDestinations]);
 
-  const popularDestinations = useMemo(
-    () => validDestinations.filter((destination) => !isOverseas(destination)).slice(0, 8),
-    [validDestinations],
+  const themeDestinations = useMemo(
+    () => selectedTheme === "전체"
+      ? validDestinations
+      : validDestinations.filter((destination) => getTags(destination).includes(selectedTheme)),
+    [selectedTheme],
   );
 
-  const overseasDestinations = useMemo(
-    () => validDestinations.filter(isOverseas).slice(0, 8),
-    [validDestinations],
-  );
-
-  const visibleDestinations = activeTab === TAB.OVERSEAS ? overseasDestinations : popularDestinations;
+  const visibleDestinations = activeTab === TAB.THEME ? themeDestinations : validDestinations;
   const activeRegion = useMemo(
     () => regions.find((region) => region.id === activeRegionId) || null,
     [activeRegionId, regions],
@@ -161,6 +168,21 @@ export default function DestinationExplorer({
     });
   };
 
+  const selectSubSpot = (destination, subSpot, index) => {
+    selectDestination({
+      ...destination,
+      id: `${destination.id}-spot-${index + 1}`,
+      parentDestinationId: destination.id,
+      title: subSpot,
+      name: subSpot,
+      detail: subSpot,
+      latitude: null,
+      longitude: null,
+      apiSearchKeyword: `${destination.title} ${subSpot}`,
+      needsGeocoding: true,
+    });
+  };
+
   const handleSearchKeyDown = (event) => {
     if (!matchingDestinations.length) return;
     if (event.key === "ArrowDown") {
@@ -207,7 +229,7 @@ export default function DestinationExplorer({
             value={query}
             onChange={(event) => setQuery(event.target.value)}
             onKeyDown={handleSearchKeyDown}
-            placeholder="예: 제주, 속초, 해운대, 교토"
+            placeholder="예: 제주, 속초, 해운대, 경포대"
             aria-label="도시 또는 관광지 검색"
             aria-autocomplete="list"
             aria-controls="destination-search-results"
@@ -236,20 +258,18 @@ export default function DestinationExplorer({
         </div>
 
         <nav className="destination-explorer-tabs" aria-label="도착지 탐색 방식">
-          <button type="button" className={activeTab === TAB.POPULAR ? "is-active" : ""} onClick={() => setActiveTab(TAB.POPULAR)}>
-            <Compass size={17} /> 인기 여행지
+          <button type="button" className={activeTab === TAB.TRENDING ? "is-active" : ""} onClick={() => setActiveTab(TAB.TRENDING)}>
+            <Compass size={17} /> 요즘 뜨는 여행지
           </button>
-          <button type="button" className={activeTab === TAB.REGIONS ? "is-active" : ""} onClick={() => setActiveTab(TAB.REGIONS)}>
-            <MapPinned size={17} /> 권역별 찾기
+          <button type="button" className={activeTab === TAB.MAP ? "is-active" : ""} onClick={() => setActiveTab(TAB.MAP)}>
+            <MapPinned size={17} /> 지도로 찾기
           </button>
-          {overseasDestinations.length ? (
-            <button type="button" className={activeTab === TAB.OVERSEAS ? "is-active" : ""} onClick={() => setActiveTab(TAB.OVERSEAS)}>
-              <Globe2 size={17} /> 해외 여행지
-            </button>
-          ) : null}
+          <button type="button" className={activeTab === TAB.THEME ? "is-active" : ""} onClick={() => setActiveTab(TAB.THEME)}>
+            <Sparkles size={17} /> 테마별 추천
+          </button>
         </nav>
 
-        {activeTab === TAB.REGIONS ? (
+        {activeTab === TAB.MAP ? (
           <div className="destination-region-panel">
             {activeRegion ? (
               <div className="destination-region-detail">
@@ -258,14 +278,12 @@ export default function DestinationExplorer({
                   <span><MapPinned size={19} /></span>
                   <div><b>{activeRegion.name}에서 어디로 갈까요?</b><small>관광지와 가까운 세부 시·군·구를 골라보세요.</small></div>
                 </div>
-                <div className="destination-district-grid">
-                  {activeRegion.districts?.map((district) => (
-                    <button type="button" key={district.id} onClick={() => selectDistrict(district)}>
-                      <span><b>{district.detail || district.name}</b><small>{district.apiSearchKeyword}</small></span>
-                      <ArrowRight size={17} aria-hidden="true" />
-                    </button>
-                  ))}
-                </div>
+                <RegionDetailMap
+                  region={activeRegion}
+                  selectedDistrictId={selectedId}
+                  selectDistrict={selectDistrict}
+                  ariaLabel={`${activeRegion.name} 도착지 세부 시군구 선택 지도`}
+                />
               </div>
             ) : (
               <>
@@ -279,10 +297,19 @@ export default function DestinationExplorer({
           </div>
         ) : (
           <div className="destination-visual-panel">
+            {activeTab === TAB.THEME ? (
+              <div className="destination-theme-chips" role="group" aria-label="여행 테마 선택">
+                {THEME_OPTIONS.map((theme) => (
+                  <button type="button" key={theme} className={selectedTheme === theme ? "is-active" : ""} onClick={() => setSelectedTheme(theme)} aria-pressed={selectedTheme === theme}>
+                    {theme}
+                  </button>
+                ))}
+              </div>
+            ) : null}
             <div className="destination-visual-heading">
               <div>
-                <b>{activeTab === TAB.OVERSEAS ? "지금 떠나고 싶은 해외 여행지" : "많이 찾는 국내 여행지"}</b>
-                <small>사진과 테마를 보고 가장 끌리는 곳을 골라보세요.</small>
+                <b>{activeTab === TAB.THEME ? `${selectedTheme} 테마 여행지` : "요즘 많이 찾는 국내 여행지"}</b>
+                <small>{activeTab === TAB.THEME ? "원하는 테마와 어울리는 지역을 골라보세요." : "카드에 마우스를 올리면 대표 관광지 4곳을 바로 선택할 수 있어요."}</small>
               </div>
               {onAiRecommend ? (
                 <button type="button" onClick={onAiRecommend}><Sparkles size={16} /> AI에게 추천받기</button>
@@ -294,24 +321,31 @@ export default function DestinationExplorer({
                   const selected = selectedId === destination.id;
                   const tags = getTags(destination);
                   return (
-                    <button
-                      type="button"
+                    <article
                       key={destination.id || `${getTitle(destination)}-${index}`}
-                      className={`destination-visual-card${selected ? " is-selected" : ""}`}
-                      onClick={() => selectDestination(destination)}
-                      aria-pressed={selected}
+                      className={`destination-visual-card${selected ? " is-selected" : ""}${activeTab === TAB.TRENDING ? " has-sub-spots" : ""}`}
                     >
-                      <span className="destination-card-image">
-                        {destination.image ? <img src={destination.image} alt="" /> : <span className="destination-image-fallback"><MapPinned size={25} /></span>}
-                        <span className="destination-card-shade" />
-                        <span className="destination-card-select">{selected ? "선택됨" : "여행지 보기"}</span>
-                      </span>
-                      <span className="destination-card-content">
-                        <b>{getTitle(destination)}</b>
-                        <small>{getDetail(destination)}</small>
-                        {tags.length ? <span className="destination-card-tags">{tags.map((tag) => <em key={tag}>#{tag}</em>)}</span> : null}
-                      </span>
-                    </button>
+                      <button type="button" className="destination-card-main" onClick={() => selectDestination(destination)} aria-pressed={selected}>
+                        <span className="destination-card-image">
+                          {destination.image ? <img src={destination.image} alt="" /> : <span className="destination-image-fallback"><MapPinned size={25} /></span>}
+                          <span className="destination-card-shade" />
+                          <span className="destination-card-select">{selected ? "선택됨" : "여행지 보기"}</span>
+                        </span>
+                        <span className="destination-card-content">
+                          <b>{getTitle(destination)}</b>
+                          <small>{getDetail(destination)}</small>
+                          {tags.length ? <span className="destination-card-tags">{tags.map((tag) => <em key={tag}>#{tag}</em>)}</span> : null}
+                        </span>
+                      </button>
+                      {activeTab === TAB.TRENDING ? (
+                        <div className="destination-subspot-overlay" aria-label={`${destination.title} 대표 관광지`}>
+                          <strong>{destination.title} 어디로 갈까요?</strong>
+                          {destination.subSpots.map((subSpot, subIndex) => (
+                            <button type="button" key={subSpot} onClick={() => selectSubSpot(destination, subSpot, subIndex)}>{subSpot}<ArrowRight size={13} /></button>
+                          ))}
+                        </div>
+                      ) : null}
+                    </article>
                   );
                 })}
               </div>
