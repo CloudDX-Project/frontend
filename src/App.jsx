@@ -1,4 +1,5 @@
-import { UsersRound } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Car, ChevronDown, Home, Plane, SlidersHorizontal, Smartphone, Sparkles, Ticket } from "lucide-react";
 import { koreanRegions } from "./data/locationCatalog";
 import {
   dateLabel,
@@ -25,14 +26,29 @@ import {
   transportName,
 } from "./data/mockData";
 import DestinationExplorer from "./components/DestinationExplorer";
-import TransitionIcon from "./components/common/TransitionIcon";
+import CommerceShowcase from "./components/CommerceShowcase";
+import TripDatePicker from "./components/TripDatePicker";
+import Premium3dIcon from "./components/common/Premium3dIcon";
 import BrandPolygon from "./components/icons/BrandPolygon";
 import JejuRegionModal from "./components/modals/JejuRegionModal";
 import RegionLocationMenu from "./components/modals/RegionLocationMenu";
 import PlanFullscreen from "./components/planner/PlanFullscreen";
 import useTripPlanner from "./hooks/useTripPlanner";
+import useMediaQuery from "./hooks/useMediaQuery";
+
+const quickAccessIcons = { sparkles: Sparkles, plane: Plane, home: Home, ticket: Ticket, car: Car, smartphone: Smartphone };
 
 function App() {
+  const isMobile = useMediaQuery("(max-width: 760px)");
+  const [isPlannerOpen, setIsPlannerOpen] = useState(false);
+  const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
+  const [showScrollTop, setShowScrollTop] = useState(false);
+  useEffect(() => {
+    const updateScrollTop = () => setShowScrollTop(window.scrollY > 300);
+    updateScrollTop();
+    window.addEventListener("scroll", updateScrollTop, { passive: true });
+    return () => window.removeEventListener("scroll", updateScrollTop);
+  }, []);
   const {
     setDestinationType,
     destination,
@@ -183,23 +199,21 @@ function App() {
     changePlanStop,
     itineraryEventCost,
     generate,
+    resetTripDraft,
   } = useTripPlanner();
 
   return (
-    <main>
+    <main className={isMobile && isPlannerOpen ? "mobile-planner-open" : ""}>
+      {(!isMobile || !isPlannerOpen) && <>
       <header className="topbar">
-        <a className="brand" href="#top" aria-label="얼마길 처음으로">
+        <a className="brand" href="#top" aria-label="TripBuddy 처음으로">
           <BrandPolygon />
-          <strong>얼마길</strong>
+          <strong>TripBuddy</strong>
         </a>
-        <nav>
-          <a href="#inspiration">인기 여행지</a>
-          <a href="#inspiration">가이드 추천</a>
-          <a href="#how">이용 방법</a>
-        </nav>
         <button className="outline-button" onClick={() => setLoginOpen(true)}>
           로그인
         </button>
+        <button className="header-reservations" type="button" onClick={() => notify("내 예약 기능은 백엔드 연동 후 제공됩니다.")}>내 예약</button>
         <button
           className="header-button"
           onClick={() =>
@@ -227,7 +241,7 @@ function App() {
             >
               ×
             </button>
-            <p>얼마길 계정</p>
+            <p>TripBuddy 계정</p>
             <h3 id="login-modal-title">다시 만나 반가워요.</h3>
             <span>아이디와 비밀번호를 입력해 로그인하세요.</span>
             <form
@@ -276,14 +290,14 @@ function App() {
         <div className="hero-inner">
           <p className="eyebrow light">YOUR BUDGET, YOUR ROUTE</p>
           <h1>
-            내 예산에 딱 맞춘
+            여행의 모든 순간을
             <br />
-            <i>단 하나의 길, 얼마길.</i>
+            <i>함께하는 AI, TripBuddy.</i>
           </h1>
           <p className="hero-copy">
-            가고 싶은 곳과 사용할 수 있는 예산만 알려주세요.
+            예산과 취향만 알려주세요.
             <br />
-            AI가 현실적인 동선과 머무를 이유를 함께 설계합니다.
+            복잡한 준비부터 현장의 변수까지, AI가 여행의 균형을 맞춰드립니다.
           </p>
           <div className="hero-tags">
             <span>예산 우선 설계</span>
@@ -305,24 +319,28 @@ function App() {
       </section>
       <section className="quick-access" aria-label="여행 바로가기">
         <div className="quick-access-inner">
-          {quickLinks.map((link) => (
+          {quickLinks.map((link) => {
+            const Icon = quickAccessIcons[link.icon] || Sparkles;
+            return (
             <button
               type="button"
               key={link.title}
-              onClick={() =>
-                document
-                  .querySelector(link.target)
-                  ?.scrollIntoView({ behavior: "smooth" })
-              }
+              onClick={() => {
+                if (isMobile && link.target === "#planner") setIsPlannerOpen(true);
+                window.requestAnimationFrame(() => document.querySelector(link.target)?.scrollIntoView({ behavior: "smooth" }));
+              }}
             >
-              <span>{link.icon}</span>
+              <span><Icon size={20} strokeWidth={2} /></span>
               <b>{link.title}</b>
               <small>{link.text}</small>
             </button>
-          ))}
+          )})}
         </div>
       </section>
+      </>}
+      {(!isMobile || isPlannerOpen) && <>
       <section className="planner-section" id="planner">
+        {isMobile ? <header className="mobile-planner-header"><button type="button" onClick={() => setIsPlannerOpen(false)}>← 뒤로 가기</button><b>AI 일정 설계</b><span /></header> : null}
         <div className="section-title">
           <div>
             <p className="eyebrow">TRIP PLANNING, MADE PERSONAL</p>
@@ -337,6 +355,11 @@ function App() {
             <br />그 안에서 가장 좋은 하루를 찾아드려요.
           </p>
         </div>
+        <details className="planner-collapsible" open>
+          <summary>
+            <span className="planner-summary-copy"><i aria-hidden="true"><SlidersHorizontal size={18} /></i><span><b>AI 일정 설계</b><small>여행 조건과 예산을 직접 설정해 맞춤 일정을 만들어요.</small></span></span>
+            <strong><em className="planner-label-open">설정 접기</em><em className="planner-label-closed">설정 열기</em><ChevronDown size={19} aria-hidden="true" /></strong>
+          </summary>
         <div className="planner-card">
           <div className="form-area">
             <div className="prompt-area">
@@ -468,6 +491,10 @@ function App() {
                         onChooseDistrict={chooseDepartureDistrict}
                         onChooseRegion={setDepartureRegionId}
                         onCustomValueChange={setCustomDeparture}
+                        onClose={() => {
+                          setDepartureMenuOpen(false);
+                          setDepartureRegionId("");
+                        }}
                         onUseCurrentLocation={useCurrentDepartureLocation}
                       />
                     )}
@@ -481,12 +508,6 @@ function App() {
                       type="button"
                       className={`route-picker-trigger ${destination ? "chosen" : ""}`}
                       onClick={() => {
-                        if (!departureLocation) {
-                          setDepartureMenuOpen(true);
-                          setMenuOpen(false);
-                          notify("먼저 출발지를 선택해 주세요.");
-                          return;
-                        }
                         setMenuOpen(true);
                         setDepartureMenuOpen(false);
                         setDestinationRegionId("");
@@ -527,127 +548,30 @@ function App() {
                   </div>
                 </div>
               </section>
-              <label className="date-field">
-                <small>
-                  언제 · 인원을 먼저 정한 뒤 출발일과 귀국일을 선택해 주세요
-                </small>
-                {travelers && !endDate && (
-                  <aside className="date-ai-guide" role="status">
-                    <span>AI 안내</span>
-                    <b>출발일과 귀국일을 정해주세요!</b>
-                  </aside>
-                )}
-                <span>▣</span>
-                <div
-                  className={`date-time-range ${showTimeFields ? "with-time" : ""}`}
-                >
-                  <div>
-                    <b>출발</b>
-                    <label>
-                      <span>날짜</span>
-                      <input
-                        id="trip-start-date"
-                        type="date"
-                        value={startDate}
-                        onChange={(e) => {
-                          if (!travelers) {
-                            setTravelerPromptOpen(true);
-                            return;
-                          }
-                          setStartDate(e.target.value);
-                          if (endDate && endDate < e.target.value)
-                            setEndDate("");
-                          setFlightId("");
-                          setReturnFlightId("");
-                          if (showPlan) {
-                            setTransportPromptReady(false);
-                            notify(
-                              "날짜가 바뀌어 항공편을 새 날짜 기준으로 다시 선택해 주세요.",
-                            );
-                          }
-                        }}
-                      />
-                    </label>
-                    {showTimeFields && (
-                      <label>
-                        <span>시간</span>
-                        <select
-                          value={startTime}
-                          onChange={(e) => {
-                            setStartTime(e.target.value);
-                            setFlightId("");
-                            setReturnFlightId("");
-                          }}
-                          aria-label="출발 희망 시간"
-                        >
-                          {departureTimeOptions.map((time) => (
-                            <option value={time} key={time}>
-                              {time} 이후
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                  </div>
-                  <i>→</i>
-                  <div>
-                    <b>귀국</b>
-                    <label>
-                      <span>날짜</span>
-                      <input
-                        type="date"
-                        value={endDate}
-                        min={startDate}
-                        onChange={(e) => {
-                          if (!travelers) {
-                            setTravelerPromptOpen(true);
-                            return;
-                          }
-                          setEndDate(e.target.value);
-                          setFlightId("");
-                          setReturnFlightId("");
-                          setTransportPromptReady(
-                            !showPlan &&
-                              Boolean(destinationLocation) &&
-                              Boolean(travelers) &&
-                              Boolean(departureLocation),
-                          );
-                          if (showPlan) {
-                            notify(
-                              "날짜가 바뀌어 항공편을 새 날짜 기준으로 다시 선택해 주세요.",
-                            );
-                          }
-                        }}
-                      />
-                    </label>
-                    {showTimeFields && (
-                      <label>
-                        <span>시간</span>
-                        <select
-                          value={endTime}
-                          onChange={(e) => {
-                            setEndTime(e.target.value);
-                            setFlightId("");
-                            setReturnFlightId("");
-                          }}
-                          aria-label="귀국 희망 시간"
-                        >
-                          {returnTimeOptions.map((time) => (
-                            <option value={time} key={time}>
-                              {time} 이전
-                            </option>
-                          ))}
-                        </select>
-                      </label>
-                    )}
-                  </div>
-                </div>
-                {showTimeFields && (
-                  <small className="direct-time-note">
-                    항공 외 이동을 선택해 직접 출발·귀국 시간을 설정했어요.
-                  </small>
-                )}
-              </label>
+              <TripDatePicker
+                startDate={startDate}
+                endDate={endDate}
+                startTime={startTime}
+                endTime={endTime}
+                travelers={travelers}
+                departureTimeOptions={departureTimeOptions}
+                returnTimeOptions={returnTimeOptions}
+                showTimeFields={showTimeFields}
+                onConfirm={({ startDate: nextStartDate, endDate: nextEndDate, startTime: nextStartTime, endTime: nextEndTime }) => {
+                  setStartDate(nextStartDate);
+                  setEndDate(nextEndDate);
+                  setStartTime(nextStartTime);
+                  setEndTime(nextEndTime);
+                  setFlightId("");
+                  setReturnFlightId("");
+                  setTransportPromptReady(
+                    !showPlan && Boolean(destinationLocation) && Boolean(travelers) && Boolean(departureLocation),
+                  );
+                  if (showPlan) {
+                    notify("날짜가 바뀌어 항공편을 새 날짜 기준으로 다시 선택해 주세요.");
+                  }
+                }}
+              />
               <div
                 className={`traveler-field ${!travelers && destination ? "needs-input" : ""}`}
               >
@@ -970,7 +894,7 @@ function App() {
                   >
                     <header className="stay-modal-head">
                       <div>
-                        <p>✦ 얼마길 AI · STAY MATCH</p>
+                        <p>✦ TripBuddy AI · STAY MATCH</p>
                         <h3>
                           여행 동선에 맞는 숙소를
                           <br />
@@ -1129,9 +1053,12 @@ function App() {
                 총 {travelers || 0}명 여행비 {money(total * (travelers || 0))}원
               </span>
             </div>
-            <button className="generate" type="button" onClick={generate}>
+            <button className="generate" type="button" onClick={() => setIsDisclaimerOpen(true)}>
               내 예산으로 여행 만들기 →
             </button>
+            <button className="reset-draft-btn" type="button" onClick={() => {
+              if (window.confirm("입력한 여행 조건을 모두 지우고 새로 시작할까요?")) resetTripDraft();
+            }}>↺ 입력 초기화</button>
             {showPlan && (
               <button
                 className="plan-return-button"
@@ -1144,7 +1071,11 @@ function App() {
             <small>항공·숙소를 바꾸면 1인 경비와 동선도 바로 반영돼요.</small>
           </aside>
         </div>
+        </details>
+        {isMobile ? <div className="mobile-planner-bottom"><span><small>현재 예상 1인 경비</small><b>{money(total)}원</b></span><button type="button" onClick={() => setIsDisclaimerOpen(true)}>여행 만들기 →</button></div> : null}
       </section>
+      </>}
+      {(!isMobile || !isPlannerOpen) && <>
       <section className="inspiration compact-inspiration" id="inspiration">
         <div className="section-heading">
           <div>
@@ -1182,6 +1113,29 @@ function App() {
           ))}
         </div>
       </section>
+      <CommerceShowcase />
+      </>}
+      {isDisclaimerOpen && (
+        <div className="ai-modal-backdrop disclaimer-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setIsDisclaimerOpen(false);
+        }}>
+          <section className="ai-modal disclaimer-modal" role="dialog" aria-modal="true" aria-labelledby="disclaimer-title">
+            <button type="button" className="modal-close" onClick={() => setIsDisclaimerOpen(false)} aria-label="안내 닫기">×</button>
+            <p>AI TRIP ESTIMATE</p>
+            <h3 id="disclaimer-title">⚠️ AI 예상 경비 및 일정 안내</h3>
+            <ul>
+              <li>AI가 계산한 금액은 현장 상황에 따라 실제와 상이할 수 있습니다.</li>
+              <li>식비는 평균 예상 비용으로 산정되었으며, 주문 메뉴와 수량에 따라 달라집니다.</li>
+              <li>항공 및 숙박 요금은 여행사 실시간 데이터를, 관광지 및 맛집 가격은 매장 제공 정보를 기준으로 반영했습니다.</li>
+            </ul>
+            <button type="button" className="transition-primary" onClick={() => {
+              setIsDisclaimerOpen(false);
+              generate();
+            }}>동의하고 AI 일정 생성하기 →</button>
+          </section>
+        </div>
+      )}
+      {showScrollTop && <button className="scroll-to-top" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>↑ TOP</button>}
       {planning && (
         <div className="planning-overlay" role="status" aria-live="polite">
           <div
@@ -1189,7 +1143,7 @@ function App() {
           >
             <span className="planning-orbit" aria-hidden="true" />
             <p>
-              얼마길 AI ·{" "}
+              TripBuddy AI ·{" "}
               {planningMode === "stay-revision"
                 ? "STAY ROUTE REVISION"
                 : "TRIP PLANNING"}
@@ -1273,10 +1227,8 @@ function App() {
             >
               ×
             </button>
-            <p>✦ 얼마길 AI · TRIP PARTY</p>
-            <span className="traveler-prompt-icon" aria-hidden="true">
-              <UsersRound />
-            </span>
+            <p>✦ TripBuddy AI · TRIP PARTY</p>
+            <Premium3dIcon type="traveler" />
             <h3 id="traveler-prompt-title">
               함께 떠나는 인원을
               <br />
@@ -1333,7 +1285,7 @@ function App() {
               ×
             </button>
             <p>
-              ✦ 얼마길 AI ·{" "}
+              ✦ TripBuddy AI ·{" "}
               {transportStep === "origin"
                 ? "QUESTION 01"
                 : transportStep === "mode"
@@ -1467,8 +1419,8 @@ function App() {
             aria-modal="true"
             aria-labelledby="return-flight-transition-title"
           >
-            <p>✦ 얼마길 AI · ROUND TRIP STEP 02</p>
-            <TransitionIcon type="flight" />
+            <p>✦ TripBuddy AI · ROUND TRIP STEP 02</p>
+            <Premium3dIcon type="flight" />
             <h3 id="return-flight-transition-title">
               가는 편을 선택했어요.
               <br />
@@ -1512,7 +1464,7 @@ function App() {
             >
               ×
             </button>
-            <p>✦ 얼마길 AI · FLIGHT MATCH</p>
+            <p>✦ TripBuddy AI · FLIGHT MATCH</p>
             <div className="journey-chip">
               <span>{departureLocation?.detail || "출발지"}</span>
               <i>→</i>
@@ -1708,7 +1660,7 @@ function App() {
             >
               ×
             </button>
-            <p>✦ 얼마길 AI · JEJU DRIVE</p>
+            <p>✦ TripBuddy AI · JEJU DRIVE</p>
             <div className="journey-chip">
               <span>서울</span>
               <i>→</i>
@@ -1844,7 +1796,7 @@ function App() {
             >
               ×
             </button>
-            <p>✦ 얼마길 AI · TRAVEL STYLE</p>
+            <p>✦ TripBuddy AI · TRAVEL STYLE</p>
             <h3 id="preference-modal-title">
               제주에서는
               <br />
@@ -1919,8 +1871,8 @@ function App() {
             aria-modal="true"
             aria-labelledby="stay-transition-title"
           >
-            <p>✦ 얼마길 AI · STAY MATCH</p>
-            <TransitionIcon type="stay" />
+            <p>✦ TripBuddy AI · STAY MATCH</p>
+            <Premium3dIcon type="stay" />
             <h3 id="stay-transition-title">
               제주도 · {jejuBaseArea || "선택 지역"}을 선택하셨네요!
               <br />
@@ -1952,8 +1904,8 @@ function App() {
             aria-modal="true"
             aria-labelledby="budget-confirmation-title"
           >
-            <p>✦ 얼마길 AI · BUDGET CHECK</p>
-            <TransitionIcon type="budget" />
+            <p>✦ TripBuddy AI · BUDGET CHECK</p>
+            <Premium3dIcon type="budget" />
             <h3 id="budget-confirmation-title">
               {confirmedInBudget
                 ? "예산 안에서 가능합니다!"
@@ -1994,8 +1946,8 @@ function App() {
             aria-modal="true"
             aria-labelledby="plan-transition-title"
           >
-            <p>✦ 얼마길 AI · PLAN READY</p>
-            <TransitionIcon type="plan" />
+            <p>✦ TripBuddy AI · PLAN READY</p>
+            <Premium3dIcon type="plan" />
             <h3 id="plan-transition-title">이제 일정을 생성하러 가볼까요?</h3>
             <span>
               선택한 항공편·렌터카·숙소와 여행 취향을 바탕으로 최적 동선과 1인
@@ -2024,8 +1976,8 @@ function App() {
             aria-modal="true"
             aria-labelledby="stay-change-prompt-title"
           >
-            <p>✦ 얼마길 AI · STAY ROUTE UPDATE</p>
-            <TransitionIcon type="plan" />
+            <p>✦ TripBuddy AI · STAY ROUTE UPDATE</p>
+            <Premium3dIcon type="plan" />
             <h3 id="stay-change-prompt-title">
               새 숙소를 기준으로
               <br />
@@ -2073,7 +2025,7 @@ function App() {
             >
               ×
             </button>
-            <p>✦ 얼마길 AI · BEFORE & AFTER</p>
+            <p>✦ TripBuddy AI · BEFORE & AFTER</p>
             <h3 id="stay-change-compare-title">
               숙소가 바뀌며 달라진 여행을
               <br />
@@ -2138,7 +2090,7 @@ function App() {
       )}
       <section className="how" id="how">
         <div>
-          <p className="eyebrow light">HOW EOLMAGIL WORKS</p>
+          <p className="eyebrow light">HOW TRIPBUDDY WORKS</p>
           <h2>
             계획은 가볍게,
             <br />
@@ -2164,10 +2116,10 @@ function App() {
         </div>
       </section>
       <footer>
-        <b>● 얼마길</b>
+        <b>● TripBuddy</b>
         <span>Travel, thoughtfully planned.</span>
         <span className="footer-legal">
-          © 2026 EOLMAGIL <i>·</i> SMART ROUTES, BETTER TRIPS
+          © 2026 TRIPBUDDY <i>·</i> SMART ROUTES, BETTER TRIPS
         </span>
       </footer>
       {message && <div className="toast">✓ {message}</div>}

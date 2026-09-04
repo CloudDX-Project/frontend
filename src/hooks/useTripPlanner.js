@@ -34,28 +34,41 @@ import {
 } from "../data/mockData";
 
 function useTripPlanner() {
-  const [destinationType, setDestinationType] = useState("");
+  const [initialDraft] = useState(() => {
+    try { return JSON.parse(window.localStorage.getItem("tripDraft") || "{}"); }
+    catch { return {}; }
+  });
+  const [destinationType, setDestinationType] = useState(initialDraft.destinationType || "");
   const [destination, setDestination] = useState("");
-  const [destinationLocation, setDestinationLocation] = useState(null);
+  const [destinationLocation, setDestinationLocation] = useState(initialDraft.destinationLocation || null);
   const [destinationRegionId, setDestinationRegionId] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
   const [customDestination, setCustomDestination] = useState("");
-  const [departureLocation, setDepartureLocation] = useState(null);
+  const [departureLocation, setDepartureLocation] = useState(initialDraft.departureLocation || null);
   const [departureRegionId, setDepartureRegionId] = useState("");
   const [departureMenuOpen, setDepartureMenuOpen] = useState(false);
   const [customDeparture, setCustomDeparture] = useState("");
-  const [prompt, setPrompt] = useState("");
-  const [startDate, setStartDate] = useState(today);
-  const [endDate, setEndDate] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("18:00");
+  const [prompt, setPrompt] = useState(initialDraft.prompt || "");
+  const [startDate, setStartDate] = useState(initialDraft.startDate || today);
+  const [endDate, setEndDate] = useState(initialDraft.endDate || "");
+  const [startTime, setStartTime] = useState(initialDraft.startTime || "09:00");
+  const [endTime, setEndTime] = useState(initialDraft.endTime || "18:00");
   const [showTimeFields, setShowTimeFields] = useState(false);
-  const [travelers, setTravelers] = useState(null);
+  const [travelers, setTravelers] = useState(initialDraft.travelers || null);
   const [travelerInput, setTravelerInput] = useState("");
   const [travelerPromptOpen, setTravelerPromptOpen] = useState(false);
-  const [budget, setBudget] = useState(900000);
-  const [pace, setPace] = useState("보통");
-  const [themes, setThemes] = useState(["맛집", "관광"]);
+  const [budget, setBudget] = useState(initialDraft.budget || 900000);
+  const [pace, setPace] = useState(initialDraft.pace || "보통");
+  const [themes, setThemes] = useState(initialDraft.themes || ["맛집", "관광"]);
+  useEffect(() => {
+    try {
+      window.localStorage.setItem("tripDraft", JSON.stringify({ destinationType, destinationLocation, departureLocation, prompt, startDate, endDate, startTime, endTime, travelers, budget, pace, themes }));
+    } catch { /* Private browsing/storage restrictions should not block planning. */ }
+  }, [destinationType, destinationLocation, departureLocation, prompt, startDate, endDate, startTime, endTime, travelers, budget, pace, themes]);
+  const resetTripDraft = () => {
+    try { window.localStorage.removeItem("tripDraft"); } catch { /* no-op */ }
+    window.location.reload();
+  };
   const [heroSlideIndex, setHeroSlideIndex] = useState(0);
   const [transportPromptReady, setTransportPromptReady] = useState(false);
   const [jejuBaseArea, setJejuBaseArea] = useState("");
@@ -217,6 +230,7 @@ function useTripPlanner() {
         destinationLocation,
         departureLocation,
         transport,
+        dates.length,
       ),
     [
       scheduledArrivalTime,
@@ -226,6 +240,7 @@ function useTripPlanner() {
       destinationLocation,
       departureLocation,
       transport,
+      dates.length,
     ],
   );
   const dayPlans = useMemo(
@@ -637,11 +652,6 @@ function useTripPlanner() {
     notify(`${detail} 출발 정보를 저장했어요. API 연동 시 좌표를 자동으로 찾을 수 있어요.`);
   };
   const chooseDestinationDistrict = (region, district) => {
-    if (!departureLocation) {
-      setMenuOpen(false);
-      setDepartureMenuOpen(true);
-      return notify("도착지보다 먼저 출발지를 선택해 주세요.");
-    }
     const nextLocation = {
       ...district,
       region: region.name || region.region,
@@ -671,11 +681,6 @@ function useTripPlanner() {
     const selection = typeof placeInput === "string" ? { title: placeInput } : placeInput || {};
     const place = selection.lookupName || selection.title || selection.name || selection.detail;
     if (!place) return notify("도착지를 선택해 주세요.");
-    if (!departureLocation) {
-      setMenuOpen(false);
-      setDepartureMenuOpen(true);
-      return notify("도착지보다 먼저 출발지를 선택해 주세요.");
-    }
     const catalogLocation = destinationCoordinatesByName[place] || destinationCoordinatesByName[selection.title];
     const suppliedLocation = selection.location || selection;
     const hasStructuredLocation = Boolean(
@@ -826,6 +831,14 @@ function useTripPlanner() {
       setFlightPickerLeg("outbound");
       setTransportModalOpen(false);
       setFlightOpen(true);
+      return;
+    }
+    if (mode === "CAR") {
+      setLocalTransport("CAR");
+      setShowTimeFields(true);
+      setTransportModalOpen(false);
+      setPreferenceModalOpen(true);
+      notify("자차 이동으로 설정했어요. 현지 이동수단 선택은 생략하고 여행 취향으로 이어갈게요.");
       return;
     }
     setShowTimeFields(true);
@@ -1244,6 +1257,7 @@ function useTripPlanner() {
     changePlanStop,
     itineraryEventCost,
     generate,
+    resetTripDraft,
   };
 }
 

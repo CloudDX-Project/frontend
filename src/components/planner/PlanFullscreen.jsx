@@ -32,7 +32,10 @@ function PlanFullscreen({
   transport,
   travelers,
 }) {
-  const day = dayPlans[activeDay];
+  // Backend-ready contract: dayPlans is consumed as an array of day tuples only;
+  // no fixed three-day index is assumed when the API replaces the mock generator.
+  const safeDayPlans = Array.isArray(dayPlans) ? dayPlans : [];
+  const day = safeDayPlans[activeDay] || ["일정 준비 중", "선택한 날짜의 일정을 구성하고 있어요.", []];
   const [costExpanded, setCostExpanded] = useState(false);
   const [scheduleView, setScheduleView] = useState("timeline");
   const [placePicker, setPlacePicker] = useState(null);
@@ -74,11 +77,11 @@ function PlanFullscreen({
     }
   };
   const sharePlan = async () => {
-    const text = `얼마길 여행 일정 · ${dayPlans[0]?.[0] || `${destinationName} 여행`}\n1인 예상 경비 ${money(total)}원 · ${travelers}명 여행`;
+    const text = `TripBuddy 여행 일정 · ${dayPlans[0]?.[0] || `${destinationName} 여행`}\n1인 예상 경비 ${money(total)}원 · ${travelers}명 여행`;
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "얼마길 여행 일정",
+          title: "TripBuddy 여행 일정",
           text,
           url: window.location.href,
         });
@@ -134,7 +137,7 @@ function PlanFullscreen({
           aria-label="일정 닫기"
         >
           <BrandPolygon />
-          <strong>얼마길</strong>
+          <strong>TripBuddy</strong>
         </a>
         <div>
           <span>AI TRIP PLAN · REV {planRevision}</span>
@@ -200,7 +203,7 @@ function PlanFullscreen({
               >
                 <small>DAY {index + 1}</small>
                 <b>{date.slice(5).replace("-", ".")}</b>
-                <span>{dayPlans[index][0]}</span>
+                <span>{safeDayPlans[index]?.[0] || "일정 준비 중"}</span>
               </button>
             ))}
           </div>
@@ -211,7 +214,7 @@ function PlanFullscreen({
               DAY {activeDay + 1} ·{" "}
               {dates[activeDay]?.slice(5).replace("-", ".")}
             </span>
-            <h1>{scheduleView === "timeline" ? day[0] : "3일 여행 시간표"}</h1>
+            <h1>{scheduleView === "timeline" ? day[0] : `${dates.length}일 여행 시간표`}</h1>
             <p>
               {scheduleView === "timeline"
                 ? day[1]
@@ -411,7 +414,7 @@ function PlanFullscreen({
             >
               ×
             </button>
-            <p>✦ 얼마길 AI · ROUTE EDIT</p>
+            <p>✦ TripBuddy AI · ROUTE EDIT</p>
             <h3>
               {placePicker.name} 대신
               <br />
@@ -483,7 +486,7 @@ function PlanFullscreen({
         >
           <section>
             <TransitionIcon type="plan" />
-            <p>얼마길 AI · ROUTE RECALCULATION</p>
+            <p>TripBuddy AI · ROUTE RECALCULATION</p>
             <h2>
               변경된 장소를 기점으로
               <br />
@@ -510,7 +513,7 @@ function PlanFullscreen({
             aria-label="장소 변경 완료"
           >
             <TransitionIcon type="plan" />
-            <p>✦ 얼마길 AI · ROUTE UPDATE COMPLETE</p>
+            <p>✦ TripBuddy AI · ROUTE UPDATE COMPLETE</p>
             <h3>재설정이 완료되었습니다!</h3>
             <span>
               {routeResult.to}를 기준으로 다음 동선과 예상 경비를

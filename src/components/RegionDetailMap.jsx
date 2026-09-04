@@ -5,8 +5,8 @@ import { KOREA_MUNICIPALITIES_GEOJSON_URLS, municipalityFeaturesForRegion } from
 import useKoreaGeoJson from "../hooks/useKoreaGeoJson";
 import "./KoreaRegionMap.css";
 
-const MAP_WIDTH = 820;
-const MAP_HEIGHT = 530;
+const MAP_WIDTH = 980;
+const MAP_HEIGHT = 650;
 
 const districtFromFeature = (region, feature) => {
   const code = String(feature?.properties?.code || "");
@@ -94,6 +94,14 @@ export default function RegionDetailMap({ region, selectedDistrictId = null, sel
         </Geographies>
       </ComposableMap>
       <div className="region-detail-map-meta"><b>{region.name} 전체 {features.length}개 시·군·구</b><span>지도에서 지역 이름을 눌러 선택하세요.</span></div>
+      <section className="region-detail-quick-select" aria-label={`${region.name} 빠른 지역 선택`}>
+        <div><b>이름으로 빠르게 선택</b><small>지도가 촘촘한 지역은 아래 큰 버튼을 이용하세요.</small></div>
+        <div>
+          {[...districtByCode.values()].sort((a, b) => a.name.localeCompare(b.name, "ko")).map((district) => (
+            <button type="button" key={district.id} onClick={() => selectDistrict?.(district)}>{district.name}</button>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

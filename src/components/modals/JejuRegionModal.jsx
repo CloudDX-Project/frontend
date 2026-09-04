@@ -24,7 +24,7 @@ export default function JejuRegionModal({
         >
           ×
         </button>
-        <p>✦ 얼마길 AI · JEJU REGION GUIDE</p>
+        <p>✦ TripBuddy AI · JEJU REGION GUIDE</p>
         <h3 id="jeju-area-title">
           제주를 선택하셨네요!
           <br />

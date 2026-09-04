@@ -1,0 +1,192 @@
+import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { CalendarDays, ChevronLeft, ChevronRight, Clock3, X } from "lucide-react";
+import { weatherForecastMock } from "../data/weatherMock";
+import "./trip-date-picker.css";
+
+const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
+const MAX_DATE = "2027-05-31";
+const HOUR_OPTIONS = Array.from({ length: 25 }, (_, hour) => String(hour).padStart(2, "0"));
+const MINUTE_OPTIONS = ["00", "30"];
+
+const toIso = (date) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+const fromIso = (value) => {
+  const [year, month, day] = String(value || "").split("-").map(Number);
+  return year && month && day ? new Date(year, month - 1, day) : null;
+};
+const monthStart = (date) => new Date(date.getFullYear(), date.getMonth(), 1);
+const addMonths = (date, amount) => new Date(date.getFullYear(), date.getMonth() + amount, 1);
+const formatDate = (value) => value ? `${Number(value.slice(5, 7))}월 ${Number(value.slice(8, 10))}일` : "날짜 선택";
+
+const createMonthCells = (month) => {
+  const first = monthStart(month);
+  const lastDay = new Date(first.getFullYear(), first.getMonth() + 1, 0).getDate();
+  return [
+    ...Array.from({ length: first.getDay() }, () => null),
+    ...Array.from({ length: lastDay }, (_, index) => new Date(first.getFullYear(), first.getMonth(), index + 1)),
+  ];
+};
+
+function CalendarMonth({ month, minDate, maxDate, start, end, weatherByDate, dragState, onDateClick, onDateEnter, onDatePointerDown }) {
+  const cells = createMonthCells(month);
+  return (
+    <section className="trip-calendar-month" aria-label={`${month.getFullYear()}년 ${month.getMonth() + 1}월`}>
+      <h3>{month.getFullYear()}년 {month.getMonth() + 1}월</h3>
+      <div className="trip-calendar-weekdays">{WEEKDAYS.map((day) => <span key={day}>{day}</span>)}</div>
+      <div className="trip-calendar-days">
+        {cells.map((date, index) => {
+          if (!date) return <span className="trip-calendar-empty" key={`empty-${index}`} />;
+          const iso = toIso(date);
+          const disabled = iso < minDate || iso > maxDate;
+          const isStart = iso === start;
+          const isEnd = iso === end;
+          const inRange = Boolean(start && end && iso > start && iso < end);
+          const weather = weatherByDate.get(iso);
+          return (
+            <button
+              type="button"
+              key={iso}
+              className={`trip-calendar-day${disabled ? " is-disabled" : ""}${inRange ? " is-in-range" : ""}${isStart ? " is-start" : ""}${isEnd ? " is-end" : ""}`}
+              disabled={disabled}
+              aria-label={`${month.getFullYear()}년 ${month.getMonth() + 1}월 ${date.getDate()}일${weather ? `, ${weather.condition}` : ""}`}
+              aria-pressed={isStart || isEnd || inRange}
+              onClick={() => onDateClick(iso)}
+              onPointerDown={() => onDatePointerDown(iso)}
+              onPointerEnter={() => dragState.current && onDateEnter(iso)}
+            >
+              <span className="trip-calendar-day-number">{date.getDate()}</span>
+              {weather ? <span className="trip-calendar-weather"><i aria-hidden="true">{weather.icon}</i><small>{weather.condition}</small></span> : null}
+            </button>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
+function TimeSelect({ label, value, onChange }) {
+  const [hour = "00", minute = "00"] = String(value || "00:00").split(":");
+  const setHour = (nextHour) => onChange(`${nextHour}:${nextHour === "24" ? "00" : minute}`);
+  const setMinute = (nextMinute) => onChange(`${hour}:${hour === "24" ? "00" : nextMinute}`);
+  return (
+    <label className="trip-time-select">
+      <span><Clock3 size={15} /> {label}</span>
+      <span className="trip-time-select-controls">
+        <select value={hour} onChange={(event) => setHour(event.target.value)} aria-label={`${label} 시 선택`}>
+          {HOUR_OPTIONS.map((item) => <option key={item} value={item}>{item}시</option>)}
+        </select>
+        <select value={hour === "24" ? "00" : minute} onChange={(event) => setMinute(event.target.value)} disabled={hour === "24"} aria-label={`${label} 분 선택`}>
+          {MINUTE_OPTIONS.map((item) => <option key={item} value={item}>{item}분</option>)}
+        </select>
+      </span>
+    </label>
+  );
+}
+
+export default function TripDatePicker({ startDate, endDate, startTime, endTime, travelers, departureTimeOptions, returnTimeOptions, onConfirm, showTimeFields = false }) {
+  const today = useMemo(() => toIso(new Date()), []);
+  const minMonth = useMemo(() => monthStart(new Date()), []);
+  const maxMonth = useMemo(() => new Date(2027, 4, 1), []);
+  const [open, setOpen] = useState(false);
+  const [cursorMonth, setCursorMonth] = useState(() => monthStart(fromIso(startDate) || new Date()));
+  const [draftStart, setDraftStart] = useState(startDate || today);
+  const [draftEnd, setDraftEnd] = useState(endDate || "");
+  const [draftStartTime, setDraftStartTime] = useState(startTime || "09:00");
+  const [draftEndTime, setDraftEndTime] = useState(endTime || "18:00");
+  const dragState = useRef(null);
+  const dragged = useRef(false);
+  const weatherByDate = useMemo(() => new Map(weatherForecastMock.map((item) => [item.date, item])), []);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const finishDrag = () => { dragState.current = null; };
+    const closeWithEscape = (event) => { if (event.key === "Escape") setOpen(false); };
+    window.addEventListener("pointerup", finishDrag);
+    window.addEventListener("keydown", closeWithEscape);
+    return () => { window.removeEventListener("pointerup", finishDrag); window.removeEventListener("keydown", closeWithEscape); };
+  }, [open]);
+
+  const openPicker = () => {
+    setDraftStart(startDate || today);
+    setDraftEnd(endDate || "");
+    setDraftStartTime(startTime || "09:00");
+    setDraftEndTime(endTime || "18:00");
+    setCursorMonth(monthStart(fromIso(startDate) || new Date()));
+    setOpen(true);
+  };
+
+  const selectDate = (iso) => {
+    if (dragged.current) { dragged.current = false; return; }
+    if (!draftStart || draftEnd) { setDraftStart(iso); setDraftEnd(""); return; }
+    if (iso < draftStart) { setDraftStart(iso); setDraftEnd(""); return; }
+    setDraftEnd(iso);
+  };
+
+  const beginDrag = (iso) => { dragState.current = iso; dragged.current = false; };
+  const extendDrag = (iso) => {
+    const anchor = dragState.current;
+    if (!anchor || anchor === iso) return;
+    dragged.current = true;
+    setDraftStart(anchor < iso ? anchor : iso);
+    setDraftEnd(anchor < iso ? iso : anchor);
+  };
+
+  const changeMonth = (amount) => {
+    const next = addMonths(cursorMonth, amount);
+    if (next < minMonth || next > maxMonth) return;
+    setCursorMonth(next);
+  };
+
+  const confirm = () => {
+    if (!draftStart || !draftEnd) return;
+    onConfirm?.({ startDate: draftStart, endDate: draftEnd, startTime: draftStartTime, endTime: draftEndTime });
+    setOpen(false);
+  };
+
+  return (
+    <>
+      <label className="date-field trip-date-field">
+        <small>언제 · 출발일과 귀국일을 한 번에 선택해 주세요</small>
+        {travelers && !endDate ? <aside className="date-ai-guide" role="status"><span>AI 안내</span><b>출발일과 귀국일을 정해주세요!</b></aside> : null}
+        <button type="button" className="trip-date-range-trigger" onClick={openPicker}>
+          <span><b>출발</b><small>{formatDate(startDate)}</small>{showTimeFields ? <em>{startTime}</em> : null}</span>
+          <i>→</i>
+          <span><b>귀국</b><small>{formatDate(endDate)}</small>{showTimeFields && endDate ? <em>{endTime}</em> : null}</span>
+          <CalendarDays size={20} aria-hidden="true" />
+        </button>
+        {showTimeFields ? <small className="direct-time-note">항공 외 이동을 선택해 직접 출발·귀국 시간을 설정했어요.</small> : null}
+      </label>
+
+      {open ? createPortal((
+        <div className="trip-calendar-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) setOpen(false); }}>
+          <section className="trip-calendar-modal" role="dialog" aria-modal="true" aria-labelledby="trip-calendar-title">
+            <header className="trip-calendar-header">
+              <div><span><CalendarDays size={17} /> 여행 일정</span><h2 id="trip-calendar-title">출발일과 귀국일을 선택하세요.</h2><p>날짜를 두 번 누르거나 드래그해서 여행 기간을 정할 수 있어요.</p></div>
+              <div className="trip-calendar-controls">
+                <button type="button" onClick={() => changeMonth(-1)} disabled={cursorMonth <= minMonth} aria-label="이전 달"><ChevronLeft size={18} /></button>
+                <select value={cursorMonth.getFullYear()} onChange={(event) => setCursorMonth(new Date(Number(event.target.value), 0, 1))} aria-label="연도 선택">
+                  {Array.from({ length: 2027 - minMonth.getFullYear() + 1 }, (_, index) => minMonth.getFullYear() + index).map((year) => <option key={year} value={year}>{year}년</option>)}
+                </select>
+                <select value={cursorMonth.getMonth()} onChange={(event) => setCursorMonth(new Date(cursorMonth.getFullYear(), Number(event.target.value), 1))} aria-label="월 선택">
+                  {Array.from({ length: cursorMonth.getFullYear() === 2027 ? 5 : 12 }, (_, month) => <option key={month} value={month}>{month + 1}월</option>)}
+                </select>
+                <button type="button" onClick={() => changeMonth(1)} disabled={cursorMonth >= maxMonth} aria-label="다음 달"><ChevronRight size={18} /></button>
+                <button type="button" className="trip-calendar-close" onClick={() => setOpen(false)} aria-label="달력 닫기"><X size={18} /></button>
+              </div>
+            </header>
+            <div className="trip-calendar-body">
+              {[cursorMonth, addMonths(cursorMonth, 1)].map((month) => <CalendarMonth key={`${month.getFullYear()}-${month.getMonth()}`} month={month} minDate={today} maxDate={MAX_DATE} start={draftStart} end={draftEnd} weatherByDate={weatherByDate} dragState={dragState} onDateClick={selectDate} onDateEnter={extendDrag} onDatePointerDown={beginDrag} />)}
+            </div>
+            <footer className="trip-calendar-footer">
+              <div className="trip-calendar-time-group">
+                <TimeSelect label="출발 시간" value={draftStartTime} onChange={setDraftStartTime} />
+                <TimeSelect label="도착 시간" value={draftEndTime} onChange={setDraftEndTime} />
+              </div>
+              <div className="trip-calendar-confirm"><small>{formatDate(draftStart)} → {formatDate(draftEnd)}</small><button type="button" disabled={!draftStart || !draftEnd} onClick={confirm}>선택 완료</button></div>
+            </footer>
+          </section>
+        </div>
+      ), document.body) : null}
+    </>
+  );
+}

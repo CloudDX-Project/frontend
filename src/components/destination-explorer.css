@@ -5,7 +5,7 @@
   display: grid;
   place-items: center;
   padding: clamp(16px, 3vw, 42px);
-  overflow-y: auto;
+  overflow: hidden;
   background: rgba(13, 56, 53, 0.55);
   backdrop-filter: blur(8px);
   animation: destination-backdrop-in 180ms ease-out both;
@@ -17,6 +17,7 @@
   max-height: min(885px, calc(100vh - 32px));
   padding: clamp(22px, 3vw, 39px);
   overflow: auto;
+  overscroll-behavior: contain;
   border: 1px solid rgba(194, 229, 219, 0.92);
   border-radius: clamp(20px, 2.5vw, 30px);
   background:
@@ -151,21 +152,22 @@
     padding: 15px;
     visibility: hidden;
     opacity: 0;
-    background: rgba(4, 27, 25, .82);
-    backdrop-filter: blur(2px);
+    background: rgba(4, 27, 25, .42);
+    backdrop-filter: blur(1px);
     transform: translateY(5px);
     transition: all .3s ease;
   }
+  .destination-visual-card.has-sub-spots:hover .destination-card-image img { filter:brightness(.4); }
   .destination-visual-card.has-sub-spots:hover .destination-subspot-overlay,
   .destination-visual-card.has-sub-spots:focus-within .destination-subspot-overlay { visibility: visible; opacity: 1; transform: translateY(0); }
   .destination-subspot-overlay strong { margin-bottom: 3px; color: #fff; font-size: 12px; text-align: center; }
   .destination-subspot-overlay button { display: flex; min-height: 34px; align-items: center; justify-content: space-between; gap: 7px; padding: 7px 10px; border: 1px solid rgba(255, 255, 255, .24); border-radius: 8px; background: rgba(255, 255, 255, .09); color: #fff; font: 750 11px "Noto Sans KR", sans-serif; text-align: left; cursor: pointer; transition: all .18s ease; }
   .destination-subspot-overlay button:hover,
-  .destination-subspot-overlay button:focus-visible { border-color: #8ce2d2; outline: 0; background: #0c877d; transform: translateX(2px); }
+  .destination-subspot-overlay button:focus-visible { border-color: rgba(255,255,255,.72); outline: 0; background: rgba(255,255,255,.2); backdrop-filter:blur(4px); transform: translateX(2px); }
 }
 
 .destination-region-heading { display: flex; align-items: center; gap: 11px; margin: 0 0 15px; }.destination-region-heading > span { display: grid; width: 42px; height: 42px; place-items: center; border-radius: 13px; background: #dff5ec; color: #07877b; }.destination-region-heading b, .destination-region-heading small { display: block; }.destination-region-heading b { font-size: 17px; }.destination-region-heading small { margin-top: 3px; color: #71908a; font-size: 12px; font-weight: 600; }
-.destination-region-panel .korea-svg-map-shell { width: min(100%, 655px); margin: 0 auto; }
+.destination-region-panel .korea-svg-map-shell { width: min(100%, 900px); margin: 0 auto; }
 .destination-region-back { margin: 0 0 13px; padding: 8px 10px; border: 1px solid #c5e3d9; border-radius: 8px; background: #f5fbf8; color: #16786e; font: 800 12px "Noto Sans KR", sans-serif; cursor: pointer; }
 .destination-region-back:hover { border-color: #0a8378; background: #e6f6ef; }
 .destination-district-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
@@ -194,6 +196,13 @@
   .destination-visual-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }.destination-card-image { height: 112px; }.destination-card-content { padding: 10px; }.destination-card-content b { font-size: 14px; }
   .destination-district-grid { grid-template-columns: 1fr; }
   .destination-explorer-footer { align-items: flex-start; flex-direction: column; }.destination-explorer-footer > button { width: 100%; justify-content: center; }
+}
+
+@media (max-width:760px){
+  .destination-visual-card.is-expanded .destination-card-image img{filter:brightness(.4)}
+  .destination-visual-card.is-expanded .destination-subspot-overlay{position:absolute;z-index:4;inset:0;display:flex;flex-direction:column;justify-content:center;gap:5px;padding:12px;background:rgba(4,27,25,.42);backdrop-filter:blur(1px)}
+  .destination-visual-card.is-expanded .destination-subspot-overlay strong{color:#fff;font-size:11px;text-align:center}
+  .destination-visual-card.is-expanded .destination-subspot-overlay button{display:flex;align-items:center;justify-content:space-between;min-height:31px;padding:6px 9px;border:1px solid rgba(255,255,255,.35);border-radius:8px;background:rgba(255,255,255,.15);color:#fff;font-size:10px;font-weight:800;backdrop-filter:blur(4px)}
 }
 
 @media (max-width: 360px) { .destination-explorer-tabs button { padding: 9px 10px; font-size: 11px; }.destination-card-image { height: 95px; } }

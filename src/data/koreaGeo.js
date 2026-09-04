@@ -19,13 +19,20 @@ export const REGION_ID_BY_PROVINCE_GEO_CODE = Object.fromEntries(
   Object.entries(PROVINCE_GEO_CODE_BY_REGION_ID).map(([regionId, code]) => [code, regionId]),
 );
 
+export const EXCLUDED_MUNICIPALITY_NAMES = new Set(["옹진군", "울릉군"]);
+
 export const shortRegionName = (name = "") =>
   String(name)
     .replace("특별자치도", "")
     .replace("특별자치시", "")
     .replace("특별시", "")
     .replace("광역시", "")
-    .replace(/도$/, "");
+    .replace(/도$/, "")
+    .replace("충청북", "충북")
+    .replace("충청남", "충남")
+    .replace("전라남", "전남")
+    .replace("경상북", "경북")
+    .replace("경상남", "경남");
 
 export const regionIdForProvinceFeature = (feature) =>
   REGION_ID_BY_PROVINCE_GEO_CODE[String(feature?.properties?.code || "").slice(0, 2)] || null;
@@ -33,5 +40,8 @@ export const regionIdForProvinceFeature = (feature) =>
 export const municipalityFeaturesForRegion = (geoJson, regionId) => {
   const prefix = PROVINCE_GEO_CODE_BY_REGION_ID[regionId];
   if (!prefix || !Array.isArray(geoJson?.features)) return [];
-  return geoJson.features.filter((feature) => String(feature?.properties?.code || "").startsWith(prefix));
+  return geoJson.features.filter((feature) =>
+    String(feature?.properties?.code || "").startsWith(prefix)
+    && !EXCLUDED_MUNICIPALITY_NAMES.has(feature?.properties?.name),
+  );
 };

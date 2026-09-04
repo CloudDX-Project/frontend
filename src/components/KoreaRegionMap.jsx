@@ -25,10 +25,29 @@ const RegionListFallback = ({ regions, onSelect }) => (
 export default function KoreaRegionMap({ regions = [], selectedId = null, onSelect, ariaLabel = "대한민국 17개 시도 선택 지도" }) {
   const { data, error, loading } = useKoreaGeoJson(KOREA_PROVINCES_GEOJSON_URLS);
   const regionById = useMemo(() => new Map(regions.map((region) => [region.id, region])), [regions]);
-  const projection = useMemo(() => {
-    if (!data) return geoMercator().center([127.8, 36]).scale(5300).translate([MAP_WIDTH / 2, MAP_HEIGHT / 2]);
-    return geoMercator().fitExtent([[28, 20], [MAP_WIDTH - 28, MAP_HEIGHT - 22]], data);
+  const displayData = useMemo(() => {
+    if (!data) return null;
+    return {
+      ...data,
+      features: data.features.map((feature) => {
+        if (feature.geometry?.type !== "MultiPolygon" || regionIdForProvinceFeature(feature) === "jeju") return feature;
+        return {
+          ...feature,
+          geometry: {
+            ...feature.geometry,
+            coordinates: feature.geometry.coordinates.filter((coordinates) => {
+              const [longitude] = geoCentroid({ type: "Feature", properties: {}, geometry: { type: "Polygon", coordinates } });
+              return longitude >= 125.65 && longitude <= 130.05;
+            }),
+          },
+        };
+      }),
+    };
   }, [data]);
+  const projection = useMemo(() => {
+    if (!displayData) return geoMercator().center([127.8, 36]).scale(5300).translate([MAP_WIDTH / 2, MAP_HEIGHT / 2]);
+    return geoMercator().fitExtent([[16, 12], [MAP_WIDTH - 16, MAP_HEIGHT - 14]], displayData);
+  }, [displayData]);
 
   const handleKeyDown = (event, region) => {
     if (event.key !== "Enter" && event.key !== " ") return;
@@ -40,11 +59,11 @@ export default function KoreaRegionMap({ regions = [], selectedId = null, onSele
     <div className="korea-svg-map-shell">
       {loading ? (
         <div className="administrative-map-status" role="status"><span className="administrative-map-spinner" /><b>대한민국 행정경계를 불러오고 있어요.</b></div>
-      ) : error || !data ? (
+      ) : error || !displayData ? (
         <div className="administrative-map-error"><b>지도를 불러오지 못했어요.</b><small>지역 목록에서 동일하게 선택할 수 있습니다.</small><RegionListFallback regions={regions} onSelect={onSelect} /></div>
       ) : (
         <ComposableMap className="korea-svg-map" width={MAP_WIDTH} height={MAP_HEIGHT} projection={projection} role="group" aria-label={ariaLabel}>
-          <Geographies geography={data}>
+          <Geographies geography={displayData}>
             {({ geographies }) => (
               <>
                 {geographies.map((geography) => {

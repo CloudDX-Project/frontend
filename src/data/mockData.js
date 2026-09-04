@@ -76,41 +76,81 @@ export const destinations = [
 ];
 export const quickLinks = [
   {
-    icon: "✦",
+    icon: "sparkles",
     title: "AI 일정 설계",
     text: "조건만 고르면 일정 완성",
     target: "#planner",
   },
   {
-    icon: "✈",
+    icon: "plane",
     title: "항공권 비교",
     text: "출발지와 날짜별 비교",
     target: "#planner",
   },
   {
-    icon: "⌂",
+    icon: "home",
     title: "숙소 찾기",
-    text: "국내·해외 숙소 한눈에",
-    target: "#planner",
+    text: "취향에 맞는 숙소 한눈에",
+    target: "#commerce-stays",
   },
   {
-    icon: "🚗",
-    title: "렌터카·교통",
-    text: "이동 수단부터 편하게",
-    target: "#planner",
+    icon: "ticket",
+    title: "투어·액티비티",
+    text: "테마파크부터 로컬 체험까지",
+    target: "#commerce-tours",
   },
   {
-    icon: "☕",
-    title: "맛집·카페",
-    text: "여행지별 취향 추천",
-    target: "#planner",
+    icon: "car",
+    title: "교통·렌터카",
+    text: "KTX부터 렌터카까지 편하게",
+    target: "#commerce-passes",
   },
   {
-    icon: "♨",
-    title: "온천·힐링",
-    text: "온전한 쉼을 위한 여행",
-    target: "#planner",
+    icon: "smartphone",
+    title: "유심·eSIM",
+    text: "데이터 끊김 없는 여행 준비",
+    target: "#commerce-esim",
   },
+];
+
+const product = (id, title, location, tag, price, image, rating = "4.8", reviews = "2,410") => ({ id, title, location, tag, price, image, rating, reviews });
+export const tourProducts = [
+  product("tour-01", "스위스 알프스 패러글라이딩", "스위스 · 인터라켄", "하늘에서 만나는 알프스", 219000, "https://images.unsplash.com/photo-1530789253388-582c481c54b0?q=80&w=600&auto=format&fit=crop"),
+  product("tour-02", "도쿄 디즈니 리조트 패스", "일본 · 도쿄", "하루 종일 마법 같은 시간", 81000, "https://images.unsplash.com/photo-1560109947-543149eceb16?q=80&w=600&auto=format&fit=crop"),
+  product("tour-03", "세부 프라이빗 호핑투어", "필리핀 · 세부", "에메랄드빛 섬 탐험", 65000, "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?q=80&w=600&auto=format&fit=crop"),
+  product("tour-04", "파리 바토무슈 야경 크루즈", "프랑스 · 파리", "센강 위 파리의 밤", 32000, "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=600&auto=format&fit=crop"),
+  product("tour-05", "런던 아이 패스트트랙", "영국 · 런던", "런던 스카이라인 한눈에", 74000, "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=600&auto=format&fit=crop"),
+  product("tour-06", "도쿄 스카이트리 전망대", "일본 · 도쿄", "도쿄 최고층 파노라마", 28000, "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=600&auto=format&fit=crop"),
+  product("tour-07", "뉴욕 탑오브더락 입장권", "미국 · 뉴욕", "맨해튼 대표 전망", 61000, "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?q=80&w=600&auto=format&fit=crop"),
+  product("tour-08", "시드니 오페라하우스 투어", "호주 · 시드니", "아이코닉 건축 내부 탐방", 39000, "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=600&auto=format&fit=crop"),
+  product("tour-09", "방콕 왕궁 & 에메랄드 사원", "태국 · 방콕", "태국 왕실 문화 산책", 25000, "https://images.unsplash.com/photo-1508009603885-50cf7c579365?q=80&w=600&auto=format&fit=crop"),
+  product("tour-10", "오사카 유니버설 스튜디오", "일본 · 오사카", "인기 어트랙션 종일권", 89000, "https://images.unsplash.com/photo-1590559899731-a382839e5549?q=80&w=600&auto=format&fit=crop"),
+  product("tour-11", "괌 돌핀 크루즈 & 스노클링", "미국 · 괌", "남태평양 가족 액티비티", 72000, "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=600&auto=format&fit=crop"),
+  product("tour-12", "그랜드 캐년 헬기투어", "미국 · 애리조나", "대자연을 가장 가까이", 499000, "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=600&auto=format&fit=crop"),
+  product("tour-13", "다낭 바나힐 왕복 투어", "베트남 · 다낭", "골든브리지와 테마파크", 58000, "https://images.unsplash.com/photo-1528127269322-539801943592?q=80&w=600&auto=format&fit=crop"),
+  product("tour-14", "사그라다 파밀리아 패스트트랙", "스페인 · 바르셀로나", "가우디 대표작 집중 관람", 54000, "https://images.unsplash.com/photo-1583779457094-ab6f77f7bf57?q=80&w=600&auto=format&fit=crop"),
+  product("tour-15", "하와이 거북이 스노클링", "미국 · 하와이", "와이키키 바다 체험", 119000, "https://images.unsplash.com/photo-1507525428034-b723cf961d3e? q=80&w=600&auto=format&fit=crop".replace("? q", "?q")),
+];
+export const transportPasses = [
+  product("pass-01", "유레일 글로벌 패스", "유럽 33개국", "모바일 연속 패스", 436000, "https://images.unsplash.com/photo-1473445361085-b9a07f55608b?q=80&w=600&auto=format&fit=crop"),
+  product("pass-02", "오사카 메트로 패스", "일본 · 오사카", "지하철 무제한 탑승", 7500, "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?q=80&w=600&auto=format&fit=crop"),
+  product("pass-03", "다낭 공항 단독 픽업", "베트남 · 다낭", "공항에서 숙소까지", 12000, "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=600&auto=format&fit=crop"),
+  product("pass-04", "스위스 트래블 패스", "스위스 전역", "산악열차 할인 포함", 315000, "https://images.unsplash.com/photo-1527668752968-14dc70a27c95?q=80&w=600&auto=format&fit=crop"),
+  product("pass-05", "도쿄 서브웨이 티켓", "일본 · 도쿄", "24·48·72시간권", 8000, "https://images.unsplash.com/photo-1532236204992-f5e85c024202?q=80&w=600&auto=format&fit=crop"),
+];
+export const eSimProducts = [
+  product("esim-01", "일본 데이터 eSIM", "일본 전역", "QR 즉시 발송", 5900, "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=600&auto=format&fit=crop"),
+  product("esim-02", "유럽 33개국 쓰리심", "유럽 전역", "국가 이동에도 그대로", 27900, "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=600&auto=format&fit=crop"),
+  product("esim-03", "베트남 공항수령 유심", "베트남 전역", "현지 번호 포함", 8900, "https://images.unsplash.com/photo-1526139334526-f591a54b477c?q=80&w=600&auto=format&fit=crop"),
+  product("esim-04", "미국 무제한 데이터", "미국 전역", "5G 무제한 플랜", 43900, "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?q=80&w=600&auto=format&fit=crop"),
+  product("esim-05", "대만 데이터 eSIM", "대만 전역", "개통부터 간편하게", 6900, "https://images.unsplash.com/photo-1470004914212-05527e49370b?q=80&w=600&auto=format&fit=crop"),
+];
+export const saleStays = [
+  product("sale-01", "제주 신라호텔 오션뷰", "대한민국 · 제주", "무료 조식 · 오늘 마감", 280000, "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop"),
+  product("sale-02", "반얀트리 방콕", "태국 · 방콕", "루프탑 · 무료 취소", 185000, "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?q=80&w=600&auto=format&fit=crop"),
+  product("sale-03", "호시노야 도쿄", "일본 · 도쿄", "도심 온천 · 조식 포함", 650000, "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=600&auto=format&fit=crop"),
+  product("sale-04", "마리나 베이 샌즈", "싱가포르", "인피니티 풀 포함", 530000, "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?q=80&w=600&auto=format&fit=crop"),
+  product("sale-05", "파리 부티크 호텔", "프랑스 · 파리", "에펠탑 도보권", 249000, "https://images.unsplash.com/photo-1455587734955-081b22074882?q=80&w=600&auto=format&fit=crop"),
 ];
 export const paceOptions = ["여유롭게", "보통", "빡빡하게"];
 export const themeOptions = [
@@ -199,7 +239,6 @@ export const outboundOptions = [
   { id: "KTX", icon: "🚆", title: "KTX", text: "철도 시간표 기반 비교" },
   { id: "FLIGHT", icon: "✈", title: "항공", text: "가는 편·오는 편 따로 비교" },
   { id: "BUS", icon: "🚌", title: "고속·시외버스", text: "노선과 환승 시간을 비교" },
-  { id: "FERRY", icon: "⛴", title: "배", text: "여객선 시간표를 비교" },
 ];
 export const localOptions = [
   { id: "RENTAL", icon: "🚗", title: "렌터카", text: "자유로운 동선 추천" },
@@ -1266,7 +1305,7 @@ export const stayProfileFor = (stay) => {
     };
   return stayProfileFor({ area: "애월", name: stayName });
 };
-export const makeJejuDayPlans = (arrivalTime, endTime, stay, flight) => {
+export const makeJejuDayPlans = (arrivalTime, endTime, stay, flight, dayCount = 3) => {
   const profile = stayProfileFor(stay);
   const arrivalAt = timeToMinutes(arrivalTime);
   const outboundCode = flight?.code?.split("·")[0]?.trim();
@@ -1405,28 +1444,33 @@ export const makeJejuDayPlans = (arrivalTime, endTime, stay, flight) => {
   const departureStart = earlyReturn
     ? Math.max(7 * 60 + 30, departureMinutes - 210)
     : Math.max(8 * 60 + 30, departureMinutes - 510);
-  return [
-    makeSequentialPlan(
+  const firstDay = makeSequentialPlan(
       `공항에서 ${profile.areaLabel}의 첫날까지`,
       flight
         ? `${flight.airline} ${flight.out} 항공편 도착 후, 렌터카·체크인 순서를 현실적으로 배치했어요.`
         : "도착·인수·체크인 순서를 현실적으로 배치했어요.",
       minutesToTime(arrivalAt),
       arrivalRows,
-    ),
+    );
+  const middleDays = Array.from({ length: Math.max(0, dayCount - 2) }, (_, index) =>
     makeSequentialPlan(
-      `${profile.areaLabel} 중심의 제주 하루`,
-      "선택한 숙소 권역을 중심으로 되돌아가는 이동을 줄였어요.",
+      `${profile.areaLabel} 중심의 제주 ${index + 2}일차`,
+      "선택한 숙소 권역을 중심으로 대표 장소를 연결하고, 장기 일정에서도 하루 동선이 비지 않도록 구성했어요.",
       "08:30",
-      profile.secondDay,
+      profile.secondDay.map((row, rowIndex) =>
+        rowIndex === 0 && index > 0
+          ? { ...row, name: `${row.name} · 새로운 동선` }
+          : { ...row },
+      ),
     ),
-    makeSequentialPlan(
+  );
+  const lastDay = makeSequentialPlan(
       "제주를 담아 돌아가는 날",
       "귀국 시각 90분 전 공항 도착을 기준으로 마지막 동선을 설계했어요.",
       minutesToTime(departureStart),
       departureRows,
-    ),
-  ];
+    );
+  return dayCount <= 1 ? [firstDay] : [firstDay, ...middleDays, lastDay];
 };
 
 // 지역을 선택한 뒤에는 특정 발표 시나리오가 아니라, 선택한 권역을 중심으로
@@ -1705,6 +1749,7 @@ export const makeRegionalDayPlans = (
   destinationLocation,
   originLocation,
   transport,
+  dayCount = 3,
 ) => {
   const profile = profileForLocation(destinationLocation);
   const destination = locationLabel(destinationLocation);
@@ -1767,15 +1812,15 @@ export const makeRegionalDayPlans = (
     ? Math.max(7 * 60 + 30, departureMinutes - 190)
     : Math.max(8 * 60 + 30, departureMinutes - 420);
 
-  return [
-    makeSequentialPlan(
+  const firstDay = makeSequentialPlan(
       `${destination}에 도착한 첫날`,
       `${origin}에서 출발한 ${arrivalTransport} 일정과 ${destination} 권역의 첫 이동을 연결했어요.`,
       minutesToTime(arrivalAt),
       arrivalRows,
-    ),
+    );
+  const middleDays = Array.from({ length: Math.max(0, dayCount - 2) }, (_, index) =>
     makeSequentialPlan(
-      `${profile.focus} 중심의 하루`,
+      `${profile.focus} 중심의 ${index + 2}일차`,
       "선택한 여행지의 대표 명소를 되돌아가지 않도록 같은 권역으로 묶었어요.",
       "09:00",
       [
@@ -1783,13 +1828,14 @@ export const makeRegionalDayPlans = (
         ...profile.dayTwo.map(([icon, name, detail, duration, travel]) => scheduleEvent(icon, name, detail, duration, travel)),
       ],
     ),
-    makeSequentialPlan(
+  );
+  const lastDay = makeSequentialPlan(
       `${destination}을 담아 돌아가는 날`,
       `${arrivalTransport} 출발 시각 전 이동·탑승 준비 시간을 반영해 마지막 동선을 설계했어요.`,
       minutesToTime(departureStart),
       departureRows,
-    ),
-  ];
+    );
+  return dayCount <= 1 ? [firstDay] : [firstDay, ...middleDays, lastDay];
 };
 
 export const makeDayPlans = (
@@ -1800,12 +1846,13 @@ export const makeDayPlans = (
   destinationLocation,
   originLocation,
   transport,
+  dayCount = 3,
 ) => {
   const isJejuDestination =
     destinationLocation?.regionCode === "KR-49" ||
     /제주/.test(`${destinationLocation?.region || ""} ${destinationLocation?.detail || ""}`);
   if (isJejuDestination || !destinationLocation)
-    return makeJejuDayPlans(arrivalTime, endTime, stay, flight);
+    return makeJejuDayPlans(arrivalTime, endTime, stay, flight, dayCount);
   return makeRegionalDayPlans(
     arrivalTime,
     endTime,
@@ -1814,6 +1861,7 @@ export const makeDayPlans = (
     destinationLocation,
     originLocation,
     transport,
+    dayCount,
   );
 };
 
@@ -2035,7 +2083,7 @@ export const getDates = (start, end) => {
   const last = new Date(`${end}T00:00:00`);
   for (
     const day = new Date(`${start}T00:00:00`);
-    day <= last && dates.length < 3;
+    day <= last && dates.length < 12;
     day.setDate(day.getDate() + 1)
   )
     dates.push(
