@@ -30,6 +30,7 @@ function PlanFullscreen({
   stayChange,
   total,
   transport,
+  localTransport,
   travelers,
 }) {
   // Backend-ready contract: dayPlans is consumed as an array of day tuples only;
@@ -48,6 +49,26 @@ function PlanFullscreen({
   const destinationRegion =
     destinationLocation?.region || destinationLocation?.countryCode || "TRAVEL";
   const nightCount = Math.max(0, dates.length - 1);
+  const intercityTransportSummary = transport === "CAR"
+    ? "🚙 출발부터 자차 이동"
+    : transport === "KTX"
+      ? "🚆 KTX 이동"
+      : transport === "BUS"
+        ? "🚌 고속·시외버스 이동"
+        : selectedFlight
+          ? `✈ ${selectedFlight.airline} 왕복`
+          : "교통수단 미선택";
+  const localTransportSummary = localTransport === "CAR"
+    ? null
+    : selectedRental
+      ? `🚗 ${selectedRental.company} · 48시간`
+      : localTransport === "TRANSIT"
+        ? "🚌 현지 대중교통"
+        : localTransport === "TAXI"
+          ? "🚕 택시·카셰어링"
+          : localTransport === "WALK"
+            ? "🚶 도보 이동"
+            : "현지 이동 미선택";
   const tripTitle = (
     <>
       {destinationName}에서 완성하는
@@ -171,24 +192,14 @@ function PlanFullscreen({
             {dateLabel(dates[dates.length - 1])} {timeLabel(endTime)}
           </span>
           <div className="full-booking-list">
-            <b>
-              ✈{" "}
-              {selectedFlight
-                ? `${selectedFlight.airline} 왕복`
-                : `${transport || "교통수단"} 미선택`}
-            </b>
+            <b>{intercityTransportSummary}</b>
             <b>
               ⌂{" "}
               {selectedStay
                 ? `${selectedStay.name} · ${nightCount}박`
                 : "숙소 미선택"}
             </b>
-            <b>
-              🚗{" "}
-              {selectedRental
-                ? `${selectedRental.company} · 48시간`
-                : "현지 이동 미선택"}
-            </b>
+            {localTransportSummary && <b>{localTransportSummary}</b>}
           </div>
           <div className="full-day-tabs">
             {dates.map((date, index) => (

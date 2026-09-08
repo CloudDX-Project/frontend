@@ -7,7 +7,6 @@ import {
   destinations,
   destinationExplorerItems,
   heroSlides,
-  hotelGroups,
   isSaleFlight,
   localOptions,
   money,
@@ -98,6 +97,10 @@ function App() {
     setLoginOpen,
     transport,
     localTransport,
+    carType,
+    setCarType,
+    carFuel,
+    setCarFuel,
     transportModalOpen,
     setTransportModalOpen,
     transportStep,
@@ -171,6 +174,7 @@ function App() {
     dayPlans,
     saleFirstFlights,
     filteredStays,
+    stayAreas,
     costDetails,
     total,
     confirmedTotal,
@@ -192,6 +196,7 @@ function App() {
     beginOriginQuestion,
     chooseTransportMode,
     chooseLocal,
+    completeCarDetails,
     chooseFlight,
     chooseRental,
     chooseStay,
@@ -938,11 +943,11 @@ function App() {
                     <div className="stay-toolbar">
                       <div className="price-filters">
                         {[
-                          ["0-5", "0 ~ 5만원대"],
-                          ["5-10", "5 ~ 10만원대"],
-                          ["10-20", "10 ~ 20만원대"],
-                          ["20-30", "20 ~ 30만원대"],
-                          ["30+", "30만원 이상"],
+                          ["0-5", "가성비 (~10만)"],
+                          ["5-10", "가성비 (~10만)"],
+                          ["10-20", "스탠다드 (10~20만)"],
+                          ["20-30", "프리미엄 (20~30만)"],
+                          ["30+", "럭셔리 (30만 이상)"],
                         ].map(([id, label]) => (
                           <button
                             type="button"
@@ -961,13 +966,13 @@ function App() {
                           onChange={(event) => setStaySort(event.target.value)}
                           aria-label="숙소 정렬 기준"
                         >
-                          <option value="review">리뷰순</option>
+                          <option value="review">별점순</option>
                           <option value="price">최저가순</option>
                         </select>
                       </label>
                     </div>
                     <div className="area-filters">
-                      {["전체", ...hotelGroups.map(([area]) => area)].map(
+                      {stayAreas.map(
                         (area) => (
                           <button
                             type="button"
@@ -1178,6 +1183,7 @@ function App() {
           costDetails={costDetails}
           dates={dates}
           dayPlans={dayPlans}
+          destinationLocation={destinationLocation}
           endTime={scheduledEndTime}
           eventCost={itineraryEventCost}
           money={money}
@@ -1186,6 +1192,8 @@ function App() {
           onOpenStayComparison={() => setStayChangePromptOpen(true)}
           placeOptions={placeAlternatives}
           planRevision={planRevision}
+          originLocation={departureLocation}
+          localTransport={localTransport}
           selectedFlight={selectedFlight}
           selectedRental={selectedRental}
           selectedStay={selectedStay}
@@ -1195,6 +1203,7 @@ function App() {
           startTime={scheduledStartTime}
           stayChange={stayChange}
           total={total}
+          transport={transport}
           travelers={travelers}
         />
       )}
@@ -1290,7 +1299,9 @@ function App() {
                 ? "QUESTION 01"
                 : transportStep === "mode"
                   ? "TRAVEL MODE"
-                  : "LOCAL MOVE"}
+                  : transportStep === "car-detail"
+                    ? "CAR DETAILS"
+                    : "LOCAL MOVE"}
             </p>
             {transportStep === "origin" ? (
               <>
@@ -1363,6 +1374,53 @@ function App() {
                   }}
                 >
                   ← 출발지·도착지 다시 보기
+                </button>
+              </>
+            ) : transportStep === "car-detail" ? (
+              <>
+                <h3 id="ai-transport-title">
+                  자차 이동을 선택하셨네요.
+                  <br />
+                  정확한 유류비 계산을 위해 차량 정보를 알려주세요.
+                </h3>
+                <span>선택한 차량 정보는 예상 유류비와 통행료 계산에만 사용돼요.</span>
+                <div className="car-detail-options">
+                  <div className="car-detail-row">
+                    <b>차종</b>
+                    <div>
+                      {["경차", "세단", "SUV"].map((type) => (
+                        <button
+                          type="button"
+                          key={type}
+                          className={carType === type ? "selected" : ""}
+                          onClick={() => setCarType(type)}
+                        >
+                          {type}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="car-detail-row">
+                    <b>연료</b>
+                    <div>
+                      {["휘발유", "경유", "LPG"].map((fuel) => (
+                        <button
+                          type="button"
+                          key={fuel}
+                          className={carFuel === fuel ? "selected" : ""}
+                          onClick={() => setCarFuel(fuel)}
+                        >
+                          {fuel}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+                <button type="button" className="car-detail-complete" onClick={completeCarDetails}>
+                  선택 완료
+                </button>
+                <button type="button" className="modal-back" onClick={() => setTransportStep("mode")}>
+                  ← 이동수단 다시 고르기
                 </button>
               </>
             ) : (

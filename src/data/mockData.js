@@ -1,4 +1,5 @@
 import jejuCoastPhoto from "../assets/jeju-main-hero.jpeg";
+import { koreanRegions } from "./locationCatalog";
 
 // Mock catalog and state-independent planning helpers.
 export const heroSlides = [
@@ -249,7 +250,7 @@ export const localOptions = [
     title: "택시·카셰어링",
     text: "필요할 때만 편하게",
   },
-  { id: "OTHER", icon: "＋", title: "기타", text: "직접 입력·나중에 결정" },
+  { id: "WALK", icon: "🚶", title: "도보", text: "걸어서 여행하기" },
 ];
 export const departureTimeOptions = [
   "06:00",
@@ -321,23 +322,32 @@ export const demoStayImages = [
   "https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=1200&q=90",
 ];
 
-export const demoStaysForLocation = (location) => {
-  if (!location || location.regionCode === "KR-49") return stays;
-  const area = location.detail || location.region || "선택 지역";
-  return demoStayImages.map((image, index) => ({
-    id: `mock-stay-${location.id || area}-${index}`,
-    area,
-    name: `${area} ${["스테이", "호텔", "레지던스", "부티크 호텔"][index]}`,
-    price: [126000, 148000, 171000, 196000][index],
-    image,
-    rating: (4.82 - index * 0.05).toFixed(2),
-    reviewCount: 1240 + index * 853,
-    deal: index === 0 || index === 2,
-    left: 2 + index,
-    insight: `${area} 동선과 선택한 여행 기간을 기준으로 만든 시연 숙소 견적이에요.`,
-    isMock: true,
-  }));
+export const generateMockHotels = (location) => {
+  const region = koreanRegions.find((item) => item.regionCode === location?.regionCode);
+  const districts = region?.districts?.map((district) => district.name) || [location?.detail || location?.region || "선택 지역"];
+  const regionName = location?.detail || location?.region || "선택 지역";
+  const nameSuffixes = ["오션뷰 호텔", "시그니엘", "프리미어 스테이", "부티크 리조트", "그랜드 레지던스", "힐사이드 호텔", "센트럴 스위트", "베이 프라이빗 풀빌라", "가든 테라스 호텔", "로컬 스테이", "루프탑 레지던스", "아트 하우스"];
+  const prices = [89000, 98000, 126000, 148000, 171000, 196000, 218000, 245000, 278000, 315000, 365000, 428000];
+  return Array.from({ length: 12 }, (_, index) => {
+    const area = districts[index % districts.length];
+    return {
+      id: `mock-stay-${location?.id || regionName}-${index}`,
+      area,
+      name: `${area} ${nameSuffixes[index]}`,
+      price: prices[index],
+      image: hotelImages[index % hotelImages.length],
+      rating: (4.92 - index * 0.035).toFixed(2),
+      reviewCount: 1540 + index * 437,
+      tags: index % 3 === 0 ? ["무료취소", "오션뷰"] : index % 3 === 1 ? ["조식포함", "도심"] : ["신규오픈", "주차가능"],
+      deal: [0, 3, 7].includes(index),
+      left: 2 + (index % 5),
+      insight: `${area} 권역과 선택한 여행 기간을 기준으로 구성한 시연 숙소 견적이에요.`,
+      isMock: true,
+    };
+  });
 };
+
+export const demoStaysForLocation = (location) => generateMockHotels(location);
 
 export const demoRentalsForLocation = (location) => {
   if (!location || location.regionCode === "KR-49") return rentals;

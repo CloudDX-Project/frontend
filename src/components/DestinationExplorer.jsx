@@ -23,27 +23,27 @@ const THEME_OPTIONS = ["전체", "바다", "힐링", "맛집·카페", "야경",
 
 const DESTINATION_IMAGE_FALLBACKS = {
   "destination-jeju": jejuCoastPhoto,
-  "destination-busan": "https://media.grandvoyage.com/__sized__/voyages/Viaje_a_Corea_del_Sur_de_9_dias__de_Seul_a_Busan_pM5Y5VD_urjfjJv-thumbnail_webp-1920x960.webp",
+  "destination-busan": "https://yaimg.yanolja.com/v5/2026/01/30/05/1280/697c45a04bcde3.06159282.jpg",
   "destination-yeosu": "https://img.einet.kr/P202101006/travel/42924/01.jpg?v=1684740236",
   "destination-gapyeong-chuncheon": "https://a.travel-assets.com/findyours-php/viewfinder/images/res70/463000/463964-Nami-Island.jpg?h=500&impolicy=fcrop&q=medium&w=1200",
-  "destination-danyang": "https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=88",
-  "destination-suncheon-boseong": "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=88",
-  "destination-pohang": "https://images.unsplash.com/photo-1530789253388-582c481c54b0?auto=format&fit=crop&w=1200&q=88",
+  "destination-danyang": "https://d3h30waly5w5yx.cloudfront.net/images/tour/pictures/danyang-dodam-1.jpg",
+  "destination-suncheon-boseong": "https://commons.wikimedia.org/wiki/Special:FilePath/Suncheon%20Ecological%20Bay-%20%EC%88%9C%EC%B2%9C%EB%A7%8C%EC%8A%B5%EC%A7%80.jpg?width=1200",
+  "destination-pohang": "https://tong.visitkorea.or.kr/cms/resource/30/2917730_image2_1.jpg",
 };
 
 export const TRENDING_DESTINATIONS = [
   { id: "destination-jeju", title: "제주도", subtitle: "제주시 · 협재 · 성산", region: "제주특별자치도", regionCode: "KR-49", latitude: 33.4996, longitude: 126.5312, tags: ["바다", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1589136785350-93a3881bcce2?q=80&w=600&auto=format&fit=crop", subSpots: ["성산일출봉", "애월 한담해안산책로", "오설록 티뮤지엄", "동문시장"] },
-  { id: "destination-busan", title: "부산", subtitle: "해운대 · 광안리", region: "부산광역시", regionCode: "KR-26", latitude: 35.1796, longitude: 129.0756, tags: ["바다", "맛집·카페", "야경"], image: "https://images.unsplash.com/photo-1583252516422-04e4604e308f?q=80&w=600&auto=format&fit=crop", subSpots: ["해운대 블루라인파크", "흰여울문화마을", "해동용궁사", "광안리 해수욕장"] },
+  { id: "destination-busan", title: "부산", subtitle: "해운대 · 광안리", region: "부산광역시", regionCode: "KR-26", latitude: 35.1796, longitude: 129.0756, tags: ["바다", "맛집·카페", "야경"], image: "https://yaimg.yanolja.com/v5/2026/01/30/05/1280/697c45a04bcde3.06159282.jpg", subSpots: ["해운대 블루라인파크", "흰여울문화마을", "해동용궁사", "광안리 해수욕장"] },
   { id: "destination-gangneung", title: "강릉", subtitle: "경포 · 안목", region: "강원특별자치도", regionCode: "KR-42", latitude: 37.7519, longitude: 128.8761, tags: ["바다", "맛집·카페", "힐링"], image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=88", subSpots: ["경포대", "아르떼뮤지엄", "안목해변 커피거리", "강릉 중앙시장"] },
   { id: "destination-sokcho", title: "속초", subtitle: "설악산 · 영랑호", region: "강원특별자치도", regionCode: "KR-42", latitude: 38.207, longitude: 128.5918, tags: ["자연·숲", "바다", "힐링"], image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=88", subSpots: ["설악산 케이블카", "속초아이 대관람차", "아바이마을", "속초관광수산시장"] },
   { id: "destination-yeosu", title: "여수", subtitle: "오동도 · 낭만포차", region: "전라남도", regionCode: "KR-46", latitude: 34.7604, longitude: 127.6622, tags: ["바다", "야경", "맛집·카페"], image: "https://images.unsplash.com/photo-1598509524136-421c60f2bb97?q=80&w=600&auto=format&fit=crop", subSpots: ["오동도", "여수 해상케이블카", "향일암", "이순신광장"] },
-  { id: "destination-gyeongju", title: "경주", subtitle: "황리단길 · 대릉원", region: "경상북도", regionCode: "KR-47", latitude: 35.8562, longitude: 129.2247, tags: ["힐링", "맛집·카페", "야경"], image: "https://cdn.welfarehello.com/naver-blog/production/gyeongju_e/2025-05/223857733508/gyeongju_e_223857733508_2.jpg?f=webp&q=80&w=1200", subSpots: ["대릉원", "황리단길", "불국사", "동궁과 월지"] },
+  { id: "destination-gyeongju", title: "경주", subtitle: "황리단길 · 대릉원", region: "경상북도", regionCode: "KR-47", latitude: 35.8562, longitude: 129.2247, tags: ["힐링", "맛집·카페", "야경"], image: "https://upload.wikimedia.org/wikipedia/commons/b/bb/Korea-Gyeongju-Bulguksa-24.jpg", subSpots: ["대릉원", "황리단길", "불국사", "동궁과 월지"] },
   { id: "destination-jeonju", title: "전주", subtitle: "한옥마을 · 남부시장", region: "전북특별자치도", regionCode: "KR-45", latitude: 35.8242, longitude: 127.148, tags: ["맛집·카페", "힐링", "야경"], image: "https://tour.jeonju.go.kr/images/visitjj/contents/streetmap/img_hanok00.jpg", subSpots: ["전주한옥마을", "객리단길", "덕진공원", "남부시장"] },
   { id: "destination-gapyeong-chuncheon", title: "가평·춘천", subtitle: "남이섬 · 의암호", region: "경기도·강원특별자치도", regionCode: "KR-41", latitude: 37.8564, longitude: 127.62, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=600&auto=format&fit=crop", subSpots: ["남이섬", "아침고요수목원", "레고랜드", "구봉산 카페거리"] },
   { id: "destination-taean", title: "태안·안면도", subtitle: "꽃지 · 신두리", region: "충청남도", regionCode: "KR-44", latitude: 36.7456, longitude: 126.2979, tags: ["바다", "자연·숲", "힐링"], image: "https://images.unsplash.com/photo-1455729552865-3658a5d39692?auto=format&fit=crop&w=1200&q=88", subSpots: ["꽃지해수욕장", "신두리 해안사구", "천리포수목원", "안면도 수산시장"] },
-  { id: "destination-danyang", title: "단양", subtitle: "도담삼봉 · 남한강", region: "충청북도", regionCode: "KR-43", latitude: 36.9847, longitude: 128.365, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1596711311746-81cf31dcb6cc?q=80&w=600&auto=format&fit=crop", subSpots: ["도담삼봉", "패러글라이딩 활공장", "만천하스카이워크", "단양 구경시장"] },
-  { id: "destination-suncheon-boseong", title: "순천·보성", subtitle: "순천만 · 녹차밭", region: "전라남도", regionCode: "KR-46", latitude: 34.9006, longitude: 127.287, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1521257400732-c7f70cda320f?q=80&w=600&auto=format&fit=crop", subSpots: ["순천만습지", "순천만국가정원", "대한다원 녹차밭", "낙안읍성 민속마을"] },
-  { id: "destination-pohang", title: "포항", subtitle: "호미곶 · 영일대", region: "경상북도", regionCode: "KR-47", latitude: 36.019, longitude: 129.3435, tags: ["바다", "야경", "맛집·카페"], image: "https://images.unsplash.com/photo-1541851086088-7517c5bba793?q=80&w=600&auto=format&fit=crop", subSpots: ["호미곶", "스페이스워크", "구룡포 일본인가옥거리", "영일대 해수욕장"] },
+  { id: "destination-danyang", title: "단양", subtitle: "도담삼봉 · 남한강", region: "충청북도", regionCode: "KR-43", latitude: 36.9847, longitude: 128.365, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://d3h30waly5w5yx.cloudfront.net/images/tour/pictures/danyang-dodam-1.jpg", subSpots: ["도담삼봉", "패러글라이딩 활공장", "만천하스카이워크", "단양 구경시장"] },
+  { id: "destination-suncheon-boseong", title: "순천·보성", subtitle: "순천만 · 녹차밭", region: "전라남도", regionCode: "KR-46", latitude: 34.9006, longitude: 127.287, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://commons.wikimedia.org/wiki/Special:FilePath/Suncheon%20Ecological%20Bay-%20%EC%88%9C%EC%B2%9C%EB%A7%8C%EC%8A%B5%EC%A7%80.jpg?width=1200", subSpots: ["순천만습지", "순천만국가정원", "대한다원 녹차밭", "낙안읍성 민속마을"] },
+  { id: "destination-pohang", title: "포항", subtitle: "호미곶 · 영일대", region: "경상북도", regionCode: "KR-47", latitude: 36.019, longitude: 129.3435, tags: ["바다", "야경", "맛집·카페"], image: "https://tong.visitkorea.or.kr/cms/resource/30/2917730_image2_1.jpg", subSpots: ["호미곶", "스페이스워크", "구룡포 일본인가옥거리", "영일대 해수욕장"] },
 ];
 
 const normalizedText = (value) => String(value || "").replace(/\s+/g, " ").trim().toLocaleLowerCase("ko-KR");

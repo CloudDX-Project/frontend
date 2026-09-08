@@ -100,8 +100,10 @@ function useTripPlanner() {
     setJejuAreaModalOpen(false);
     setJejuRegionGuideOpen(true);
   }, [jejuAreaModalOpen]);
-  const [transport, setTransport] = useState("");
-  const [localTransport, setLocalTransport] = useState("");
+  const [transport, setTransport] = useState(initialDraft.transport || "");
+  const [localTransport, setLocalTransport] = useState(initialDraft.localTransport || "");
+  const [carType, setCarType] = useState(initialDraft.carType || "세단");
+  const [carFuel, setCarFuel] = useState(initialDraft.carFuel || "휘발유");
   const [transportModalOpen, setTransportModalOpen] = useState(false);
   const [transportStep, setTransportStep] = useState("mode");
   const [origin, setOrigin] = useState("GMP");
@@ -122,6 +124,18 @@ function useTripPlanner() {
   const [stayArea, setStayArea] = useState("전체");
   const [stayCustomArea, setStayCustomArea] = useState("");
   const [priceBand, setPriceBand] = useState("10-20");
+  useEffect(() => {
+    try {
+      const savedDraft = JSON.parse(window.localStorage.getItem("tripDraft") || "{}");
+      window.localStorage.setItem("tripDraft", JSON.stringify({
+        ...savedDraft,
+        transport,
+        localTransport,
+        carType,
+        carFuel,
+      }));
+    } catch { /* Storage remains optional for the planner. */ }
+  }, [transport, localTransport, carType, carFuel]);
   const [staySearch, setStaySearch] = useState("");
   const [staySort, setStaySort] = useState("review");
   const [stayId, setStayId] = useState("");
@@ -289,9 +303,7 @@ function useTripPlanner() {
     .sort((a, b) =>
       staySort === "price"
         ? a.price - b.price
-        : Number(b.deal) - Number(a.deal) ||
-          Number(b.rating) - Number(a.rating) ||
-          b.reviewCount - a.reviewCount,
+        : Number(b.rating) - Number(a.rating) || b.reviewCount - a.reviewCount,
     );
   // 비용은 특정 지역·시나리오가 아니라 현재 선택한 출발지, 도착지, 이동수단을
   // 기준으로 계산합니다. 이후 백엔드에서는 동일한 출력 구조에 실제 견적 API만
@@ -836,9 +848,7 @@ function useTripPlanner() {
     if (mode === "CAR") {
       setLocalTransport("CAR");
       setShowTimeFields(true);
-      setTransportModalOpen(false);
-      setPreferenceModalOpen(true);
-      notify("자차 이동으로 설정했어요. 현지 이동수단 선택은 생략하고 여행 취향으로 이어갈게요.");
+      setTransportStep("car-detail");
       return;
     }
     setShowTimeFields(true);
@@ -851,6 +861,14 @@ function useTripPlanner() {
     setLocalTransport(mode);
     setTransportModalOpen(false);
     if (mode === "RENTAL") setRentalOpen(true);
+  };
+  const completeCarDetails = () => {
+    setTransport("CAR");
+    setLocalTransport("CAR");
+    setShowTimeFields(true);
+    setTransportModalOpen(false);
+    setPreferenceModalOpen(true);
+    notify(`${carType} · ${carFuel} 기준으로 유류비를 계산할게요.`);
   };
   const chooseFlight = (id) => {
     if (flightPickerLeg === "outbound") {
@@ -891,7 +909,7 @@ function useTripPlanner() {
     );
   };
   const chooseStay = (id) => {
-    const stay = stays.find((item) => item.id === id);
+    const stay = stayCatalog.find((item) => item.id === id);
     const previousStay = selectedStay;
     const nextTotal = stay ? estimateTotalWithStay(stay) : 0;
     setStayId(id);
@@ -1156,6 +1174,10 @@ function useTripPlanner() {
     setLoginOpen,
     transport,
     localTransport,
+    carType,
+    setCarType,
+    carFuel,
+    setCarFuel,
     transportModalOpen,
     setTransportModalOpen,
     transportStep,
@@ -1229,6 +1251,7 @@ function useTripPlanner() {
     dayPlans,
     saleFirstFlights,
     filteredStays,
+    stayAreas,
     costDetails,
     total,
     confirmedTotal,
@@ -1250,6 +1273,7 @@ function useTripPlanner() {
     beginOriginQuestion,
     chooseTransportMode,
     chooseLocal,
+    completeCarDetails,
     chooseFlight,
     chooseRental,
     chooseStay,
