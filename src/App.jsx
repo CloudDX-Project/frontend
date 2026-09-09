@@ -1631,7 +1631,7 @@ function App() {
                         <>
                           <del>정가 {money(originalOneWay)}원</del>
                           <b>{money(oneWay)}원</b>
-                          <small>오늘의 특가 · 편도 1인</small>
+                          <small>특가 · 편도 1인</small>
                         </>
                       ) : (
                         <>

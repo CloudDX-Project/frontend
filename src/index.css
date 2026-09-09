@@ -2103,3 +2103,85 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 @media(max-width:760px){.flight-modal .flight-catalog>button,.flight-modal .flight-catalog>button.sale-flight{padding:18px 15px}.flight-modal .flight-catalog>button.sale-flight>.flight-price{border-left:0}}
 @media(max-width:760px){main:has(.ai-modal-backdrop) .mobile-planner-bottom{display:none}}
 main:has(.ai-modal-backdrop) > .scroll-to-top{display:none}
+
+/* Keep the sale badge in normal flow so it cannot overlap airline details. */
+.flight-modal .flight-catalog > button {
+  grid-template-columns: 46px minmax(0, 1fr) 140px;
+  column-gap: 18px;
+  row-gap: 14px;
+}
+.flight-modal .flight-catalog > button.sale-flight {
+  border-color: #efd2bc;
+  background: linear-gradient(115deg, #fffaf5 0%, #fff 50%);
+}
+.flight-modal .flight-catalog > button.sale-flight:hover {
+  border-color: #df966a;
+}
+.flight-modal .flight-catalog > button.sale-flight.selected {
+  border-color: #79a9a1;
+  background: #f8fbfa;
+}
+.flight-modal .flight-sale-sticker {
+  position: static;
+  grid-column: 1 / -1;
+  justify-self: start;
+  padding: 6px 12px;
+  border: 1px solid #f1c5a5;
+  border-radius: 7px;
+  background: #fff0e3;
+  color: #a6441e;
+  font-size: 11px;
+  line-height: 1.4;
+  white-space: nowrap;
+}
+.flight-modal .flight-catalog > button.sale-flight .airline-mark { margin-top: 0; }
+.flight-modal .flight-catalog > button.sale-flight > .flight-card-main { padding-top: 0; }
+.flight-modal .flight-card-main { gap: 10px; }
+.flight-modal .flight-airline-name { flex-wrap: wrap; gap: 4px 10px; line-height: 1.5; }
+.flight-modal .flight-airline-name small { line-height: 1.5; }
+.flight-modal .flight-segment > span { gap: 4px; }
+.flight-modal .flight-segment strong { line-height: 1.2; }
+.flight-modal .flight-segment small,
+.flight-modal .flight-inclusions i { line-height: 1.5; }
+.flight-modal .flight-deal { flex-wrap: wrap; line-height: 1.6; }
+.flight-modal .flight-deal b { color: #a6441e; }
+.flight-modal .flight-catalog > button > .flight-price {
+  min-width: 0;
+  gap: 8px;
+  padding-left: 18px;
+  text-align: right;
+}
+.flight-modal .flight-catalog > button > .flight-price b {
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+.flight-modal .flight-catalog > button > .flight-price del,
+.flight-modal .flight-catalog > button > .flight-price small {
+  margin: 0;
+  line-height: 1.5;
+  white-space: nowrap;
+  word-break: keep-all;
+}
+.flight-modal .flight-catalog > button.sale-flight > .flight-price small {
+  padding: 5px 9px;
+  border-radius: 6px;
+  background: #fff0e3;
+  color: #a6441e;
+}
+.flight-modal .flight-value-hero { border-left: 4px solid #ed9b63; }
+.flight-modal .flight-value-hero div { gap: 7px; }
+@media (max-width: 760px) {
+  .flight-modal .flight-catalog > button { grid-template-columns: 39px minmax(0, 1fr); column-gap: 12px; }
+  .flight-modal .flight-catalog > button > .flight-price {
+    grid-column: 2;
+    grid-template-columns: 1fr;
+    justify-items: start;
+    padding: 12px 0 0;
+    border-left: 0;
+    border-top: 1px solid #e5eeeb;
+    gap: 6px;
+    text-align: left;
+  }
+}
