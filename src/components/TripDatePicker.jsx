@@ -5,7 +5,6 @@ import { weatherForecastMock } from "../data/weatherMock";
 import "./trip-date-picker.css";
 
 const WEEKDAYS = ["일", "월", "화", "수", "목", "금", "토"];
-const MAX_DATE = "2027-05-31";
 const HOUR_OPTIONS = Array.from({ length: 25 }, (_, hour) => String(hour).padStart(2, "0"));
 const MINUTE_OPTIONS = ["00", "30"];
 
@@ -86,9 +85,21 @@ function TimeSelect({ label, value, onChange }) {
 export default function TripDatePicker({ startDate, endDate, startTime, endTime, travelers, departureTimeOptions, returnTimeOptions, onConfirm, showTimeFields = false }) {
   const today = useMemo(() => toIso(new Date()), []);
   const minMonth = useMemo(() => monthStart(new Date()), []);
-  const maxMonth = useMemo(() => new Date(2027, 4, 1), []);
+  const maxDate = useMemo(() => {
+    const now = new Date();
+    return toIso(new Date(now.getFullYear() + 1, now.getMonth(), now.getDate()));
+  }, []);
+  const maxMonth = useMemo(() => monthStart(fromIso(maxDate)), [maxDate]);
+  const selectableYears = useMemo(
+    () => Array.from({ length: maxMonth.getFullYear() - minMonth.getFullYear() + 1 }, (_, index) => minMonth.getFullYear() + index),
+    [maxMonth, minMonth],
+  );
   const [open, setOpen] = useState(false);
   const [cursorMonth, setCursorMonth] = useState(() => monthStart(fromIso(startDate) || new Date()));
+  const selectableMonths = useMemo(() => Array.from({ length: 12 }, (_, month) => month).filter((month) => {
+    const candidate = new Date(cursorMonth.getFullYear(), month, 1);
+    return candidate >= minMonth && candidate <= maxMonth;
+  }), [cursorMonth, maxMonth, minMonth]);
   const [draftStart, setDraftStart] = useState(startDate || today);
   const [draftEnd, setDraftEnd] = useState(endDate || "");
   const [draftStartTime, setDraftStartTime] = useState(startTime || "09:00");
@@ -164,18 +175,23 @@ export default function TripDatePicker({ startDate, endDate, startTime, endTime,
               <div><span><CalendarDays size={17} /> 여행 일정</span><h2 id="trip-calendar-title">출발일과 귀국일을 선택하세요.</h2><p>날짜를 두 번 누르거나 드래그해서 여행 기간을 정할 수 있어요.</p></div>
               <div className="trip-calendar-controls">
                 <button type="button" onClick={() => changeMonth(-1)} disabled={cursorMonth <= minMonth} aria-label="이전 달"><ChevronLeft size={18} /></button>
-                <select value={cursorMonth.getFullYear()} onChange={(event) => setCursorMonth(new Date(Number(event.target.value), 0, 1))} aria-label="연도 선택">
-                  {Array.from({ length: 2027 - minMonth.getFullYear() + 1 }, (_, index) => minMonth.getFullYear() + index).map((year) => <option key={year} value={year}>{year}년</option>)}
+                <select value={cursorMonth.getFullYear()} onChange={(event) => {
+                  const year = Number(event.target.value);
+                  const firstMonth = year === minMonth.getFullYear() ? minMonth.getMonth() : 0;
+                  const lastMonth = year === maxMonth.getFullYear() ? maxMonth.getMonth() : 11;
+                  setCursorMonth(new Date(year, Math.min(Math.max(cursorMonth.getMonth(), firstMonth), lastMonth), 1));
+                }} aria-label="연도 선택">
+                  {selectableYears.map((year) => <option key={year} value={year}>{year}년</option>)}
                 </select>
                 <select value={cursorMonth.getMonth()} onChange={(event) => setCursorMonth(new Date(cursorMonth.getFullYear(), Number(event.target.value), 1))} aria-label="월 선택">
-                  {Array.from({ length: cursorMonth.getFullYear() === 2027 ? 5 : 12 }, (_, month) => <option key={month} value={month}>{month + 1}월</option>)}
+                  {selectableMonths.map((month) => <option key={month} value={month}>{month + 1}월</option>)}
                 </select>
                 <button type="button" onClick={() => changeMonth(1)} disabled={cursorMonth >= maxMonth} aria-label="다음 달"><ChevronRight size={18} /></button>
                 <button type="button" className="trip-calendar-close" onClick={() => setOpen(false)} aria-label="달력 닫기"><X size={18} /></button>
               </div>
             </header>
             <div className="trip-calendar-body">
-              {[cursorMonth, addMonths(cursorMonth, 1)].map((month) => <CalendarMonth key={`${month.getFullYear()}-${month.getMonth()}`} month={month} minDate={today} maxDate={MAX_DATE} start={draftStart} end={draftEnd} weatherByDate={weatherByDate} dragState={dragState} onDateClick={selectDate} onDateEnter={extendDrag} onDatePointerDown={beginDrag} />)}
+              {[cursorMonth, addMonths(cursorMonth, 1)].filter((month) => month <= maxMonth).map((month) => <CalendarMonth key={`${month.getFullYear()}-${month.getMonth()}`} month={month} minDate={today} maxDate={maxDate} start={draftStart} end={draftEnd} weatherByDate={weatherByDate} dragState={dragState} onDateClick={selectDate} onDateEnter={extendDrag} onDatePointerDown={beginDrag} />)}
             </div>
             <footer className="trip-calendar-footer">
               {showTimeFields ? <div className="trip-calendar-time-group">

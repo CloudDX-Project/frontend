@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import { CalendarDays, MapPin, Monitor, Smartphone } from "lucide-react";
 import { dateLabel, getPlaceAlternatives, locationLabel, timeLabel } from "../../data/mockData";
 import TransitionIcon from "../common/TransitionIcon";
 import BrandPolygon from "../icons/BrandPolygon";
@@ -11,6 +12,7 @@ function PlanFullscreen({
   costDetails,
   dates,
   dayPlans,
+  routeResults = [],
   destinationLocation,
   endTime,
   eventCost,
@@ -25,13 +27,13 @@ function PlanFullscreen({
   selectedRental,
   selectedStay,
   setActiveDay,
-  setPlanRevision,
   setPlanViewOpen,
   startTime,
   stayChange,
   total,
   transport,
   localTransport,
+  isMobile = false,
   travelers,
 }) {
   // Backend-ready contract: dayPlans is consumed as an array of day tuples only;
@@ -45,6 +47,8 @@ function PlanFullscreen({
   const [routeRecalculation, setRouteRecalculation] = useState(null);
   const [routeResult, setRouteResult] = useState(null);
   const [utilityMessage, setUtilityMessage] = useState("");
+  const [mobilePreview, setMobilePreview] = useState(false);
+  const [orderRecalculating, setOrderRecalculating] = useState(false);
   const placeOptions = getPlaceAlternatives(destinationLocation, placePicker?.item);
   const destinationName = locationLabel(destinationLocation);
   const originName = locationLabel(originLocation, "출발지");
@@ -142,9 +146,17 @@ function PlanFullscreen({
       setRouteResult(update);
     }, 1900);
   };
+  const handleDragEnd = ({ source, destination }) => {
+    if (!destination || source.index === destination.index || orderRecalculating) return;
+    setOrderRecalculating(true);
+    window.setTimeout(() => {
+      onReorderStops?.(activeDay, source.index, destination.index);
+      window.setTimeout(() => setOrderRecalculating(false), 450);
+    }, 750);
+  };
   return (
     <section
-      className={`plan-fullscreen ${stayChange ? "plan-rebuilt" : ""}`}
+      className={`plan-fullscreen ${stayChange ? "plan-rebuilt" : ""}${mobilePreview ? " mobile-preview" : ""}${scheduleView === "budget" ? " budget-mode" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-label={`${destinationName} 전체 여행 일정`}
@@ -187,12 +199,22 @@ function PlanFullscreen({
       )}
       <div className="plan-fullscreen-body">
         <aside className="full-trip-aside">
-          <p>{destinationRegion}</p>
-          <h2>{tripTitle}</h2>
-          <span>
-            {originName} → {destinationName} · {dateLabel(dates[0])} {timeLabel(startTime)} —{" "}
-            {dateLabel(dates[dates.length - 1])} {timeLabel(endTime)}
-          </span>
+          {mobilePreview ? (
+            <div className="mobile-trip-overview">
+              <p><MapPin size={11} /> {(destinationRegion || "여행지").replace("특별자치도", "")} 여행 · {nightCount}박 {dates.length}일</p>
+              <h2>{destinationName} 여행</h2>
+              <span><CalendarDays size={11} /> {dateLabel(dates[0])} — {dateLabel(dates[dates.length - 1])}</span>
+            </div>
+          ) : (
+            <>
+              <p>{destinationRegion}</p>
+              <h2>{tripTitle}</h2>
+              <span>
+                {originName} → {destinationName} · {dateLabel(dates[0])} {timeLabel(startTime)} —{" "}
+                {dateLabel(dates[dates.length - 1])} {timeLabel(endTime)}
+              </span>
+            </>
+          )}
           <div className="full-booking-list">
             <b>{intercityTransportSummary}</b>
             <b>
@@ -227,11 +249,13 @@ function PlanFullscreen({
               DAY {activeDay + 1} ·{" "}
               {dates[activeDay]?.slice(5).replace("-", ".")}
             </span>
-            <h1>{scheduleView === "timeline" ? day[0] : `${dates.length}일 여행 시간표`}</h1>
+            <h1>{scheduleView === "timeline" ? day[0] : scheduleView === "calendar" ? mobilePreview ? `${activeDay + 1}일차 시간표` : `${dates.length}일 여행 시간표` : "여행 경비 한눈에 보기"}</h1>
             <p>
               {scheduleView === "timeline"
                 ? day[1]
-                : "세 날짜의 이동·식사·관광·휴식 시간을 한눈에 비교해 보세요."}
+                : scheduleView === "calendar"
+                  ? mobilePreview ? "선택한 하루의 이동·식사·관광 시간을 순서대로 확인하세요." : "세 날짜의 이동·식사·관광·휴식 시간을 한눈에 비교해 보세요."
+                  : "선택한 예약과 장소별 예상 금액을 1인 기준으로 정리했어요."}
             </p>
             <div>
               <button
@@ -254,14 +278,16 @@ function PlanFullscreen({
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  setPlanRevision((revision) => revision + 1);
-                  setActiveDay(0);
-                  setScheduleView("timeline");
-                }}
+                className={scheduleView === "budget" ? "view-tab active" : "view-tab"}
+                onClick={() => setScheduleView("budget")}
               >
-                ✦ 현재 선택으로 일정 다시 설계
+                경비
               </button>
+              <button type="button" className="device-preview-toggle" onClick={() => setMobilePreview((current) => !current)}>
+                {mobilePreview ? <Monitor size={14} /> : <Smartphone size={14} />}
+                {mobilePreview ? "데스크톱으로 돌아가기" : "모바일 화면으로 전환"}
+              </button>
+              {mobilePreview && <button type="button" className="mobile-only-route-button" onClick={() => document.querySelector(".mobile-preview .full-route-map")?.scrollIntoView({ behavior: "smooth", block: "center" })}>동선 지도 보기</button>}
               {stayChange && (
                 <button
                   type="button"
@@ -279,10 +305,20 @@ function PlanFullscreen({
               </div>
             </div>
           </div>
+          {mobilePreview && scheduleView === "timeline" && (
+            <div className="mobile-inline-route">
+              <RouteMap
+                activeDay={activeDay}
+                dayPlans={dayPlans}
+                destinationLocation={destinationLocation}
+                originLocation={originLocation}
+                routeResults={routeResults}
+                compact
+              />
+            </div>
+          )}
           {scheduleView === "timeline" ? (
-            <DragDropContext onDragEnd={({ source, destination }) => {
-              if (destination) onReorderStops?.(activeDay, source.index, destination.index);
-            }}>
+            <DragDropContext onDragEnd={handleDragEnd}>
             <Droppable droppableId={`day-${activeDay}-timeline`}>
               {(dropProvided) => <div className="full-timeline" ref={dropProvided.innerRef} {...dropProvided.droppableProps}>
               {day[2].map(([time, icon, name, detail, stay, travel, metadata = {}], index) => {
@@ -354,7 +390,7 @@ function PlanFullscreen({
                         className="stop-change"
                         onClick={(event) => {
                           event.stopPropagation();
-                          setPlacePicker({ eventId, name, item: { icon, name, detail } });
+                          setPlacePicker({ eventId, name, item: { icon, name, detail, ...metadata } });
                         }}
                       >
                         장소 변경
@@ -376,8 +412,28 @@ function PlanFullscreen({
               </div>}
             </Droppable>
             </DragDropContext>
+          ) : scheduleView === "calendar" ? (
+            <CampusTimetable activeDay={activeDay} compact={mobilePreview} dates={dates} dayPlans={dayPlans} />
           ) : (
-            <CampusTimetable dates={dates} dayPlans={dayPlans} />
+            <section className="inline-budget-view" aria-label="여행 상세 경비">
+              <header>
+                <span>선택한 예약 기준 · 1인 예상 경비</span>
+                <h2>1인 {money(total)}원</h2>
+                <p>총 {travelers}명 여행비 {money(total * (travelers || 1))}원</p>
+              </header>
+              <div className="inline-cost-groups">
+                {costDetails.map((group) => (
+                  <section key={`inline-${group.group}`}>
+                    <h3>{group.group}</h3>
+                    {group.rows.map(([name, value, note], rowIndex) => {
+                      const approximate = /예상|평균|참고/.test(note || "") || /고등어|카페|점심|저녁|시장|오설록|새별|카멜리아|성산/.test(name);
+                      return <p key={`${name}-inline-${rowIndex}`}><span><b>{name}</b><small>{note}</small></span><strong>{approximate ? "약 " : ""}1인 {money(value)}원</strong></p>;
+                    })}
+                  </section>
+                ))}
+              </div>
+              <p className="cost-uncertainty">※ 식비·간식·체험비는 실제 주문, 인원, 현장 요금에 따라 달라질 수 있어요.</p>
+            </section>
           )}
         </main>
         <aside className="full-budget">
@@ -386,6 +442,8 @@ function PlanFullscreen({
             dayPlans={dayPlans}
             destinationLocation={destinationLocation}
             originLocation={originLocation}
+            routeResults={routeResults}
+            compact={mobilePreview || isMobile}
           />
           <section className="full-budget-summary">
             <div className="full-budget-top">
@@ -476,7 +534,7 @@ function PlanFullscreen({
                   onClick={() => applyPlaceChange(place)}
                 >
                   {place.image ? (
-                    <img src={place.image} alt={`${place.name} 관광지 사진`} />
+                    <img src={place.image} alt={`${place.name} 대표 이미지`} loading="lazy" />
                   ) : (
                     <div className="route-place-photo-fallback" aria-hidden="true">
                       {place.icon}
@@ -486,8 +544,10 @@ function PlanFullscreen({
                     <i aria-hidden="true">{place.icon}</i>
                     <b>{place.name}</b>
                     <small>
-                      {place.duration} · 이동 {place.travel}분
+                      {place.distanceKm != null ? `${place.distanceKm.toFixed(1)}km · 차로 약 ${place.travel}분` : `${place.duration} · 이동 ${place.travel}분`}
                     </small>
+                    {place.representativeMenu && <em>대표 메뉴 · {place.representativeMenu}</em>}
+                    {place.routeSource && <small className="route-estimate-source">{place.routeSource}</small>}
                   </span>
                 </button>
               ))}
@@ -545,6 +605,17 @@ function PlanFullscreen({
               <i />
               <i />
             </div>
+          </section>
+        </div>
+      )}
+      {orderRecalculating && (
+        <div className="route-recalculation-overlay order-recalculation" role="status" aria-live="polite">
+          <section>
+            <TransitionIcon type="plan" />
+            <p>TripBuddy AI · SCHEDULE OPTIMIZING</p>
+            <h2>새로운 순서에 맞춰<br />이동 시간과 경로를 계산하고 있어요.</h2>
+            <span>장소 간 거리와 선택한 현지 이동수단을 반영해 모든 방문 시각을 다시 맞춥니다.</span>
+            <div className="route-recalculation-dots"><i /><i /><i /></div>
           </section>
         </div>
       )}

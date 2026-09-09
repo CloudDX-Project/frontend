@@ -436,6 +436,8 @@ export const rentals = [
     age: "만 21세 · 1년",
     specs: "4인승 · 자동 · 캐리어 2개",
     benefit: "최저가인데 완전자차 포함 · 단, 휴차보상료는 현장 약관 확인",
+    category: "COMPACT",
+    image: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Kia_Ray_PE_II_Clear_White_(2).jpg?width=900",
   },
   {
     id: "jeju-pass",
@@ -454,6 +456,8 @@ export const rentals = [
     specs: "5인승 · 자동 · 캐리어 3개",
     benefit:
       "준중형 공간이 장점 · 사고 시 면책금과 보장 제외 항목을 확인하세요",
+    category: "SEDAN",
+    image: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Kia_k3_bd_white_(1).jpg?width=900",
   },
   {
     id: "sk-rent",
@@ -471,6 +475,8 @@ export const rentals = [
     age: "만 21세 · 1년",
     specs: "5인승 · 자동 · 캐리어 3개",
     benefit: "공항 셔틀 7분으로 인수 시간이 짧아요 · 보장 범위는 상품별 확인",
+    category: "SUV",
+    image: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Hyundai_Casper_Active_1.0_Turbo_AX1_white_(1).jpg?width=900",
   },
   {
     id: "lotte-rent",
@@ -489,6 +495,8 @@ export const rentals = [
     specs: "5인승 · 자동 · 캐리어 4개",
     benefit:
       "SUV·완전자차·오토하우스 인수로 편의성 강화 · 비싼 이유를 한눈에 비교",
+    category: "SUV",
+    image: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Hyundai_Kona_2.0_Inspiration_SX2_Atlas_White_(1)_(cropped).jpg?width=900",
   },
   {
     id: "d-rent",
@@ -506,6 +514,8 @@ export const rentals = [
     age: "만 21세 · 1년",
     specs: "5인승 · 자동 · 캐리어 3개",
     benefit: "48시간 전 무료 취소가 강점 · 사고 보장 한도는 예약 전 확인",
+    category: "SEDAN",
+    image: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Hyundai_Avante_CN7_white_(3)_(cropped).jpg?width=900",
   },
   {
     id: "free-rent",
@@ -523,21 +533,17 @@ export const rentals = [
     age: "만 26세 · 2년",
     specs: "5인승 · 자동 · 캐리어 3개",
     benefit: "충전카드·완전자차 포함 · 반납 전 충전 잔량 조건을 확인하세요",
+    category: "SUV",
+    image: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Kia_Niro_EV_SG2_EV_Snow_White_Pearl_(2).jpg?width=900",
   },
 ];
 export const rentalImages = {
-  billycar:
-    "https://images.unsplash.com/photo-1494905998402-395d579af36f?auto=format&fit=crop&w=900&q=88",
-  "jeju-pass":
-    "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=88",
-  "sk-rent":
-    "https://images.unsplash.com/photo-1542282088-72c9c27ed0cd?auto=format&fit=crop&w=900&q=88",
-  "lotte-rent":
-    "https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=900&q=88",
-  "d-rent":
-    "https://images.unsplash.com/photo-1504215680853-026ed2a45def?auto=format&fit=crop&w=900&q=88",
-  "free-rent":
-    "https://images.unsplash.com/photo-1494976388531-d1058494cdd8?auto=format&fit=crop&w=900&q=88",
+  billycar: rentals[0].image,
+  "jeju-pass": rentals[1].image,
+  "sk-rent": rentals[2].image,
+  "lotte-rent": rentals[3].image,
+  "d-rent": rentals[4].image,
+  "free-rent": rentals[5].image,
 };
 export const domestic = [
   "서울",
@@ -2028,16 +2034,44 @@ export const makeDayPlans = (
 
 const lockedStopPattern = /항공|공항 도착|오는 편 출발|역·터미널|귀가 출발|렌터카|체크인|체크아웃|탑승 준비/;
 const bookableStopPattern = /항공|오는 편|렌터카|체크인|숙소|뮤지엄|케이블카|아쿠아|테마파크/;
+const knownPlanCoordinates = [
+  ["제주국제공항", 33.5104, 126.4914],
+  ["한담해안산책로", 33.4626, 126.3108],
+  ["애월 카페 거리", 33.4635, 126.3094],
+  ["곽지해수욕장", 33.4507, 126.3055],
+  ["협재해수욕장", 33.3942, 126.2398],
+  ["금능해변", 33.3904, 126.2359],
+  ["새별오름", 33.3663, 126.3578],
+  ["오설록", 33.3059, 126.2895],
+  ["카멜리아힐", 33.2897, 126.3701],
+  ["숙성도 중문점", 33.2516, 126.4168],
+  ["숙성도", 33.4850, 126.4817],
+  ["고이정", 33.4611, 126.3111],
+  ["성안식당", 33.4630, 126.3100],
+  ["애월은혜전복", 33.4487, 126.3065],
+  ["애월돈가스집", 33.4641, 126.3090],
+  ["제주김만복 애월점", 33.4720, 126.3500],
+  ["이춘옥 원조고등어쌈밥", 33.4838, 126.3774],
+  ["자매국수", 33.5167, 126.5142],
+  ["스시 호시카이", 33.4918, 126.4787],
+];
+const coordinatesForPlanName = (name = "") => {
+  const match = knownPlanCoordinates.find(([keyword]) => name.includes(keyword));
+  return match ? { latitude: match[1], longitude: match[2] } : {};
+};
 
 export const decoratePlanEvents = (plans = []) => plans.map((day, dayIndex) => [
   day[0],
   day[1],
   day[2].map((event, stopIndex) => {
     const name = event[2] || "일정";
+    const coordinates = coordinatesForPlanName(name);
     return [
       ...event.slice(0, 6),
       {
         ...(event[6] || {}),
+        latitude: event[6]?.latitude ?? coordinates.latitude,
+        longitude: event[6]?.longitude ?? coordinates.longitude,
         id: event[6]?.id || `day-${dayIndex + 1}-stop-${stopIndex + 1}`,
         isLocked: event[6]?.isLocked ?? lockedStopPattern.test(name),
         bookingUrl: event[6]?.bookingUrl || (bookableStopPattern.test(name) ? `pending:${encodeURIComponent(name)}` : null),
@@ -2118,18 +2152,19 @@ export const constrainPlanTimes = (plans, arrivalTime, endTime, mode) => {
 
 export const regionalPlaceAlternatives = {
   "제주특별자치도": [
-    { icon: "📸", name: "성산일출봉", latitude: 33.4581, longitude: 126.9426, detail: "동부 대표 명소를 중심으로 이동 동선을 다시 계산해요.", duration: "100분", travel: 35 },
-    { icon: "🌊", name: "함덕해수욕장", latitude: 33.5431, longitude: 126.6692, detail: "에메랄드빛 해변 산책과 주변 이동 시간을 반영해요.", duration: "85분", travel: 30 },
-    { icon: "🌿", name: "오설록 티 뮤지엄", latitude: 33.3059, longitude: 126.2895, detail: "서부 녹차밭과 실내 관람 시간을 일정에 반영해요.", duration: "90분", travel: 30 },
-    { icon: "📸", name: "새별오름", latitude: 33.3663, longitude: 126.3578, detail: "오름 산책과 전망 감상 시간을 포함해 다시 설계해요.", duration: "95분", travel: 35 },
-    { icon: "🌺", name: "카멜리아힐", latitude: 33.2897, longitude: 126.3701, detail: "계절 정원 산책과 안덕권 이동 시간을 반영해요.", duration: "95분", travel: 30 },
-    { icon: "🌊", name: "주상절리대", latitude: 33.2379, longitude: 126.4260, detail: "중문 해안 경관과 관람 시간을 일정에 넣어요.", duration: "80분", travel: 25 },
-    { icon: "🍽", name: "고집돌우럭", latitude: 33.5169, longitude: 126.5034, detail: "제주 향토 생선요리와 대기 시간을 함께 반영해요.", duration: "75분", travel: 25 },
-    { icon: "🍽", name: "숙성도", latitude: 33.4850, longitude: 126.4817, detail: "제주 흑돼지 식사와 웨이팅을 고려해 일정을 조정해요.", duration: "85분", travel: 30 },
-    { icon: "🍜", name: "자매국수", latitude: 33.5167, longitude: 126.5142, detail: "고기국수 식사와 제주시내 이동 시간을 반영해요.", duration: "65분", travel: 20 },
-    { icon: "🍱", name: "오는정김밥", latitude: 33.2498, longitude: 126.5672, detail: "예약 수령 시간과 서귀포시내 동선을 함께 계산해요.", duration: "55분", travel: 20 },
-    { icon: "🍽", name: "명진전복", latitude: 33.5326, longitude: 126.8502, detail: "동부 해안 전복 식사와 이동 시간을 반영해요.", duration: "75분", travel: 30 },
-    { icon: "🍲", name: "네거리식당", latitude: 33.2487, longitude: 126.5592, detail: "서귀포 갈치요리 식사와 주변 동선을 조정해요.", duration: "75분", travel: 25 },
+    { icon: "🌊", name: "곽지해수욕장", latitude: 33.4507, longitude: 126.3055, detail: "한담과 이어지는 애월 대표 해변에서 산책과 물빛을 즐겨요.", duration: "80분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202110/25/daaa3e6e-822b-4acc-98df-8ba8e8453dd7.webp" },
+    { icon: "🌊", name: "협재해수욕장", latitude: 33.3942, longitude: 126.2398, detail: "비양도가 보이는 제주 서부 대표 해변을 둘러봐요.", duration: "85분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202408/27/77cf6bb2-4d0d-4f46-8cfa-3f527a4d06b3.webp" },
+    { icon: "🌊", name: "금능해변", latitude: 33.3904, longitude: 126.2359, detail: "협재 옆 한적한 해변에서 여유로운 시간을 보내요.", duration: "75분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202110/25/f633561a-01c8-4e4a-a826-dd704e8bb5d9.webp" },
+    { icon: "📸", name: "새별오름", latitude: 33.3663, longitude: 126.3578, detail: "애월 중산간의 억새와 탁 트인 전망을 감상해요.", duration: "95분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202410/21/dd078476-3958-40e8-ab31-c3599ef97bcc.webp" },
+    { icon: "🌿", name: "오설록 티 뮤지엄", latitude: 33.3059, longitude: 126.2895, detail: "서부 녹차밭과 전시 공간을 함께 둘러봐요.", duration: "90분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202110/20/003f420c-6efe-41e9-93b7-00fe6ac5e83b.webp" },
+    { icon: "🌺", name: "카멜리아힐", latitude: 33.2897, longitude: 126.3701, detail: "계절 꽃과 정원 산책을 중심으로 일정을 구성해요.", duration: "95분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202410/15/fb2d2739-5e8e-4a87-9d1d-0281d95efeb7.webp" },
+    { icon: "📸", name: "성산일출봉", latitude: 33.4581, longitude: 126.9426, detail: "동부 대표 명소를 중심으로 이동 동선을 다시 계산해요.", duration: "100분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202409/20/c8bf6191-832c-4605-a948-96f07f6112d2.webp" },
+    { icon: "🍖", name: "고이정 애월", latitude: 33.4611, longitude: 126.3111, detail: "한담 산책로와 가까운 흑돼지 전문점이에요.", duration: "85분", representativeMenu: "보리짚불 흑돼지 근고기", image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🍲", name: "성안식당", latitude: 33.4630, longitude: 126.3100, detail: "애월의 오래된 향토음식점에서 따뜻한 해물 한 끼를 즐겨요.", duration: "70분", representativeMenu: "전복뚝배기·갈치국", image: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🍚", name: "애월은혜전복", latitude: 33.4487, longitude: 126.3065, detail: "애월 해안과 가까운 전복 요리 전문점이에요.", duration: "70분", representativeMenu: "전복돌솥밥·전복물회", image: "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🍽", name: "애월돈가스집", latitude: 33.4641, longitude: 126.3090, detail: "제주산 흑돼지로 만든 든든한 돈가스를 맛봐요.", duration: "70분", representativeMenu: "흑돼지 왕돈가스", image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🍱", name: "제주김만복 애월점", latitude: 33.4720, longitude: 126.3500, detail: "이동 중 가볍게 즐기기 좋은 제주식 김밥을 추천해요.", duration: "55분", representativeMenu: "전복김밥·오징어무침", image: "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🍜", name: "이춘옥 원조고등어쌈밥", latitude: 33.4838, longitude: 126.3774, detail: "애월 해안도로에서 즐기는 제주식 고등어 한 상이에요.", duration: "75분", representativeMenu: "고등어쌈밥·고등어조림", image: "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=900&q=86" },
   ],
   "서울특별시": [
     { icon: "🏯", name: "북촌한옥마을", detail: "궁궐과 가까운 전통 골목으로 동선을 다시 계산해요.", duration: "80분", travel: 25 },
@@ -2183,15 +2218,26 @@ export const getPlaceAlternatives = (destinationLocation, currentItem) => {
   const region = destinationLocation?.region || destinationLocation?.name;
   const area = destinationLocation?.detail || destinationLocation?.name || region || "여행지";
   const category = placeCategory(currentItem);
+  const reference = Number.isFinite(currentItem?.latitude) && Number.isFinite(currentItem?.longitude)
+    ? currentItem
+    : destinationLocation;
   const localCandidates = (regionalPlaceAlternatives[region] || regionalPlaceAlternatives.default)
     .filter((place) => placeCategory(place) === category)
-    .sort((a, b) => (exactDistanceKm(destinationLocation, a) ?? Number.POSITIVE_INFINITY) - (exactDistanceKm(destinationLocation, b) ?? Number.POSITIVE_INFINITY));
+    .map((place) => {
+      const straightDistance = exactDistanceKm(reference, place);
+      const distanceKm = straightDistance == null ? null : Math.max(.8, Math.round(straightDistance * 1.24 * 10) / 10);
+      const travel = distanceKm == null ? 30 : Math.max(5, Math.round((distanceKm / 34 * 60 + 4) / 5) * 5);
+      return { ...place, distanceKm, travel, routeSource: "T map API 연동 전 · 좌표 기반 예상" };
+    })
+    .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
   const generatedCandidates = recommendationTemplates[category].map(([icon, suffix, detail, duration], index) => ({
     icon,
     name: `${area} ${suffix}`,
     detail,
     duration,
     travel: 20 + index * 5,
+    distanceKm: null,
+    routeSource: "백엔드 검색 대기",
     category,
   }));
   return [...localCandidates, ...generatedCandidates]
@@ -2313,6 +2359,17 @@ export const eventPrice = (
   if (name.includes("체크인"))
     return selectedStay ? (selectedStay.price * nights * rooms) / party : 0;
   if (name.includes("숙소 조식")) return 0;
+  // 네이버 지도에 공개된 대표 메뉴 가격을 참고한 데모용 1인 평균입니다.
+  // 백엔드 견적이 연결되면 event.metadata.pricePerPerson 값이 이 값을 우선합니다.
+  if (name.includes("숙성도")) return 35000;
+  if (name.includes("스시 호시카이")) return 150000;
+  if (name.includes("글라글라하와이")) return 32000;
+  if (name.includes("자매국수")) return 12000;
+  if (name.includes("제주 해녀의집") || name.includes("해녀의집 회국수")) return 18000;
+  if (name.includes("고집돌우럭")) return 30000;
+  if (name.includes("네거리식당")) return 16000;
+  if (name.includes("오는정김밥")) return 7000;
+  if (name.includes("명진전복")) return 18000;
   if (name.includes("이춘옥")) return 26000;
   if (name.includes("카페")) return 10000;
   if (name.includes("점심")) return 22000;

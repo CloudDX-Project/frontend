@@ -1,4 +1,4 @@
-# 얼마길 백엔드·외부 API 연동 기준서
+# TripBuddy 백엔드·외부 API 연동 기준서
 
 이 문서는 현재 React 화면을 실제 선택값에 따라 동작하는 여행 플랫폼으로 연결하기 위한 백엔드 작업 기준서입니다.
 
@@ -15,7 +15,7 @@
 
 React 화면
   → src/api 어댑터
-  → 얼마길 백엔드 BFF
+  → TripBuddy 백엔드 BFF
   → 위치·행정구역 / 이동수단 가능성 / 지도 경로 / 관광지 / 식당 인허가 / 견적 / 비용 / 일정 엔진
   → DB, 캐시, 작업 큐, 로그·모니터링
 
@@ -141,6 +141,10 @@ POST /api/v1/routing/route
 
 네이버 Directions는 시작과 목적지 좌표를 경도,위도 순서로 받습니다. 내부 DTO는 WGS84 latitude, longitude 순서로 유지하고, BFF 어댑터에서만 순서를 바꿉니다.
 
+카카오 Local의 `x`는 경도, `y`는 위도이며 문자열입니다. 카카오 Mobility와 TMAP의 거리·시간은 각각 `m`, `sec`이므로 BFF 또는 `src/api/normalizers.js`에서 `km`, `minute`로 바꿉니다. 지도별 원본 필드를 화면 컴포넌트에 직접 전달하지 않습니다.
+
+경유지는 공급자별 허용 개수가 다르므로 일정 전체를 한 요청에 넣지 않고, 인접 일정 사이를 leg 단위로 계산해 합칩니다. 응답에는 `dayIndex`, `fromEventId`, `toEventId`를 보존하면 드래그 후 어떤 구간을 다시 계산할지 안정적으로 식별할 수 있습니다.
+
 ## 7. 관광지와 식당의 신뢰성 규칙
 
 ### 관광지
@@ -211,6 +215,8 @@ POST /api/v1/costs/estimate
 
 1인 공통비 = ceil(공통비 총액 ÷ 인원)
 
+오피넷 평균 유가는 `GET /api/v1/fuel-prices/average?fuelType=gasoline&regionCode=KR-49` BFF로 조회합니다. 오피넷 원본의 휘발유 `B027`, 경유 `D047`, LPG `K015`를 내부 `gasoline`, `diesel`, `lpg`로 매핑하고 `PRICE`는 원/L 숫자로 변환합니다. 인증키는 프런트에 전달하지 않습니다.
+
 비용 응답에는 estimateId, total, perPerson, items, assumptions, isMock, calculatedAt을 넣습니다. 특히 유가 기준값/관측 시각, 통행료 기준값/관측 시각, 주차 산출 근거, 반올림 방식, N/1 분배 방식을 assumptions에 보관합니다.
 
 숙소나 장소가 바뀌면 새 route, 새 estimateId, 새 revisionId를 만들어 반환합니다. 화면은 같은 estimateId의 결과를 메인과 일정 화면에 그대로 표시합니다.
@@ -219,6 +225,7 @@ POST /api/v1/costs/estimate
 
 POST /api/v1/trips/plans
 GET /api/v1/trips/plans/{planId}
+POST /api/v1/trips/plans/{planId}/recalculate
 POST /api/v1/trips/plans/{planId}/share
 
 일정 생성 입력에는 다음이 필요합니다.
@@ -240,12 +247,23 @@ POST /api/v1/trips/plans/{planId}/share
 4. 장소를 바꾸면 이후 이동시간, 다음 장소, 비용, 지도 polyline을 다시 계산합니다.
 5. 변경 전후 일정은 revisionId로 보관해 숙소, 식당, 관광, 액티비티별 변화 화면을 만들 수 있어야 합니다.
 
+`/recalculate`는 `REPLACE_STOP` 또는 `REORDER_STOPS` 연산과 `baseRevisionId`를 받습니다. 서버는 새 `revisionId`, 전체 dayPlans, routes, costEstimate를 한 응답으로 반환해야 합니다. `baseRevisionId`가 최신이 아니면 409를 반환해 오래된 모바일/브라우저 탭이 최신 일정을 덮지 않게 합니다.
+
 ## 11. 환경변수와 보안
 
 프런트 .env:
 
 VITE_API_BASE_URL=https://api.example.com
 VITE_USE_MOCK=true
+
+운영에서는 `VITE_USE_MOCK=false`와 HTTPS API 주소를 함께 설정합니다. `VITE_API_BASE_URL`이 없으면 운영 빌드는 같은 출처의 `/api` 리버스 프록시를 사용하므로 사용자 브라우저의 localhost를 호출하지 않습니다.
+
+### 프런트 연결 상태
+
+- `/api/v1/trips/plans`는 `VITE_USE_MOCK=false`에서 실제 일정 생성 흐름에 연결되어 있습니다.
+- 위치, 경로, 관광·식당, 예약 견적, 비용, 유가 어댑터는 `src/api/index.js`의 `travelApi`로 제공됩니다.
+- 현재 항공·숙박·렌터카 선택 모달의 최초 목록은 시연 카탈로그를 사용합니다. 공급자 계약이 끝나면 각 모달의 조회 시점에 `travelApi.booking`을 호출하고, 반환한 offer `id`를 일정 생성 요청에 전달해야 합니다.
+- 일정 지도는 장소 좌표로 즉시 표시하며, 백엔드 route의 `deepLink`가 있으면 외부 길찾기 링크에 우선 적용합니다. 공급자 polyline을 앱 지도 위에 그리려면 카카오/TMAP 지도 SDK 렌더러를 별도로 연결해야 합니다.
 
 백엔드 환경변수 예시:
 

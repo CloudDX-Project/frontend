@@ -1,5 +1,5 @@
 /**
- * 얼마길 API 계약(Contract) 모음
+ * TripBuddy API 계약(Contract) 모음
  *
  * 화면은 이 파일의 DTO만 알고, 실제 외부 API(Naver/TMAP/관광공사/제휴사)는
  * 백엔드가 호출합니다. 브라우저에 API 키를 넣지 않는 것이 원칙입니다.
@@ -72,6 +72,7 @@
  * @property {number} distanceKm
  * @property {number} durationMinutes
  * @property {number=} tollFee
+ * @property {number=} taxiFee
  * @property {number=} fuelFee
  * @property {number=} parkingFee
  * @property {Array<{latitude:number, longitude:number}>} polyline WGS84 경로점
@@ -100,6 +101,11 @@
  * @property {string} address
  * @property {GeoPoint} point
  * @property {string=} imageUrl
+ * @property {string[]=} imageUrls 상세/대체 장소 카드용 이미지 목록
+ * @property {string=} representativeMenu 식당 대표 메뉴
+ * @property {number=} distanceKm 현재 일정 장소에서의 도로 기준 거리
+ * @property {number=} durationMinutes 현재 일정 장소에서의 예상 이동 시간
+ * @property {string=} routeProvider TMAP 등 경로 계산 제공자
  * @property {string} source KTO 등 출처
  * @property {string=} updatedAt
  * @property {string=} contentId 한국관광공사 등 원천 콘텐츠 ID
@@ -219,6 +225,17 @@
  * @property {string} calculatedAt
  */
 
+/**
+ * @typedef {Object} FuelPrice
+ * @property {'gasoline'|'diesel'|'lpg'} fuelType
+ * @property {string} productCode 오피넷 유종 코드
+ * @property {string} productName
+ * @property {number} pricePerL 원/L
+ * @property {string=} observedDate 오피넷 기준일
+ * @property {number=} difference 전일 대비 원/L
+ * @property {string} provider
+ */
+
 export const API_ENDPOINTS = Object.freeze({
   locations: {
     regions: '/api/v1/locations/regions',
@@ -247,9 +264,13 @@ export const API_ENDPOINTS = Object.freeze({
   costs: {
     estimate: '/api/v1/costs/estimate',
   },
+  fuel: {
+    average: '/api/v1/fuel-prices/average',
+  },
   plans: {
     generate: '/api/v1/trips/plans',
     status: (planId) => `/api/v1/trips/plans/${encodeURIComponent(planId)}`,
+    recalculate: (planId) => `/api/v1/trips/plans/${encodeURIComponent(planId)}/recalculate`,
     share: (planId) => `/api/v1/trips/plans/${encodeURIComponent(planId)}/share`,
   },
 });
@@ -261,5 +282,6 @@ export const API_SOURCE_LABELS = Object.freeze({
   kto: '한국관광공사 관광정보 연동',
   license: '인허가·영업상태 확인 연동',
   foodsafety: '식품의약품안전처 식품접객업정보 연동',
+  opinet: '오피넷 유가정보 연동',
   partner: '제휴사 제공 데이터',
 });

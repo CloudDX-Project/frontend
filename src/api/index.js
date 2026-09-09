@@ -9,6 +9,7 @@ export { journeyApi, createJourneyApi } from './journeyApi';
 export { contentApi, createContentApi } from './contentApi';
 export { bookingApi, createBookingApi } from './bookingApi';
 export { costApi, createCostApi, calculateMockCostEstimate } from './costApi';
+export { fuelApi, createFuelApi } from './fuelApi';
 export { API_ENDPOINTS, API_SOURCE_LABELS } from './contracts';
 
 import { locationApi } from './locationApi';
@@ -17,6 +18,7 @@ import { journeyApi } from './journeyApi';
 import { contentApi } from './contentApi';
 import { bookingApi } from './bookingApi';
 import { costApi } from './costApi';
+import { fuelApi } from './fuelApi';
 
 export const travelApi = Object.freeze({
   locations: locationApi,
@@ -25,4 +27,5 @@ export const travelApi = Object.freeze({
   content: contentApi,
   booking: bookingApi,
   costs: costApi,
+  fuel: fuelApi,
 });

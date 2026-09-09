@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
-import { requestTripPlan } from "../api/tripPlanApi";
-import { makeDemoTicketOptions, resolveTripSchedule } from "../data/travelSchedule";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { isMockModeEnabled } from "../api/apiClient";
+import { requestTripPlan, requestTripPlanRevision } from "../api/tripPlanApi";
+import { makeDemoTicketOptions, recalculateDayTimeline, resolveTripSchedule } from "../data/travelSchedule";
 import {
   destinationCoordinatesByName,
   jejuRegionCoordinates,
@@ -35,20 +36,37 @@ import {
   transportName,
 } from "../data/mockData";
 
-const applyPlanOrders = (plans, orders) => plans.map((day, dayIndex) => {
+const applyPlanOrders = (plans, orders, localTransport) => plans.map((day, dayIndex) => {
   const order = orders[dayIndex];
   if (!order?.length) return day;
   const byId = new Map(day[2].map((event) => [event[6]?.id, event]));
   const ordered = order.map((id) => byId.get(id)).filter(Boolean);
   const known = new Set(order);
-  return [day[0], day[1], [...ordered, ...day[2].filter((event) => !known.has(event[6]?.id))]];
+  return recalculateDayTimeline([day[0], day[1], [...ordered, ...day[2].filter((event) => !known.has(event[6]?.id))]], localTransport);
 });
 
+const readInitialDraft = () => {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem("tripDraft") || "{}");
+    if (!saved || typeof saved !== "object" || Array.isArray(saved)) return {};
+
+    const next = { ...saved };
+    const startIsPast = typeof next.startDate === "string" && next.startDate < today;
+    const rangeIsInvalid = next.endDate && next.startDate && next.endDate < next.startDate;
+    if (startIsPast || rangeIsInvalid) {
+      next.startDate = today;
+      next.endDate = "";
+      next.transport = "";
+      next.localTransport = "";
+    }
+    return next;
+  } catch {
+    return {};
+  }
+};
+
 function useTripPlanner() {
-  const [initialDraft] = useState(() => {
-    try { return JSON.parse(window.localStorage.getItem("tripDraft") || "{}"); }
-    catch { return {}; }
-  });
+  const [initialDraft] = useState(readInitialDraft);
   const [destinationType, setDestinationType] = useState(initialDraft.destinationType || "");
   const [destination, setDestination] = useState(initialDraft.destinationLocation?.detail || initialDraft.destinationLocation?.name || "");
   const [destinationLocation, setDestinationLocation] = useState(initialDraft.destinationLocation || null);
@@ -168,6 +186,12 @@ function useTripPlanner() {
   const [planEdits, setPlanEdits] = useState({});
   const [planOrders, setPlanOrders] = useState({});
   const [backendPlan, setBackendPlan] = useState(null);
+  const backendPlanRef = useRef(null);
+  const revisionRequestRef = useRef(0);
+  const revisionQueueRef = useRef(Promise.resolve());
+  useEffect(() => {
+    backendPlanRef.current = backendPlan;
+  }, [backendPlan]);
   const [message, setMessage] = useState("");
   useEffect(() => {
     if (!stayOpen) return;
@@ -302,8 +326,8 @@ function useTripPlanner() {
     ],
   );
   const dayPlans = useMemo(
-    () => applyPlanOrders(applyPlanEdits(baseDayPlans, planEdits), planOrders),
-    [baseDayPlans, planEdits, planOrders],
+    () => applyPlanOrders(applyPlanEdits(baseDayPlans, planEdits), planOrders, localTransport),
+    [baseDayPlans, planEdits, planOrders, localTransport],
   );
   const placeEditAdjustment = Object.entries(planEdits).reduce(
     (sum, [key, place]) => {
@@ -429,14 +453,14 @@ function useTripPlanner() {
         });
   const itineraryCostRows = dayPlans.flatMap((day, dayIndex) =>
     (day?.[2] || []).flatMap(([time, icon, name, , , , metadata = {}]) => {
-      if (!name || /항공|공항|렌터카|체크인|체크아웃|탑승 준비|출발 준비|귀가|이동 준비/.test(name)) return [];
+      if (!name || /항공|공항|렌터카|체크인|체크아웃|탑승 준비|출발 준비|귀가|이동 준비|편 출발$/.test(name)) return [];
       const isMeal = /🍽|🍚|🍜|🍲|☕|🥐/.test(icon || "") || /점심|저녁|식사|카페|간식|조식|시장/.test(name);
       return [{
         type: isMeal ? "meal" : "activity",
         row: [
           name,
           costForEvent(name, metadata),
-          `${dayIndex + 1}일차 ${time} · ${metadata.provider ? `${metadata.provider} 제공가` : isMeal ? "1인 예상 이용금액" : "1인 입장·체험 기준"}`,
+          `${dayIndex + 1}일차 ${time} · ${metadata.provider ? `${metadata.provider} 제공가` : isMeal ? "네이버 지도 공개 메뉴 참고 · 1인 평균" : "1인 입장·체험 기준"}`,
         ],
       }];
     }),
@@ -1164,6 +1188,33 @@ function useTripPlanner() {
       setStayOpen(true);
     }
   };
+  const syncPlanRevision = async (operation) => {
+    if (isMockModeEnabled() || !backendPlanRef.current?.id) return;
+    const requestId = ++revisionRequestRef.current;
+    revisionQueueRef.current = revisionQueueRef.current
+      .catch(() => undefined)
+      .then(async () => {
+        const currentPlan = backendPlanRef.current;
+        if (!currentPlan?.id) return;
+        try {
+          const nextPlan = await requestTripPlanRevision(currentPlan.id, {
+            ...operation,
+            baseRevisionId: currentPlan.revisionId ?? operation.baseRevisionId ?? null,
+          });
+          backendPlanRef.current = nextPlan;
+          setBackendPlan(nextPlan);
+          if (requestId === revisionRequestRef.current) {
+            setPlanEdits({});
+            setPlanOrders({});
+          }
+        } catch (error) {
+          if (requestId === revisionRequestRef.current) {
+            notify(error?.message || "변경된 일정의 경로와 경비를 다시 계산하지 못했어요.");
+          }
+        }
+      });
+    await revisionQueueRef.current;
+  };
   const changePlanStop = (dayIndex, eventId, place) => {
     const stopIndex = baseDayPlans[dayIndex]?.[2]?.findIndex((event) => event[6]?.id === eventId);
     if (stopIndex == null || stopIndex < 0) return;
@@ -1172,6 +1223,13 @@ function useTripPlanner() {
       [`${dayIndex}-${stopIndex}`]: place,
     }));
     setPlanRevision((current) => current + 1);
+    void syncPlanRevision({
+      type: "REPLACE_STOP",
+      baseRevisionId: backendPlan?.revisionId ?? null,
+      dayIndex,
+      eventId,
+      place: toApiLocation(place),
+    });
     notify(
       `${place.name} 기준으로 이동 동선과 1인 예상 경비를 다시 계산했어요.`,
     );
@@ -1194,6 +1252,12 @@ function useTripPlanner() {
     const order = events.map((event) => event[6]?.isLocked ? event[6]?.id : movableIds[movableCursor++]);
     setPlanOrders((current) => ({ ...current, [dayIndex]: order.filter(Boolean) }));
     setPlanRevision((current) => current + 1);
+    void syncPlanRevision({
+      type: "REORDER_STOPS",
+      baseRevisionId: backendPlan?.revisionId ?? null,
+      dayIndex,
+      eventIds: order.filter(Boolean),
+    });
     notify("일정 순서와 지도 동선을 다시 계산했어요.");
   };
   const itineraryEventCost = costForEvent;
@@ -1215,7 +1279,7 @@ function useTripPlanner() {
     setPlanningMode("create");
     setPlanning(true);
     setPlanningStage("calculating");
-    if (import.meta.env.VITE_USE_MOCK === "false") {
+    if (!isMockModeEnabled()) {
       try {
         const nextBackendPlan = await requestTripPlan({
         destination,
@@ -1256,6 +1320,7 @@ function useTripPlanner() {
         localTransport,
         });
         if (!nextBackendPlan.dayPlans.length) throw new Error("일정 데이터가 비어 있습니다.");
+        backendPlanRef.current = nextBackendPlan;
         setBackendPlan(nextBackendPlan);
         setPlanEdits({});
         setPlanOrders({});
@@ -1403,6 +1468,7 @@ function useTripPlanner() {
     selectedReturnFlight,
     selectedFlight,
     selectedRental,
+    rentalCatalog,
     selectedStay,
     dates,
     nights,
@@ -1411,6 +1477,7 @@ function useTripPlanner() {
     scheduledStartTime,
     scheduledEndTime,
     dayPlans,
+    routeResults: backendPlan?.routes || [],
     saleFirstFlights,
     filteredStays,
     stayAreas,

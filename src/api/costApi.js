@@ -1,5 +1,6 @@
 import { apiClient, withMockFallback } from './apiClient';
 import { API_ENDPOINTS, API_SOURCE_LABELS } from './contracts';
+import { normalizeCostEstimate } from './normalizers';
 
 const won = (value) => Math.max(0, Math.round(Number(value) || 0));
 
@@ -83,7 +84,10 @@ export function createCostApi({ client = apiClient } = {}) {
     /** @param {import('./contracts').CostEstimateRequest} request */
     async estimate(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.costs.estimate, { method: 'POST', body: request, signal }),
+        async () => normalizeCostEstimate(
+          await client.request(API_ENDPOINTS.costs.estimate, { method: 'POST', body: request, signal }),
+          request.travelers,
+        ),
         async () => calculateMockCostEstimate(request),
       );
     },

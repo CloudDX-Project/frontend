@@ -1,6 +1,7 @@
 import { apiClient, withMockFallback } from './apiClient';
 import { API_ENDPOINTS, API_SOURCE_LABELS } from './contracts';
 import { MOCK_PLACES } from './mockData';
+import { normalizeContentEnvelope } from './normalizers';
 
 /**
  * 관광지와 식당의 "사실성"을 분리한다.
@@ -12,7 +13,7 @@ export function createContentApi({ client = apiClient } = {}) {
     /** @param {import('./contracts').TourismSearchRequest} request */
     async searchTourismSpots(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.tourism.spots, { method: 'POST', body: request, signal }),
+        async () => normalizeContentEnvelope(await client.request(API_ENDPOINTS.tourism.spots, { method: 'POST', body: request, signal })),
         async () => ({
           items: MOCK_PLACES.slice(0, request.limit ?? 8),
           isMock: true,
@@ -46,11 +47,11 @@ export function createContentApi({ client = apiClient } = {}) {
     /** 유효 사업장만 반환하도록 백엔드 필터가 먼저 적용되는 검색 API. */
     async searchEligibleRestaurants(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.tourism.restaurants, {
+        async () => normalizeContentEnvelope(await client.request(API_ENDPOINTS.tourism.restaurants, {
           method: 'POST',
           body: request,
           signal,
-        }),
+        })),
         async () => ({ items: [], isMock: true, sourceLabel: API_SOURCE_LABELS.mock }),
       );
     },

@@ -1,14 +1,16 @@
 import { durationToMinutes, timeToMinutes } from "../../data/mockData";
 
-function CampusTimetable({ dates, dayPlans }) {
+function CampusTimetable({ activeDay = 0, compact = false, dates, dayPlans }) {
   const hours = Array.from({ length: 16 }, (_, index) => index + 8);
+  const visibleDates = compact ? [dates[activeDay]].filter(Boolean) : dates;
+  const visiblePlans = compact ? [dayPlans[activeDay]].filter(Boolean) : dayPlans;
   return (
-    <div className="campus-timetable" aria-label="3일 통합 시간표">
+    <div className={`campus-timetable${compact ? " mobile-timetable" : ""}`} aria-label={compact ? `DAY ${activeDay + 1} 시간표` : `${dates.length}일 통합 시간표`}>
       <div className="timetable-top">
         <span>TIME</span>
-        {dates.map((date, index) => (
+        {visibleDates.map((date, index) => (
           <b key={date}>
-            DAY {index + 1}
+            DAY {compact ? activeDay + 1 : index + 1}
             <small>{date.slice(5).replace("-", ".")}</small>
           </b>
         ))}
@@ -19,7 +21,7 @@ function CampusTimetable({ dates, dayPlans }) {
             <span key={hour}>{String(hour).padStart(2, "0")}:00</span>
           ))}
         </div>
-        {dayPlans.map((day, dayIndex) => (
+        {visiblePlans.map((day, dayIndex) => (
           <div className="timetable-day" key={day[0]}>
             {hours.map((hour) => (
               <i key={hour} />

@@ -14,6 +14,44 @@ const clock = (value) => {
   const minutes = Math.max(0, Math.min(1439, Math.round(value)));
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 };
+
+const durationMinutes = (value) => Math.max(0, Number.parseInt(value, 10) || 0);
+const radians = (value) => value * Math.PI / 180;
+const roadDistanceKm = (from, to) => {
+  if (![from?.latitude, from?.longitude, to?.latitude, to?.longitude].every(Number.isFinite)) return null;
+  const latitude = radians(to.latitude - from.latitude);
+  const longitude = radians(to.longitude - from.longitude);
+  const a = Math.sin(latitude / 2) ** 2
+    + Math.cos(radians(from.latitude)) * Math.cos(radians(to.latitude)) * Math.sin(longitude / 2) ** 2;
+  return 6371 * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 1.24;
+};
+
+export const estimateRouteMinutes = (from, to, localTransport = "RENTAL") => {
+  const distance = roadDistanceKm(from, to);
+  if (distance == null) return null;
+  const speed = localTransport === "WALK" ? 4.5 : localTransport === "TRANSIT" ? 22 : localTransport === "TAXI" ? 32 : 38;
+  return Math.max(5, Math.min(120, Math.round((distance / speed * 60 + 4) / 5) * 5));
+};
+
+// Rebuild every displayed clock after D&D. Coordinates can come from the mock
+// catalog now and map/navigation responses later without changing the tuple API.
+export const recalculateDayTimeline = (day, localTransport = "RENTAL") => {
+  if (!Array.isArray(day?.[2]) || day[2].length === 0) return day;
+  const events = day[2].map((event) => [...event.slice(0, 6), { ...(event[6] || {}) }]);
+  for (let index = 0; index < events.length - 1; index += 1) {
+    const current = events[index][6] || {};
+    const next = events[index + 1][6] || {};
+    const estimated = estimateRouteMinutes(current, next, localTransport);
+    if (estimated != null) events[index][5] = estimated;
+  }
+  let cursor = clockMinutes(events[0][0]);
+  const scheduled = events.map((event) => {
+    const next = [clock(cursor), ...event.slice(1)];
+    cursor += durationMinutes(event[4]) + Math.max(0, Number(event[5]) || 0);
+    return next;
+  });
+  return [day[0], day[1], scheduled];
+};
 export const parseTicketLeg = (value) => {
   if (typeof value !== "string") return null;
   const times = value.match(/\b\d{2}:\d{2}\b/g);

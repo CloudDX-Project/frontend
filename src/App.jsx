@@ -17,8 +17,6 @@ import {
   outboundOptions,
   paceOptions,
   quickLinks,
-  rentalImages,
-  rentals,
   returnTimeOptions,
   stayChangeSummaryFor,
   themeOptions,
@@ -39,6 +37,7 @@ import FoodPreferenceSelector from "./components/planner/FoodPreferenceSelector"
 import AirportRoutePicker from "./components/planner/AirportRoutePicker";
 import TravelPreferenceModal from "./components/planner/TravelPreferenceModal";
 import CarDetailsStep from "./components/planner/CarDetailsStep";
+import RentalComparisonModal from "./components/planner/RentalComparisonModal";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
 
@@ -177,6 +176,7 @@ function App() {
     selectedReturnFlight,
     selectedFlight,
     selectedRental,
+    rentalCatalog,
     selectedStay,
     dates,
     nights,
@@ -185,6 +185,7 @@ function App() {
     scheduledStartTime,
     scheduledEndTime,
     dayPlans,
+    routeResults,
     saleFirstFlights,
     filteredStays,
     stayAreas,
@@ -240,11 +241,14 @@ function App() {
         <button className="header-reservations" type="button" onClick={() => notify("내 예약 기능은 백엔드 연동 후 제공됩니다.")}>내 예약</button>
         <button
           className="header-button"
-          onClick={() =>
-            document
-              .querySelector("#planner")
-              ?.scrollIntoView({ behavior: "smooth" })
-          }
+          onClick={() => {
+            if (isMobile) {
+              setIsPlannerOpen(true);
+              window.scrollTo({ top: 0, behavior: "smooth" });
+              return;
+            }
+            document.querySelector("#planner")?.scrollIntoView({ behavior: "smooth" });
+          }}
         >
           여행 만들기 <span>→</span>
         </button>
@@ -1191,7 +1195,8 @@ function App() {
           activeDay={activeDay}
           costDetails={costDetails}
           dates={dates}
-          dayPlans={dayPlans}
+            dayPlans={dayPlans}
+            routeResults={routeResults}
           destinationLocation={destinationLocation}
           endTime={scheduledEndTime}
           eventCost={itineraryEventCost}
@@ -1203,11 +1208,11 @@ function App() {
           planRevision={planRevision}
           originLocation={departureLocation}
           localTransport={localTransport}
+          isMobile={isMobile}
           selectedFlight={selectedFlight}
           selectedRental={selectedRental}
           selectedStay={selectedStay}
           setActiveDay={setActiveDay}
-          setPlanRevision={setPlanRevision}
           setPlanViewOpen={setPlanViewOpen}
           startTime={scheduledStartTime}
           stayChange={stayChange}
@@ -1397,14 +1402,10 @@ function App() {
               <CarDetailsStep carType={carType} carFuel={carFuel} onTypeChange={setCarType} onFuelChange={setCarFuel} onComplete={completeCarDetails} onBack={() => setTransportStep("mode")} />
             ) : (
               <>
-                <h3 id="ai-transport-title">
-                  {destinationLocation?.detail || destinationLocation?.region || "도착지"}에서는
-                  <br />
-                  어떻게 이동할까요?
-                </h3>
+                <h3 id="ai-transport-title">제주도 내에서는<br />어떻게 이동하시나요?</h3>
                 <span>
-                  {transportName(transport, outboundOptions)} 이동을 선택했어요. 도착 후
-                  여행 동선에 맞는 현지 이동수단을 선택해 주세요.
+                  {transportName(transport, outboundOptions)} 이동을 선택했어요. 제주에 도착한 뒤
+                  여행 전 구간에서 이용할 현지 이동수단을 선택해 주세요.
                 </span>
                 <div className="ai-option-grid local-options">
                   {localOptions.map((option) => (
@@ -1666,139 +1667,18 @@ function App() {
         </div>
       )}
       {rentalOpen && (
-        <div className="ai-modal-backdrop" role="presentation">
-          <section
-            className="ai-modal rental-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="rental-modal-title"
-          >
-            <button
-              type="button"
-              className="modal-close"
-              onClick={() => {
-                setRentalOpen(false);
-                setQuickEditTarget("");
-              }}
-              aria-label="렌터카 닫기"
-            >
-              ×
-            </button>
-            <p>✦ TripBuddy AI · JEJU DRIVE</p>
-            <div className="journey-chip">
-              <span>서울</span>
-              <i>→</i>
-              <b>제주</b>
-              <em>항공 선택 완료</em>
-              <i>→</i>
-              <b>렌터카</b>
-            </div>
-            <h3 id="rental-modal-title">
-              제주 2박 3일,
-              <br />총 대여료로 비교해 보세요.
-            </h3>
-            <span>
-              {selectedFlight
-                ? `${selectedFlight.airline} 왕복 항공편을 고른 뒤`
-                : "항공 이동을 고른 뒤"}{" "}
-              이어서, 제주 도착{" "}
-              {timeLabel(scheduledArrivalTime)}{" "}
-              · 제주 출발{" "}
-              {timeLabel(scheduledEndTime)}{" "}
-              기준 2박 3일 렌터카를 비교했어요.
-            </span>
-            <div className="rental-sale-banner">
-              <b>2박 3일 최저가 · 총 대여료 {money(rentals[0].price)}원</b>
-              <span>
-                첫날 애월·협재, 마지막 제주시 이동을 고려하면{" "}
-                <strong>공항 인수 방식·자차 보장·무료 취소</strong>를 함께
-                확인하는 편이 좋아요.
-              </span>
-            </div>
-            <div className="rental-compare-guide">
-              <b>예약 전 확인할 항목</b>
-              <span>
-                총 대여료 · 보험 범위 · 승차 인원/수하물 · 연료/충전 반납 · 공항
-                셔틀 · 운전자 조건 · 무료 취소
-              </span>
-            </div>
-            <div className="rental-catalog rental-modal-catalog">
-              {rentals.map((rental) => {
-                const isDeal = Boolean(rental.discount);
-                return (
-                  <button
-                    type="button"
-                    key={rental.id}
-                    className={`${rental.id === rentalId ? "selected" : ""} ${isDeal ? "rental-deal-card" : ""} ${rental.price >= 128000 ? "rental-premium" : ""}`}
-                    onClick={() => chooseRental(rental.id)}
-                  >
-                    <div className="rental-visual">
-                      <img
-                        src={rentalImages[rental.id]}
-                        alt={`${rental.car} 대표 차량`}
-                      />
-                      <span>
-                        {isDeal ? `${rental.discount}% 특가세일` : rental.badge}
-                      </span>
-                      <i>★ {rental.score} · 후기 {money(rental.reviews)}개</i>
-                    </div>
-                    <div className="rental-card-body">
-                      <b>{rental.company}</b>
-                      <small>
-                        {rental.car} · {rental.age}
-                      </small>
-                      <span className="rental-specs">{rental.specs}</span>
-                      <strong className={isDeal ? "rental-sale-price" : ""}>
-                        {isDeal && (
-                          <del>정가 {money(rental.originalPrice)}원</del>
-                        )}
-                        <b>{money(rental.price)}원</b>
-                        {isDeal && (
-                          <small>오늘만 {rental.discount}% 할인</small>
-                        )}
-                      </strong>
-                      <div className="rental-meta">
-                        <small>
-                          <b>보험</b>
-                          {rental.insurance}
-                        </small>
-                        <small>
-                          <b>인수</b>
-                          {rental.pickup}
-                        </small>
-                        <small>
-                          <b>반납</b>
-                          {rental.fuel}
-                        </small>
-                        <small>
-                          <b>취소</b>
-                          {rental.cancellation}
-                        </small>
-                      </div>
-                      <em className="rental-benefit">{rental.benefit}</em>
-                      <small className="rental-note">{rental.note}</small>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-            <small className="rental-disclaimer">
-              표시 금액은 2박 3일 48시간 시연 기준 총 대여료이며, 차종은 현장
-              상황에 따라 동급 차량으로 배정될 수 있어요. 연료·카시트·추가
-              운전자 비용과 보험 제외 항목은 예약 단계에서 다시 확인해야 합니다.
-            </small>
-            <button
-              type="button"
-              className="modal-back modal-back-strong"
-              onClick={() => {
-                setRentalOpen(false);
-                setFlightOpen(true);
-              }}
-            >
-              ← 항공편 다시 보기
-            </button>
-          </section>
-        </div>
+        <RentalComparisonModal
+          rentals={rentalCatalog}
+          selectedId={rentalId}
+          selectedFlight={selectedFlight}
+          arrivalTime={scheduledArrivalTime}
+          departureTime={scheduledEndTime}
+          money={money}
+          timeLabel={timeLabel}
+          onChoose={chooseRental}
+          onClose={() => { setRentalOpen(false); setQuickEditTarget(""); }}
+          onBackToFlight={() => { setRentalOpen(false); setFlightOpen(true); }}
+        />
       )}
       {preferenceModalOpen && (
         <TravelPreferenceModal

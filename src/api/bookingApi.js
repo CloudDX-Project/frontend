@@ -1,6 +1,7 @@
 import { apiClient, withMockFallback } from './apiClient';
 import { API_ENDPOINTS, API_SOURCE_LABELS } from './contracts';
 import { mockLodgingOffers, mockRentalOffers, mockTransportOffers } from './mockData';
+import { normalizeOfferEnvelope } from './normalizers';
 
 function mockOfferEnvelope(items) {
   return {
@@ -21,7 +22,7 @@ export function createBookingApi({ client = apiClient } = {}) {
     /** @param {import('./contracts').TransportSearchRequest} request */
     async searchFlightOffers(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.offers.flights, { method: 'POST', body: request, signal }),
+        async () => normalizeOfferEnvelope(await client.request(API_ENDPOINTS.offers.flights, { method: 'POST', body: request, signal }), 'flight'),
         async () => mockOfferEnvelope(mockTransportOffers(request, 'flight')),
       );
     },
@@ -29,28 +30,28 @@ export function createBookingApi({ client = apiClient } = {}) {
     /** @param {import('./contracts').TransportSearchRequest} request */
     async searchKtxOffers(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.offers.ktx, { method: 'POST', body: request, signal }),
+        async () => normalizeOfferEnvelope(await client.request(API_ENDPOINTS.offers.ktx, { method: 'POST', body: request, signal }), 'ktx'),
         async () => mockOfferEnvelope(mockTransportOffers(request, 'ktx')),
       );
     },
 
     async searchFerryOffers(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.offers.ferries, { method: 'POST', body: request, signal }),
+        async () => normalizeOfferEnvelope(await client.request(API_ENDPOINTS.offers.ferries, { method: 'POST', body: request, signal }), 'ferry'),
         async () => mockOfferEnvelope(mockTransportOffers(request, 'ferry')),
       );
     },
 
     async searchLodgingOffers(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.offers.lodging, { method: 'POST', body: request, signal }),
+        async () => normalizeOfferEnvelope(await client.request(API_ENDPOINTS.offers.lodging, { method: 'POST', body: request, signal }), 'lodging'),
         async () => mockOfferEnvelope(mockLodgingOffers(request)),
       );
     },
 
     async searchRentalOffers(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.offers.rentalCars, { method: 'POST', body: request, signal }),
+        async () => normalizeOfferEnvelope(await client.request(API_ENDPOINTS.offers.rentalCars, { method: 'POST', body: request, signal }), 'rental'),
         async () => mockOfferEnvelope(mockRentalOffers(request)),
       );
     },

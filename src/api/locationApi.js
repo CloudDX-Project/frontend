@@ -1,6 +1,7 @@
 import { apiClient, withMockFallback } from './apiClient';
 import { API_ENDPOINTS, API_SOURCE_LABELS } from './contracts';
 import { MOCK_PLACES, MOCK_REGION_SUMMARIES } from './mockData';
+import { normalizeContentEnvelope, normalizeLocationItem } from './normalizers';
 
 function normalizeLocation(item) {
   return {
@@ -17,7 +18,7 @@ export function createLocationApi({ client = apiClient } = {}) {
   return {
     async listDomesticRegions({ signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.locations.regions, { query: { countryCode: 'KR' }, signal }),
+        async () => normalizeContentEnvelope(await client.request(API_ENDPOINTS.locations.regions, { query: { countryCode: 'KR' }, signal })),
         async () => ({ items: MOCK_REGION_SUMMARIES, isMock: true, sourceLabel: API_SOURCE_LABELS.mock }),
       );
     },
@@ -31,7 +32,7 @@ export function createLocationApi({ client = apiClient } = {}) {
       if (!regionCode) return { items: [], isMock: true, sourceLabel: API_SOURCE_LABELS.mock };
 
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.locations.districts(regionCode), { signal }),
+        async () => normalizeContentEnvelope(await client.request(API_ENDPOINTS.locations.districts(regionCode), { signal })),
         async () => ({ items: [], isMock: true, sourceLabel: API_SOURCE_LABELS.mock }),
       );
     },
@@ -39,7 +40,7 @@ export function createLocationApi({ client = apiClient } = {}) {
     /** @param {import('./contracts').PlaceSearchRequest} request */
     async searchPlaces(request, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.locations.search, { query: request, signal }),
+        async () => normalizeContentEnvelope(await client.request(API_ENDPOINTS.locations.search, { query: request, signal })),
         async () => {
           const keyword = (request.query ?? '').trim().toLowerCase();
           const items = MOCK_PLACES
@@ -54,7 +55,11 @@ export function createLocationApi({ client = apiClient } = {}) {
     /** 자유 입력 위치를 지도 제공자 좌표로 변환한다. */
     async geocode(query, { signal } = {}) {
       return withMockFallback(
-        () => client.request(API_ENDPOINTS.locations.geocode, { query: { query }, signal }),
+        async () => {
+          const payload = await client.request(API_ENDPOINTS.locations.geocode, { query: { query }, signal });
+          const item = normalizeLocationItem(payload?.item ?? payload?.documents?.[0] ?? payload);
+          return { ...payload, item };
+        },
         async () => ({
           item: {
             id: `custom-${encodeURIComponent(query)}`,

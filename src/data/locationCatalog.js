@@ -266,13 +266,21 @@ export const jejuRegionCoordinates = {
 export const toApiLocation = (location) =>
   location
     ? {
+        id: location.id,
         locationId: location.id,
+        name: location.detail || location.name || location.region || "",
         countryCode: location.countryCode || "KR",
         regionCode: location.regionCode || null,
+        region: location.region || location.name || null,
+        district: location.detail || location.name || null,
         administrativeArea: location.region || location.name || null,
         localArea: location.detail || location.name || null,
-        latitude: location.latitude ?? null,
-        longitude: location.longitude ?? null,
+        point: {
+        latitude: location.latitude ?? location.point?.latitude ?? null,
+        longitude: location.longitude ?? location.point?.longitude ?? null,
+        },
+          latitude: location.latitude ?? location.point?.latitude ?? null,
+          longitude: location.longitude ?? location.point?.longitude ?? null,
         airportCodes: location.airportCodes || (location.airportCode ? [location.airportCode] : []),
         airportCode: location.airportCode || location.airportCodes?.[0] || null,
         apiSearchKeyword: location.apiSearchKeyword || location.detail || location.name || null,
