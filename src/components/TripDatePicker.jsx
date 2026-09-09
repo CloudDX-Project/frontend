@@ -139,14 +139,14 @@ export default function TripDatePicker({ startDate, endDate, startTime, endTime,
 
   const confirm = () => {
     if (!draftStart || !draftEnd) return;
-    onConfirm?.({ startDate: draftStart, endDate: draftEnd, startTime: draftStartTime, endTime: draftEndTime });
+    onConfirm?.({ startDate: draftStart, endDate: draftEnd, ...(showTimeFields ? { startTime: draftStartTime, endTime: draftEndTime } : {}) });
     setOpen(false);
   };
 
   return (
     <>
       <label className="date-field trip-date-field">
-        <small>언제 · 출발일과 귀국일을 한 번에 선택해 주세요</small>
+        <small><b>여행 날짜</b>출발일과 귀국일을 한 번에 선택해 주세요</small>
         {travelers && !endDate ? <aside className="date-ai-guide" role="status"><span>AI 안내</span><b>출발일과 귀국일을 정해주세요!</b></aside> : null}
         <button type="button" className="trip-date-range-trigger" onClick={openPicker}>
           <span><b>출발</b><small>{formatDate(startDate)}</small>{showTimeFields ? <em>{startTime}</em> : null}</span>
@@ -178,10 +178,10 @@ export default function TripDatePicker({ startDate, endDate, startTime, endTime,
               {[cursorMonth, addMonths(cursorMonth, 1)].map((month) => <CalendarMonth key={`${month.getFullYear()}-${month.getMonth()}`} month={month} minDate={today} maxDate={MAX_DATE} start={draftStart} end={draftEnd} weatherByDate={weatherByDate} dragState={dragState} onDateClick={selectDate} onDateEnter={extendDrag} onDatePointerDown={beginDrag} />)}
             </div>
             <footer className="trip-calendar-footer">
-              <div className="trip-calendar-time-group">
+              {showTimeFields ? <div className="trip-calendar-time-group">
                 <TimeSelect label="출발 시간" value={draftStartTime} onChange={setDraftStartTime} />
                 <TimeSelect label="도착 시간" value={draftEndTime} onChange={setDraftEndTime} />
-              </div>
+              </div> : <small>시간은 교통수단을 고른 뒤 확정해요.</small>}
               <div className="trip-calendar-confirm"><small>{formatDate(draftStart)} → {formatDate(draftEnd)}</small><button type="button" disabled={!draftStart || !draftEnd} onClick={confirm}>선택 완료</button></div>
             </footer>
           </section>

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Car, ChevronDown, Home, Plane, SlidersHorizontal, Smartphone, Sparkles, Ticket } from "lucide-react";
+import { Car, ChevronDown, Home, Plane, RotateCcw, SlidersHorizontal, Smartphone, Sparkles, Ticket } from "lucide-react";
 import { koreanRegions } from "./data/locationCatalog";
 import {
   dateLabel,
@@ -7,6 +7,8 @@ import {
   destinations,
   destinationExplorerItems,
   heroSlides,
+  flightOriginAirports,
+  foodPreferenceOptions,
   isSaleFlight,
   localOptions,
   money,
@@ -14,7 +16,6 @@ import {
   oneWayOriginalFare,
   outboundOptions,
   paceOptions,
-  placeAlternatives,
   quickLinks,
   rentalImages,
   rentals,
@@ -27,11 +28,17 @@ import {
 import DestinationExplorer from "./components/DestinationExplorer";
 import CommerceShowcase from "./components/CommerceShowcase";
 import TripDatePicker from "./components/TripDatePicker";
+import { ManualTravelTimeStep, TicketScheduleStep } from "./components/planner/TransportScheduleStep";
 import Premium3dIcon from "./components/common/Premium3dIcon";
 import BrandPolygon from "./components/icons/BrandPolygon";
 import JejuRegionModal from "./components/modals/JejuRegionModal";
 import RegionLocationMenu from "./components/modals/RegionLocationMenu";
 import PlanFullscreen from "./components/planner/PlanFullscreen";
+import TripTimeSummary from "./components/planner/TripTimeSummary";
+import FoodPreferenceSelector from "./components/planner/FoodPreferenceSelector";
+import AirportRoutePicker from "./components/planner/AirportRoutePicker";
+import TravelPreferenceModal from "./components/planner/TravelPreferenceModal";
+import CarDetailsStep from "./components/planner/CarDetailsStep";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
 
@@ -66,14 +73,18 @@ function App() {
     prompt,
     setPrompt,
     startDate,
-    setStartDate,
     endDate,
-    setEndDate,
     startTime,
-    setStartTime,
     endTime,
-    setEndTime,
-    showTimeFields,
+    tripSchedule,
+    estimatedCarMinutes,
+    ticketOptions,
+    ticketLeg,
+    selectedOutboundTicket,
+    scheduledArrivalTime,
+    confirmManualTimes,
+    chooseTicket,
+    confirmTravelDates,
     travelers,
     setTravelers,
     travelerInput,
@@ -85,6 +96,8 @@ function App() {
     pace,
     setPace,
     themes,
+    foodPreferences,
+    setFoodPreferences,
     heroSlideIndex,
     setHeroSlideIndex,
     setTransportPromptReady,
@@ -202,10 +215,16 @@ function App() {
     chooseStay,
     openIndependentBooking,
     changePlanStop,
+    reorderDayPlan,
     itineraryEventCost,
     generate,
     resetTripDraft,
   } = useTripPlanner();
+  const selectedOriginAirport = flightOriginAirports.find((airport) => airport.code === origin)
+    || flightOriginAirports[0];
+  const selectedFoodLabels = foodPreferenceOptions
+    .filter((option) => foodPreferences.includes(option.code))
+    .map((option) => option.label);
 
   return (
     <main className={isMobile && isPlannerOpen ? "mobile-planner-open" : ""}>
@@ -456,7 +475,6 @@ function App() {
                     <small>여정</small>
                     <b>어디서 출발해 어디로 떠날까요?</b>
                   </div>
-                  <span>STEP 01 · ROUTE</span>
                 </header>
                 <div className="route-picker-grid">
                   <div className="route-picker route-origin-picker">
@@ -553,30 +571,6 @@ function App() {
                   </div>
                 </div>
               </section>
-              <TripDatePicker
-                startDate={startDate}
-                endDate={endDate}
-                startTime={startTime}
-                endTime={endTime}
-                travelers={travelers}
-                departureTimeOptions={departureTimeOptions}
-                returnTimeOptions={returnTimeOptions}
-                showTimeFields={showTimeFields}
-                onConfirm={({ startDate: nextStartDate, endDate: nextEndDate, startTime: nextStartTime, endTime: nextEndTime }) => {
-                  setStartDate(nextStartDate);
-                  setEndDate(nextEndDate);
-                  setStartTime(nextStartTime);
-                  setEndTime(nextEndTime);
-                  setFlightId("");
-                  setReturnFlightId("");
-                  setTransportPromptReady(
-                    !showPlan && Boolean(destinationLocation) && Boolean(travelers) && Boolean(departureLocation),
-                  );
-                  if (showPlan) {
-                    notify("날짜가 바뀌어 항공편을 새 날짜 기준으로 다시 선택해 주세요.");
-                  }
-                }}
-              />
               <div
                 className={`traveler-field ${!travelers && destination ? "needs-input" : ""}`}
               >
@@ -592,14 +586,7 @@ function App() {
                     onChange={(event) => {
                       const value = event.target.value;
                       setTravelerInput(value);
-                      setTravelers(
-                        value.trim()
-                          ? Math.min(
-                              20,
-                              Math.max(1, Math.floor(Number(value)) || 1),
-                            )
-                          : null,
-                      );
+                      setTravelers(value.trim() ? Math.min(20, Math.max(1, Math.floor(Number(value)) || 1)) : null);
                     }}
                     onBlur={commitTravelers}
                     onKeyDown={(event) => {
@@ -614,64 +601,28 @@ function App() {
                   <span>명</span>
                 </label>
               </div>
+              <TripDatePicker
+                startDate={startDate}
+                endDate={endDate}
+                startTime={startTime}
+                endTime={endTime}
+                travelers={travelers}
+                departureTimeOptions={departureTimeOptions}
+                returnTimeOptions={returnTimeOptions}
+                showTimeFields={false}
+                onConfirm={confirmTravelDates}
+              />
             </div>
             {!destinationLocation && (
               <div className="waiting-booking">
                 <b>도착 권역을 선택하면 이동수단·숙소·일정을 각각 바로 비교할 수 있어요.</b>
               </div>
             )}
-            <section className="preference-area">
-              <div className="pace-preference">
-                <div>
-                  <small>여행일정</small>
-                  <b>하루를 어떤 속도로 보낼까요?</b>
-                </div>
-                <span>
-                  {paceOptions.map((option) => (
-                    <button
-                      type="button"
-                      key={option}
-                      className={pace === option ? "active" : ""}
-                      onClick={() => setPace(option)}
-                    >
-                      {option}
-                    </button>
-                  ))}
-                </span>
-              </div>
-              <div className="theme-preference">
-                <div>
-                  <small>여행 테마</small>
-                  <b>마음에 드는 테마를 골라주세요.</b>
-                </div>
-                <span className="theme-cards">
-                  {themeOptions.map((theme) => (
-                    <button
-                      type="button"
-                      key={theme.title}
-                      className={themes.includes(theme.title) ? "active" : ""}
-                      onClick={() => toggleTheme(theme.title)}
-                    >
-                      <img src={theme.image} alt="" />
-                      <b>{theme.title}</b>
-                      {themes.includes(theme.title) && (
-                        <span
-                          className="theme-selected"
-                          aria-label={`${theme.title} 선택됨`}
-                        >
-                          선택
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </span>
-              </div>
-            </section>
             {destinationLocation ? (
               <>
                 <section className="transport-choice">
                   <div>
-                    <p>1. AI 교통편 설계</p>
+                    <p>AI 교통편 설계</p>
                     <small>
                       출발지와 도착지, 여행 기간을 기준으로 항공·KTX·자차·버스·배를
                       비교하고 가장 적합한 이동수단을 선택해요.
@@ -717,74 +668,97 @@ function App() {
                     </span>
                   </div>
                 </section>
+                {transport && transport !== "FLIGHT" ? (
+                  <TripTimeSummary
+                    transportLabel={transportName(transport, outboundOptions)}
+                    schedule={tripSchedule}
+                    startTime={scheduledStartTime}
+                    arrivalTime={scheduledArrivalTime}
+                    endTime={scheduledEndTime}
+                    onEdit={() => {
+                      chooseTransportMode(transport);
+                      setTransportModalOpen(true);
+                    }}
+                  />
+                ) : null}
                 {transport === "FLIGHT" && (
-                  <section className="booking-section">
-                    <div className="booking-heading">
-                      <div>
-                        <p>2. 왕복 항공편 선택</p>
-                        <small>
-                          {dateLabel(startDate)} 가는 편 · {dateLabel(endDate)}{" "}
-                          오는 편을 각각 고르면 실제 비행시간에 맞춰 일정이
-                          조율돼요.
-                        </small>
-                      </div>
-                      <em>
-                        {selectedFlight
-                          ? `${selectedFlight.origin} → ${destinationAirport} 왕복 선택됨`
-                          : `${selectedOutboundFlight ? "오는 편 선택 필요" : "가는 편 미선택"}`}
-                      </em>
-                    </div>
-                    <div className="booking-summary flight-summary">
-                      <div>
-                        <span>✈</span>
+                  <>
+                    <section className="booking-section">
+                      <div className="booking-heading">
                         <div>
+                          <p>왕복 항공편 선택</p>
                           <small>
-                            {selectedFlight
-                              ? `${departureLocation?.detail || selectedFlight.origin} ↔ ${destinationLocation.detail} · 왕복`
-                              : "가는 편과 오는 편을 각각 선택"}
+                            {dateLabel(startDate)} 가는 편 · {dateLabel(endDate)}{" "}
+                            오는 편을 각각 고르면 실제 비행시간에 맞춰 일정이
+                            조율돼요.
                           </small>
-                          <b>
-                            {selectedFlight
-                              ? `${selectedOutboundFlight.airline} ${selectedFlight.out} · ${selectedReturnFlight.airline} ${selectedFlight.back}`
-                              : selectedOutboundFlight
-                                ? `${selectedOutboundFlight.airline} 가는 편 선택 완료 · 오는 편을 골라주세요`
-                                : "AI가 두 편의 항공권을 따로 비교해 드릴게요"}
-                          </b>
                         </div>
+                        <em>
+                          {selectedFlight
+                            ? `${selectedFlight.origin} → ${destinationAirport} 왕복 선택됨`
+                            : `${selectedOutboundFlight ? "오는 편 선택 필요" : "가는 편 미선택"}`}
+                        </em>
                       </div>
-                      {selectedFlight && (
-                        <strong>
-                          {money(selectedFlight.fare)}원<small>1인 왕복</small>
-                        </strong>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (showPlan) setQuickEditTarget("flight");
-                          setFlightPickerLeg(
-                            selectedOutboundFlight ? "return" : "outbound",
-                          );
-                          setFlightOpen(true);
-                        }}
-                      >
-                        {selectedFlight
-                          ? "왕복편 변경"
-                          : selectedOutboundFlight
-                            ? "오는 편 고르기"
-                            : "가는 편 고르기"}{" "}
-                        →
-                      </button>
-                    </div>
-                  </section>
+                      <div className="booking-summary flight-summary">
+                        <div>
+                          <span>✈</span>
+                          <div>
+                            <small>
+                              {selectedFlight
+                                ? `${departureLocation?.detail || selectedFlight.origin} ↔ ${destinationLocation.detail} · 왕복`
+                                : "가는 편과 오는 편을 각각 선택"}
+                            </small>
+                            <b>
+                              {selectedFlight
+                                ? `${selectedOutboundFlight.airline} ${selectedFlight.out} · ${selectedReturnFlight.airline} ${selectedFlight.back}`
+                                : selectedOutboundFlight
+                                  ? `${selectedOutboundFlight.airline} 가는 편 선택 완료 · 오는 편을 골라주세요`
+                                  : "AI가 두 편의 항공권을 따로 비교해 드릴게요"}
+                            </b>
+                          </div>
+                        </div>
+                        {selectedFlight && (
+                          <strong>
+                            {money(selectedFlight.fare)}원<small>1인 왕복</small>
+                          </strong>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (showPlan) setQuickEditTarget("flight");
+                            setFlightPickerLeg(
+                              selectedOutboundFlight ? "return" : "outbound",
+                            );
+                            setFlightOpen(true);
+                          }}
+                        >
+                          {selectedFlight
+                            ? "왕복편 변경"
+                            : selectedOutboundFlight
+                              ? "오는 편 고르기"
+                              : "가는 편 고르기"}{" "}
+                          →
+                        </button>
+                      </div>
+                    </section>
+                    <TripTimeSummary
+                      transportLabel={transportName(transport, outboundOptions)}
+                      schedule={tripSchedule}
+                      startTime={scheduledStartTime}
+                      arrivalTime={scheduledArrivalTime}
+                      endTime={scheduledEndTime}
+                      onEdit={() => {
+                        chooseTransportMode(transport);
+                        setTransportModalOpen(false);
+                      }}
+                    />
+                  </>
                 )}
                 {localTransport === "RENTAL" && (
                   <section className="rental-section">
                     <div className="booking-heading">
                       <div>
-                        <p>
-                          {transport === "FLIGHT" ? "3." : "2."} 현지 렌터카
-                          선택
-                        </p>
+                        <p>현지 렌터카 선택</p>
                         <small>
                           {selectedFlight
                             ? `${selectedFlight.airline} 항공 선택 뒤, AI가 2박 3일 동선에 맞춰 비교했어요.`
@@ -846,9 +820,6 @@ function App() {
                 <div className="booking-heading">
                   <div>
                     <p>
-                      {transport === "FLIGHT" && localTransport === "RENTAL"
-                        ? "4."
-                        : "3."}{" "}
                       숙소 선택
                     </p>
                     <small>
@@ -928,7 +899,9 @@ function App() {
                         <b>AI 숙소 추천</b>{" "}
                         {selectedStay
                           ? `${selectedStay.name}은 ${selectedStay.insight}`
-                          : "특가세일 객실을 먼저 보여드리고, 선택한 동선과 인원에 맞는 숙소를 추천할게요."}
+                          : destinationLocation?.regionCode === "KR-49" && Number.isFinite(destinationLocation?.latitude)
+                            ? `${destinationLocation.detail || destinationLocation.name}에서 가까운 숙소부터 보여드려요. 가격·지역 필터로 다시 좁힐 수 있어요.`
+                            : "특가세일 객실을 먼저 보여드리고, 선택한 동선과 인원에 맞는 숙소를 추천할게요."}
                       </p>
                       <em>특가세일 객실은 빠르게 마감돼요.</em>
                     </div>
@@ -943,7 +916,7 @@ function App() {
                     <div className="stay-toolbar">
                       <div className="price-filters">
                         {[
-                          ["0-5", "가성비 (~10만)"],
+                          ["all", "전체"],
                           ["5-10", "가성비 (~10만)"],
                           ["10-20", "스탠다드 (10~20만)"],
                           ["20-30", "프리미엄 (20~30만)"],
@@ -1001,6 +974,9 @@ function App() {
                             <div>
                               <span>{stay.area}</span>
                               <b>{stay.name}</b>
+                              {Number.isFinite(stay.distanceKm) && (
+                                <small className="stay-distance">⌖ 선택지에서 약 {stay.distanceKm}km</small>
+                              )}
                               <small className="hotel-rating">
                                 ★ {stay.rating} · 3인 여행 기준 객실
                               </small>
@@ -1023,6 +999,35 @@ function App() {
                 )}
               </section>
             )}
+            <section className="preference-area planner-final-preferences">
+              <div className="theme-preference">
+                <div>
+                  <small>여행 테마</small>
+                  <b>마음에 드는 테마를 골라주세요.</b>
+                </div>
+                <span className="theme-cards">
+                  {themeOptions.map((theme) => (
+                    <button type="button" key={theme.title} className={themes.includes(theme.title) ? "active" : ""} onClick={() => toggleTheme(theme.title)}>
+                      <img src={theme.image} alt="" />
+                      <b>{theme.title}</b>
+                      {themes.includes(theme.title) && <span className="theme-selected" aria-label={`${theme.title} 선택됨`}>선택</span>}
+                    </button>
+                  ))}
+                </span>
+              </div>
+              <div className="pace-preference">
+                <div>
+                  <small>여행 일정</small>
+                  <b>하루를 어떤 속도로 보낼까요?</b>
+                </div>
+                <span>
+                  {paceOptions.map((option) => (
+                    <button type="button" key={option} className={pace === option ? "active" : ""} onClick={() => setPace(option)}>{option}</button>
+                  ))}
+                </span>
+              </div>
+              <FoodPreferenceSelector value={foodPreferences} onChange={setFoodPreferences} />
+            </section>
           </div>
           <aside className="ai-area">
             <p>
@@ -1049,6 +1054,7 @@ function App() {
               <li>
                 ✓ {pace} · {themes.length ? themes.join(" · ") : "테마 선택 전"}
               </li>
+              <li>✓ 음식 취향 · {selectedFoodLabels.length ? selectedFoodLabels.join(" · ") : "동선·평점 우선"}</li>
               <li>✓ 선택 즉시 1인 예산 다시 계산</li>
             </ul>
             <div className="selection-total">
@@ -1059,11 +1065,14 @@ function App() {
               </span>
             </div>
             <button className="generate" type="button" onClick={() => setIsDisclaimerOpen(true)}>
-              내 예산으로 여행 만들기 →
+              AI 일정 생성 →
             </button>
             <button className="reset-draft-btn" type="button" onClick={() => {
               if (window.confirm("입력한 여행 조건을 모두 지우고 새로 시작할까요?")) resetTripDraft();
-            }}>↺ 입력 초기화</button>
+            }}>
+              <RotateCcw size={15} strokeWidth={2.2} aria-hidden="true" />
+              <span>입력 초기화</span>
+            </button>
             {showPlan && (
               <button
                 className="plan-return-button"
@@ -1188,9 +1197,9 @@ function App() {
           eventCost={itineraryEventCost}
           money={money}
           onChangeStop={changePlanStop}
+          onReorderStops={reorderDayPlan}
           onOpenStay={() => setStayOpen(true)}
           onOpenStayComparison={() => setStayChangePromptOpen(true)}
-          placeOptions={placeAlternatives}
           planRevision={planRevision}
           originLocation={departureLocation}
           localTransport={localTransport}
@@ -1299,9 +1308,13 @@ function App() {
                 ? "QUESTION 01"
                 : transportStep === "mode"
                   ? "TRAVEL MODE"
+                  : transportStep === "manual-time"
+                    ? "TRAVEL TIME"
+                    : transportStep === "tickets"
+                      ? "TICKET SCHEDULE"
                   : transportStep === "car-detail"
-                    ? "CAR DETAILS"
-                    : "LOCAL MOVE"}
+                      ? "CAR DETAILS"
+                      : "LOCAL MOVE"}
             </p>
             {transportStep === "origin" ? (
               <>
@@ -1347,7 +1360,7 @@ function App() {
                 </h3>
                 <span>
                   선택한 출발지·도착지·여행 날짜를 바탕으로 이동수단을 비교해요.
-                  항공을 고르면 가는 편과 오는 편을 각각 선택할 수 있어요.
+                  항공·KTX·버스는 왕복 티켓의 시간표로, 자차는 직접 고른 시간으로 일정을 정해요.
                 </span>
                 <div className="ai-option-grid travel-mode-options">
                   {outboundOptions.map((option) => (
@@ -1376,53 +1389,12 @@ function App() {
                   ← 출발지·도착지 다시 보기
                 </button>
               </>
+            ) : transportStep === "manual-time" ? (
+              <ManualTravelTimeStep startDate={startDate} endDate={endDate} startTime={startTime} endTime={endTime} estimatedMinutes={estimatedCarMinutes} onConfirm={confirmManualTimes} onBack={() => setTransportStep("mode")} />
+            ) : transportStep === "tickets" ? (
+              <TicketScheduleStep mode={transport} leg={ticketLeg} tickets={ticketOptions} startDate={startDate} endDate={endDate} origin={departureLocation?.detail || "출발지"} destination={destinationLocation?.detail || "도착지"} selectedOutbound={selectedOutboundTicket} onSelect={chooseTicket} onBack={() => setTransportStep("mode")} />
             ) : transportStep === "car-detail" ? (
-              <>
-                <h3 id="ai-transport-title">
-                  자차 이동을 선택하셨네요.
-                  <br />
-                  정확한 유류비 계산을 위해 차량 정보를 알려주세요.
-                </h3>
-                <span>선택한 차량 정보는 예상 유류비와 통행료 계산에만 사용돼요.</span>
-                <div className="car-detail-options">
-                  <div className="car-detail-row">
-                    <b>차종</b>
-                    <div>
-                      {["경차", "세단", "SUV"].map((type) => (
-                        <button
-                          type="button"
-                          key={type}
-                          className={carType === type ? "selected" : ""}
-                          onClick={() => setCarType(type)}
-                        >
-                          {type}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="car-detail-row">
-                    <b>연료</b>
-                    <div>
-                      {["휘발유", "경유", "LPG"].map((fuel) => (
-                        <button
-                          type="button"
-                          key={fuel}
-                          className={carFuel === fuel ? "selected" : ""}
-                          onClick={() => setCarFuel(fuel)}
-                        >
-                          {fuel}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <button type="button" className="car-detail-complete" onClick={completeCarDetails}>
-                  선택 완료
-                </button>
-                <button type="button" className="modal-back" onClick={() => setTransportStep("mode")}>
-                  ← 이동수단 다시 고르기
-                </button>
-              </>
+              <CarDetailsStep carType={carType} carFuel={carFuel} onTypeChange={setCarType} onFuelChange={setCarFuel} onComplete={completeCarDetails} onBack={() => setTransportStep("mode")} />
             ) : (
               <>
                 <h3 id="ai-transport-title">
@@ -1477,7 +1449,7 @@ function App() {
             aria-modal="true"
             aria-labelledby="return-flight-transition-title"
           >
-            <p>✦ TripBuddy AI · ROUND TRIP STEP 02</p>
+            <p>✦ TripBuddy AI · 돌아오는 편 선택</p>
             <Premium3dIcon type="flight" />
             <h3 id="return-flight-transition-title">
               가는 편을 선택했어요.
@@ -1547,67 +1519,52 @@ function App() {
                 ? "먼저 제주로 가는 편을 고르고, 이어서 돌아오는 편을 선택해요."
                 : `${selectedOutboundFlight?.airline || "선택한"} 가는 편에 이어 제주 → ${departureLocation?.detail || "출발지"} 오는 편을 고르는 단계예요.`}
             </span>
-            <div className="sale-hero">
+            <div className="sale-hero flight-value-hero">
               <div>
-                <small>TODAY ONLY · 23:59 종료</small>
-                <b>오늘만, 정가 대비 최대 47% 할인</b>
+                <small>TODAY'S SPECIAL FARE · 한정 좌석</small>
+                <b>오늘 예약 가능한 특가 운임을 먼저 확인하세요.</b>
                 <span>
-                  김포·인천 출발별 오늘만 특가를 먼저 비교해요. 가는 편과 오는
-                  편은 서로 다른 항공사를 선택할 수도 있어요.
+                  할인율과 세금 포함 최종가를 비교한 뒤, 가는 편과 오는 편을
+                  서로 다른 항공사로 자유롭게 조합할 수 있어요.
                 </span>
               </div>
               <strong>
                 ✈
                 <small>
-                  오늘만
+                  SALE
                   <br />
-                  특가
+                  TODAY
                 </small>
               </strong>
             </div>
             <div className="flight-filter-row">
-              <div className="picker-tabs">
-                <button
-                  type="button"
-                  className={origin === "GMP" ? "active" : ""}
-                  onClick={() => {
-                    setOrigin("GMP");
-                    setFlightId("");
-                    setReturnFlightId("");
-                  }}
-                >
-                  김포 ↔ 제주
-                </button>
-                <button
-                  type="button"
-                  className={origin === "ICN" ? "active" : ""}
-                  onClick={() => {
-                    setOrigin("ICN");
-                    setFlightId("");
-                    setReturnFlightId("");
-                  }}
-                >
-                  인천 ↔ 제주
-                </button>
-              </div>
+              <AirportRoutePicker
+                airports={flightOriginAirports}
+                originAirport={selectedOriginAirport}
+                leg={flightPickerLeg}
+                onOriginChange={(airportCode) => {
+                  setOrigin(airportCode);
+                  setFlightId("");
+                  setReturnFlightId("");
+                }}
+              />
               <label className="flight-sort">
                 <span>정렬</span>
                 <select
                   value={flightSort}
                   onChange={(event) => setFlightSort(event.target.value)}
                 >
-                  <option value="time">시간순</option>
+                  <option value="recommended">추천순</option>
+                  <option value="time">출발시간순</option>
                   <option value="price">최저가순</option>
                 </select>
               </label>
             </div>
             <p className="flight-route-note">
-              <b>{origin === "GMP" ? "김포 출발" : "인천 출발"}</b> ·{" "}
+              <b>{selectedOriginAirport.name} ({origin})</b> ·{" "}
               {flightPickerLeg === "outbound"
-                ? origin === "GMP"
-                  ? "서울에서 제주로 향하는 시간표를 비교해요."
-                  : "인천 출발 오전·저녁 항공편을 넓게 비교해요."
-                : "제주에서 서울로 돌아오는 시간표를 비교해요."}
+                ? `${selectedOriginAirport.city}에서 제주로 향하는 직항편을 비교해요.`
+                : `제주에서 ${selectedOriginAirport.city}(으)로 돌아오는 직항편을 비교해요.`}
             </p>
             <p className="picker-date">
               {dateLabel(flightPickerLeg === "outbound" ? startDate : endDate)}{" "}
@@ -1624,6 +1581,9 @@ function App() {
                     : flight.id === returnFlightId;
                 const flightTime =
                   flightPickerLeg === "outbound" ? flight.out : flight.back;
+                const [departureTime, arrivalTime] = flightTime.split("→").map((value) => value.trim());
+                const departureCode = flightPickerLeg === "outbound" ? origin : "CJU";
+                const arrivalCode = flightPickerLeg === "outbound" ? "CJU" : origin;
                 const oneWay = oneWayFare(flight);
                 const originalOneWay = oneWayOriginalFare(flight);
                 return (
@@ -1635,22 +1595,28 @@ function App() {
                   >
                     {isSaleFlight(flight) && (
                       <em className="flight-sale-sticker">
-                        오늘만 {flight.discount}% OFF
+                        오늘의 특가 · {flight.discount}% 할인
                       </em>
                     )}
                     <span className={`airline-mark ${flight.tone}`}>
-                      {flight.airline.slice(0, 1)}
+                      {flight.code.split(/\s+/)[0]}
                     </span>
-                    <div>
-                      <b>
+                    <div className="flight-card-main">
+                      <b className="flight-airline-name">
                         {flight.airline}
                         <small>{flight.code}</small>
                       </b>
-                      <span className="flight-time">{flightTime}</span>
+                      <span className="flight-segment">
+                        <span><strong>{departureTime}</strong><small>{departureCode}</small></span>
+                        <i><small>{flight.durationMinutes}분</small><b>직항</b></i>
+                        <span><strong>{arrivalTime}</strong><small>{arrivalCode}</small></span>
+                      </span>
+                      <span className="flight-inclusions">
+                        <i>{flight.cabin}</i><i>{flight.baggage}</i><i>{flight.fareNote}</i>
+                      </span>
                       {isSaleFlight(flight) && (
                         <em className="flight-deal">
-                          정가 {money(originalOneWay)}원 →{" "}
-                          <b>{flight.discount}% 할인</b> · 잔여 {flight.seats}석
+                          <b>{flight.discount}% 할인</b> · 정가 {money(originalOneWay)}원 · 잔여 {flight.seats}석
                         </em>
                       )}
                     </div>
@@ -1665,7 +1631,7 @@ function App() {
                         <>
                           <del>정가 {money(originalOneWay)}원</del>
                           <b>{money(oneWay)}원</b>
-                          <small>{flight.discount}% 할인 · 편도 1인</small>
+                          <small>오늘의 특가 · 편도 1인</small>
                         </>
                       ) : (
                         <>
@@ -1736,13 +1702,9 @@ function App() {
                 ? `${selectedFlight.airline} 왕복 항공편을 고른 뒤`
                 : "항공 이동을 고른 뒤"}{" "}
               이어서, 제주 도착{" "}
-              {selectedFlight
-                ? selectedFlight.out.slice(-5)
-                : timeLabel(startTime)}{" "}
+              {timeLabel(scheduledArrivalTime)}{" "}
               · 제주 출발{" "}
-              {selectedFlight
-                ? selectedFlight.back.slice(0, 5)
-                : timeLabel(endTime)}{" "}
+              {timeLabel(scheduledEndTime)}{" "}
               기준 2박 3일 렌터카를 비교했어요.
             </span>
             <div className="rental-sale-banner">
@@ -1756,8 +1718,8 @@ function App() {
             <div className="rental-compare-guide">
               <b>예약 전 확인할 항목</b>
               <span>
-                총 대여료 · 보험 범위 · 연료/충전 반납 · 공항 셔틀 · 운전자 조건
-                · 무료 취소
+                총 대여료 · 보험 범위 · 승차 인원/수하물 · 연료/충전 반납 · 공항
+                셔틀 · 운전자 조건 · 무료 취소
               </span>
             </div>
             <div className="rental-catalog rental-modal-catalog">
@@ -1778,15 +1740,14 @@ function App() {
                       <span>
                         {isDeal ? `${rental.discount}% 특가세일` : rental.badge}
                       </span>
-                      <i>
-                        ★ {rental.score} · 잔여 {rental.left}대
-                      </i>
+                      <i>★ {rental.score} · 후기 {money(rental.reviews)}개</i>
                     </div>
                     <div className="rental-card-body">
                       <b>{rental.company}</b>
                       <small>
                         {rental.car} · {rental.age}
                       </small>
+                      <span className="rental-specs">{rental.specs}</span>
                       <strong className={isDeal ? "rental-sale-price" : ""}>
                         {isDeal && (
                           <del>정가 {money(rental.originalPrice)}원</del>
@@ -1822,8 +1783,9 @@ function App() {
               })}
             </div>
             <small className="rental-disclaimer">
-              표시 금액은 2박 3일 48시간 시연 기준이며, 실제 보험·연령·대여
-              조건은 예약 단계에서 다시 확인해야 합니다.
+              표시 금액은 2박 3일 48시간 시연 기준 총 대여료이며, 차종은 현장
+              상황에 따라 동급 차량으로 배정될 수 있어요. 연료·카시트·추가
+              운전자 비용과 보험 제외 항목은 예약 단계에서 다시 확인해야 합니다.
             </small>
             <button
               type="button"
@@ -1839,87 +1801,22 @@ function App() {
         </div>
       )}
       {preferenceModalOpen && (
-        <div className="ai-modal-backdrop" role="presentation">
-          <section
-            className="ai-modal preference-modal"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="preference-modal-title"
-          >
-            <button
-              type="button"
-              className="modal-close"
-              onClick={() => setPreferenceModalOpen(false)}
-              aria-label="여행 취향 설정 닫기"
-            >
-              ×
-            </button>
-            <p>✦ TripBuddy AI · TRAVEL STYLE</p>
-            <h3 id="preference-modal-title">
-              제주에서는
-              <br />
-              어떤 여행을 원하세요?
-            </h3>
-            <span>
-              렌터카 선택을 반영했어요. 여행 속도와 테마를 고르면 AI가 이후
-              일정과 추천 경비에 바로 반영합니다.
-            </span>
-            <section className="preference-modal-group">
-              <small>여행 속도</small>
-              <b>하루를 어떤 속도로 보낼까요?</b>
-              <div>
-                {paceOptions.map((option) => (
-                  <button
-                    type="button"
-                    className={pace === option ? "active" : ""}
-                    onClick={() => setPace(option)}
-                    key={option}
-                  >
-                    {option}
-                  </button>
-                ))}
-              </div>
-            </section>
-            <section className="preference-modal-group">
-              <small>여행 테마</small>
-              <b>마음에 드는 테마를 골라주세요.</b>
-              <div className="preference-modal-themes">
-                {themeOptions.map((theme) => (
-                  <button
-                    type="button"
-                    className={themes.includes(theme.title) ? "active" : ""}
-                    onClick={() => toggleTheme(theme.title)}
-                    key={theme.title}
-                  >
-                    <img src={theme.image} alt="" />
-                    <span>{theme.title}</span>
-                    {themes.includes(theme.title) && (
-                      <i
-                        className="theme-modal-check"
-                        aria-label={`${theme.title} 선택됨`}
-                      >
-                        선택
-                      </i>
-                    )}
-                  </button>
-                ))}
-              </div>
-            </section>
-            <button
-              type="button"
-              className="preference-confirm"
-              onClick={() => {
-                setPreferenceModalOpen(false);
-                setStayTransitionOpen(true);
-                notify(
-                  `${pace} · ${themes.length ? themes.join(" · ") : "테마 미선택"} 취향을 반영했어요.`,
-                );
-              }}
-            >
-              선택 완료 · 숙소 비교로 이동
-            </button>
-          </section>
-        </div>
+        <TravelPreferenceModal
+          themes={themes}
+          themeOptions={themeOptions}
+          onToggleTheme={toggleTheme}
+          pace={pace}
+          paceOptions={paceOptions}
+          onPaceChange={setPace}
+          foodPreferences={foodPreferences}
+          onFoodPreferencesChange={setFoodPreferences}
+          onClose={() => setPreferenceModalOpen(false)}
+          onComplete={() => {
+            setPreferenceModalOpen(false);
+            setPlanPromptOpen(true);
+            notify(`${pace} · ${themes.length ? themes.join(" · ") : "테마 미선택"} · ${selectedFoodLabels.length ? selectedFoodLabels.join(" · ") : "음식 취향 제한 없음"}을 반영했어요.`);
+          }}
+        />
       )}
       {stayTransitionOpen && (
         <div className="ai-modal-backdrop" role="presentation">
@@ -1988,10 +1885,10 @@ function App() {
               className="transition-primary"
               onClick={() => {
                 setBudgetConfirmationOpen(false);
-                setPlanPromptOpen(true);
+                setPreferenceModalOpen(true);
               }}
             >
-              다음 단계로 →
+              여행 테마 선택으로 →
             </button>
           </section>
         </div>

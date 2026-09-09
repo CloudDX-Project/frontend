@@ -7,20 +7,25 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation }) 
   const route = {
     label: selectedDay?.[0] || `${destinationContext} 여행 동선`,
     stops: (selectedDay?.[2] || [])
-      .map(([, , name]) => name)
-      .filter(
-        (name) =>
-          !/체크아웃|출발 준비|짐 정리|수령 · 출발 준비|이동 준비/.test(name),
-      )
+      .filter((event) => event[6]?.isGeographical !== false && !/체크인|체크아웃|준비|수령|반납|짐 정리|탑승|귀가|오는 편|이동/.test(event[2] || ""))
+      .map(([, , name, , , , metadata = {}]) => ({
+        name: name?.trim(),
+        latitude: metadata.latitude ?? metadata.point?.latitude,
+        longitude: metadata.longitude ?? metadata.point?.longitude,
+      }))
+      .filter((stop) => Boolean(stop.name))
       .slice(0, 6),
   };
-  const searchStops = (route.stops.length ? route.stops : [destinationContext]).map(
+  const searchStops = (route.stops.length ? route.stops : [{ name: destinationContext }]).map(
     (stop) =>
       encodeURIComponent(
-        `${stop}, ${destinationLocation?.apiSearchKeyword || destinationContext}`,
+        Number.isFinite(stop.latitude) && Number.isFinite(stop.longitude)
+          ? `${stop.latitude},${stop.longitude}`
+          : `${stop.name}, ${destinationLocation?.apiSearchKeyword || destinationContext}`,
       ),
   );
-  const mapUrl = `https://www.google.com/maps?output=embed&f=d&saddr=${searchStops[0]}&daddr=${searchStops.slice(1).join("+to:")}`;
+  const mapDestinations = searchStops.length > 1 ? searchStops.slice(1) : searchStops;
+  const mapUrl = `https://www.google.com/maps?output=embed&f=d&saddr=${searchStops[0]}&daddr=${mapDestinations.join("+to:")}`;
   const openMapUrl = `https://www.google.com/maps/dir/${searchStops.join("/")}`;
 
   return (
@@ -46,9 +51,9 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation }) 
         <b>DAY {activeDay + 1} ROUTE</b>
         <div className="route-stop-list">
           {route.stops.map((stop, index) => (
-            <span key={stop}>
+            <span key={`${stop.name}-${index}`}>
               <i>{index + 1}</i>
-              {stop}
+              {stop.name}
             </span>
           ))}
         </div>

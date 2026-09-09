@@ -9,17 +9,14 @@ import {
 } from "lucide-react";
 import KoreaRegionMap from "./KoreaRegionMap";
 import RegionDetailMap from "./RegionDetailMap";
-import useMediaQuery from "../hooks/useMediaQuery";
+import { flattenDistricts } from "../data/locationCatalog";
 import jejuCoastPhoto from "../assets/jeju-main-hero.jpeg";
 import "./destination-explorer.css";
 
 const TAB = {
   TRENDING: "trending",
   MAP: "map",
-  THEME: "theme",
 };
-
-const THEME_OPTIONS = ["전체", "바다", "힐링", "맛집·카페", "야경", "자연·숲"];
 
 const DESTINATION_IMAGE_FALLBACKS = {
   "destination-jeju": jejuCoastPhoto,
@@ -32,21 +29,146 @@ const DESTINATION_IMAGE_FALLBACKS = {
 };
 
 export const TRENDING_DESTINATIONS = [
-  { id: "destination-jeju", title: "제주도", subtitle: "제주시 · 협재 · 성산", region: "제주특별자치도", regionCode: "KR-49", latitude: 33.4996, longitude: 126.5312, tags: ["바다", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1589136785350-93a3881bcce2?q=80&w=600&auto=format&fit=crop", subSpots: ["성산일출봉", "애월 한담해안산책로", "오설록 티뮤지엄", "동문시장"] },
-  { id: "destination-busan", title: "부산", subtitle: "해운대 · 광안리", region: "부산광역시", regionCode: "KR-26", latitude: 35.1796, longitude: 129.0756, tags: ["바다", "맛집·카페", "야경"], image: "https://yaimg.yanolja.com/v5/2026/01/30/05/1280/697c45a04bcde3.06159282.jpg", subSpots: ["해운대 블루라인파크", "흰여울문화마을", "해동용궁사", "광안리 해수욕장"] },
-  { id: "destination-gangneung", title: "강릉", subtitle: "경포 · 안목", region: "강원특별자치도", regionCode: "KR-42", latitude: 37.7519, longitude: 128.8761, tags: ["바다", "맛집·카페", "힐링"], image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=88", subSpots: ["경포대", "아르떼뮤지엄", "안목해변 커피거리", "강릉 중앙시장"] },
-  { id: "destination-sokcho", title: "속초", subtitle: "설악산 · 영랑호", region: "강원특별자치도", regionCode: "KR-42", latitude: 38.207, longitude: 128.5918, tags: ["자연·숲", "바다", "힐링"], image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=88", subSpots: ["설악산 케이블카", "속초아이 대관람차", "아바이마을", "속초관광수산시장"] },
-  { id: "destination-yeosu", title: "여수", subtitle: "오동도 · 낭만포차", region: "전라남도", regionCode: "KR-46", latitude: 34.7604, longitude: 127.6622, tags: ["바다", "야경", "맛집·카페"], image: "https://images.unsplash.com/photo-1598509524136-421c60f2bb97?q=80&w=600&auto=format&fit=crop", subSpots: ["오동도", "여수 해상케이블카", "향일암", "이순신광장"] },
-  { id: "destination-gyeongju", title: "경주", subtitle: "황리단길 · 대릉원", region: "경상북도", regionCode: "KR-47", latitude: 35.8562, longitude: 129.2247, tags: ["힐링", "맛집·카페", "야경"], image: "https://upload.wikimedia.org/wikipedia/commons/b/bb/Korea-Gyeongju-Bulguksa-24.jpg", subSpots: ["대릉원", "황리단길", "불국사", "동궁과 월지"] },
-  { id: "destination-jeonju", title: "전주", subtitle: "한옥마을 · 남부시장", region: "전북특별자치도", regionCode: "KR-45", latitude: 35.8242, longitude: 127.148, tags: ["맛집·카페", "힐링", "야경"], image: "https://tour.jeonju.go.kr/images/visitjj/contents/streetmap/img_hanok00.jpg", subSpots: ["전주한옥마을", "객리단길", "덕진공원", "남부시장"] },
-  { id: "destination-gapyeong-chuncheon", title: "가평·춘천", subtitle: "남이섬 · 의암호", region: "경기도·강원특별자치도", regionCode: "KR-41", latitude: 37.8564, longitude: 127.62, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=600&auto=format&fit=crop", subSpots: ["남이섬", "아침고요수목원", "레고랜드", "구봉산 카페거리"] },
-  { id: "destination-taean", title: "태안·안면도", subtitle: "꽃지 · 신두리", region: "충청남도", regionCode: "KR-44", latitude: 36.7456, longitude: 126.2979, tags: ["바다", "자연·숲", "힐링"], image: "https://images.unsplash.com/photo-1455729552865-3658a5d39692?auto=format&fit=crop&w=1200&q=88", subSpots: ["꽃지해수욕장", "신두리 해안사구", "천리포수목원", "안면도 수산시장"] },
-  { id: "destination-danyang", title: "단양", subtitle: "도담삼봉 · 남한강", region: "충청북도", regionCode: "KR-43", latitude: 36.9847, longitude: 128.365, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://d3h30waly5w5yx.cloudfront.net/images/tour/pictures/danyang-dodam-1.jpg", subSpots: ["도담삼봉", "패러글라이딩 활공장", "만천하스카이워크", "단양 구경시장"] },
-  { id: "destination-suncheon-boseong", title: "순천·보성", subtitle: "순천만 · 녹차밭", region: "전라남도", regionCode: "KR-46", latitude: 34.9006, longitude: 127.287, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://commons.wikimedia.org/wiki/Special:FilePath/Suncheon%20Ecological%20Bay-%20%EC%88%9C%EC%B2%9C%EB%A7%8C%EC%8A%B5%EC%A7%80.jpg?width=1200", subSpots: ["순천만습지", "순천만국가정원", "대한다원 녹차밭", "낙안읍성 민속마을"] },
-  { id: "destination-pohang", title: "포항", subtitle: "호미곶 · 영일대", region: "경상북도", regionCode: "KR-47", latitude: 36.019, longitude: 129.3435, tags: ["바다", "야경", "맛집·카페"], image: "https://tong.visitkorea.or.kr/cms/resource/30/2917730_image2_1.jpg", subSpots: ["호미곶", "스페이스워크", "구룡포 일본인가옥거리", "영일대 해수욕장"] },
+  { id: "destination-jeju", title: "제주도", subtitle: "제주시 · 협재 · 성산", region: "제주특별자치도", regionCode: "KR-49", latitude: 33.4996, longitude: 126.5312, tags: ["바다", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1589136785350-93a3881bcce2?q=80&w=600&auto=format&fit=crop", subSpots: [{"name":"성산일출봉","latitude":33.4581,"longitude":126.9426,"image":"https://images.unsplash.com/photo-1785686856914-828bceeb9e64?auto=format&fit=crop&w=1200&q=85"},{"name":"애월 한담해안산책로","latitude":33.4626,"longitude":126.3108,"image":"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85"},{"name":"오설록 티뮤지엄","latitude":33.3059,"longitude":126.2895,"image":"https://images.unsplash.com/photo-1764092184365-0c4c62b55d97?auto=format&fit=crop&w=1200&q=85"},{"name":"동문시장","latitude":33.5116,"longitude":126.526,"image":"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-busan", title: "부산", subtitle: "해운대 · 광안리", region: "부산광역시", regionCode: "KR-26", latitude: 35.1796, longitude: 129.0756, tags: ["바다", "맛집·카페", "야경"], image: "https://yaimg.yanolja.com/v5/2026/01/30/05/1280/697c45a04bcde3.06159282.jpg", subSpots: [{"name":"해운대 블루라인파크","latitude":35.1605,"longitude":129.191,"image":"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85"},{"name":"흰여울문화마을","latitude":35.0785,"longitude":129.0447,"image":"https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=85"},{"name":"해동용궁사","latitude":35.1885,"longitude":129.2233,"image":"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85"},{"name":"광안리 해수욕장","latitude":35.1532,"longitude":129.1187,"image":"https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-gangneung", title: "강릉", subtitle: "경포 · 안목", region: "강원특별자치도", regionCode: "KR-42", latitude: 37.7519, longitude: 128.8761, tags: ["바다", "맛집·카페", "힐링"], image: "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=88", subSpots: [{"name":"경포대","latitude":37.795,"longitude":128.8966,"image":"https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=85"},{"name":"아르떼뮤지엄","latitude":37.7892,"longitude":128.9073,"image":"https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1200&q=85"},{"name":"안목해변 커피거리","latitude":37.7712,"longitude":128.9488,"image":"https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=85"},{"name":"강릉 중앙시장","latitude":37.754,"longitude":128.8985,"image":"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-sokcho", title: "속초", subtitle: "설악산 · 영랑호", region: "강원특별자치도", regionCode: "KR-42", latitude: 38.207, longitude: 128.5918, tags: ["자연·숲", "바다", "힐링"], image: "https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=88", subSpots: [{"name":"설악산 케이블카","latitude":38.1727,"longitude":128.489,"image":"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85"},{"name":"속초아이 대관람차","latitude":38.1902,"longitude":128.6014,"image":"https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=85"},{"name":"아바이마을","latitude":38.2007,"longitude":128.5942,"image":"https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=85"},{"name":"속초관광수산시장","latitude":38.2046,"longitude":128.59,"image":"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-yeosu", title: "여수", subtitle: "오동도 · 낭만포차", region: "전라남도", regionCode: "KR-46", latitude: 34.7604, longitude: 127.6622, tags: ["바다", "야경", "맛집·카페"], image: "https://images.unsplash.com/photo-1598509524136-421c60f2bb97?q=80&w=600&auto=format&fit=crop", subSpots: [{"name":"오동도","latitude":34.7446,"longitude":127.7681,"image":"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85"},{"name":"여수 해상케이블카","latitude":34.7306,"longitude":127.7413,"image":"https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=85"},{"name":"향일암","latitude":34.5913,"longitude":127.8045,"image":"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85"},{"name":"이순신광장","latitude":34.7397,"longitude":127.7361,"image":"https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-gyeongju", title: "경주", subtitle: "황리단길 · 대릉원", region: "경상북도", regionCode: "KR-47", latitude: 35.8562, longitude: 129.2247, tags: ["힐링", "맛집·카페", "야경"], image: "https://upload.wikimedia.org/wikipedia/commons/b/bb/Korea-Gyeongju-Bulguksa-24.jpg", subSpots: [{"name":"대릉원","latitude":35.8384,"longitude":129.2121,"image":"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85"},{"name":"황리단길","latitude":35.8377,"longitude":129.2096,"image":"https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=85"},{"name":"불국사","latitude":35.79,"longitude":129.332,"image":"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85"},{"name":"동궁과 월지","latitude":35.8344,"longitude":129.2267,"image":"https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-jeonju", title: "전주", subtitle: "한옥마을 · 남부시장", region: "전북특별자치도", regionCode: "KR-45", latitude: 35.8242, longitude: 127.148, tags: ["맛집·카페", "힐링", "야경"], image: "https://tour.jeonju.go.kr/images/visitjj/contents/streetmap/img_hanok00.jpg", subSpots: [{"name":"전주한옥마을","latitude":35.8148,"longitude":127.1526,"image":"https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=85"},{"name":"객리단길","latitude":35.8208,"longitude":127.1405,"image":"https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=85"},{"name":"덕진공원","latitude":35.8476,"longitude":127.1213,"image":"https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=85"},{"name":"남부시장","latitude":35.8125,"longitude":127.147,"image":"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-gapyeong-chuncheon", title: "가평·춘천", subtitle: "남이섬 · 의암호", region: "경기도·강원특별자치도", regionCode: "KR-41", latitude: 37.8564, longitude: 127.62, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://images.unsplash.com/photo-1501785888041-af3ef285b470?q=80&w=600&auto=format&fit=crop", subSpots: [{"name":"남이섬","latitude":37.7915,"longitude":127.5255,"image":"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85"},{"name":"아침고요수목원","latitude":37.7436,"longitude":127.3525,"image":"https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1200&q=85"},{"name":"레고랜드","latitude":37.8837,"longitude":127.6994,"image":"https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=85"},{"name":"구봉산 카페거리","latitude":37.8992,"longitude":127.776,"image":"https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-taean", title: "태안·안면도", subtitle: "꽃지 · 신두리", region: "충청남도", regionCode: "KR-44", latitude: 36.7456, longitude: 126.2979, tags: ["바다", "자연·숲", "힐링"], image: "https://images.unsplash.com/photo-1455729552865-3658a5d39692?auto=format&fit=crop&w=1200&q=88", subSpots: [{"name":"꽃지해수욕장","latitude":36.501,"longitude":126.334,"image":"https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&w=1200&q=85"},{"name":"신두리 해안사구","latitude":36.8403,"longitude":126.1964,"image":"https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&w=1200&q=85"},{"name":"천리포수목원","latitude":36.7987,"longitude":126.149,"image":"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85"},{"name":"안면도 수산시장","latitude":36.52,"longitude":126.3444,"image":"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-danyang", title: "단양", subtitle: "도담삼봉 · 남한강", region: "충청북도", regionCode: "KR-43", latitude: 36.9847, longitude: 128.365, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://d3h30waly5w5yx.cloudfront.net/images/tour/pictures/danyang-dodam-1.jpg", subSpots: [{"name":"도담삼봉","latitude":37.0002,"longitude":128.343,"image":"https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=85"},{"name":"패러글라이딩 활공장","latitude":37.011,"longitude":128.374,"image":"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85"},{"name":"만천하스카이워크","latitude":36.9776,"longitude":128.3442,"image":"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85"},{"name":"단양 구경시장","latitude":36.9844,"longitude":128.369,"image":"https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-suncheon-boseong", title: "순천·보성", subtitle: "순천만 · 녹차밭", region: "전라남도", regionCode: "KR-46", latitude: 34.9006, longitude: 127.287, tags: ["자연·숲", "힐링", "맛집·카페"], image: "https://commons.wikimedia.org/wiki/Special:FilePath/Suncheon%20Ecological%20Bay-%20%EC%88%9C%EC%B2%9C%EB%A7%8C%EC%8A%B5%EC%A7%80.jpg?width=1200", subSpots: [{"name":"순천만습지","latitude":34.8851,"longitude":127.5091,"image":"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85"},{"name":"순천만국가정원","latitude":34.9278,"longitude":127.498,"image":"https://images.unsplash.com/photo-1490750967868-88aa4486c946?auto=format&fit=crop&w=1200&q=85"},{"name":"대한다원 녹차밭","latitude":34.7134,"longitude":127.08,"image":"https://images.unsplash.com/photo-1764092184365-0c4c62b55d97?auto=format&fit=crop&w=1200&q=85"},{"name":"낙안읍성 민속마을","latitude":34.9073,"longitude":127.3387,"image":"https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=1200&q=85"}] },
+  { id: "destination-pohang", title: "포항", subtitle: "호미곶 · 영일대", region: "경상북도", regionCode: "KR-47", latitude: 36.019, longitude: 129.3435, tags: ["바다", "야경", "맛집·카페"], image: "https://tong.visitkorea.or.kr/cms/resource/30/2917730_image2_1.jpg", subSpots: [{"name":"호미곶","latitude":36.0762,"longitude":129.5662,"image":"https://images.unsplash.com/photo-1518837695005-2083093ee35b?auto=format&fit=crop&w=1200&q=85"},{"name":"스페이스워크","latitude":36.0633,"longitude":129.396,"image":"https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1200&q=85"},{"name":"구룡포 일본인가옥거리","latitude":35.9904,"longitude":129.5594,"image":"https://images.unsplash.com/photo-1519608487953-e999c86e7455?auto=format&fit=crop&w=1200&q=85"},{"name":"영일대 해수욕장","latitude":36.0564,"longitude":129.3778,"image":"https://images.unsplash.com/photo-1473116763249-2faaef81ccda?auto=format&fit=crop&w=1200&q=85"}] },
 ];
 
-const normalizedText = (value) => String(value || "").replace(/\s+/g, " ").trim().toLocaleLowerCase("ko-KR");
+// WGS84 대표 지점. 차량 접근 지점은 경로 API에서 별도 보정합니다.
+// 대표 이미지는 제주관광공사 Visit Jeju의 실제 명소 사진을 사용합니다.
+export const JEJU_DESTINATIONS = [
+  {
+    "id": "jeju-spot-1",
+    "name": "동문시장",
+    "latitude": 33.5116,
+    "longitude": 126.526,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202410/16/bdf6c336-fde3-4312-92be-7db8f3a37fbc.webp"
+  },
+  {
+    "id": "jeju-spot-2",
+    "name": "함덕해수욕장",
+    "latitude": 33.5431,
+    "longitude": 126.6692,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202408/20/a397a498-7bc9-4730-963a-cfa29ccffe7d.webp"
+  },
+  {
+    "id": "jeju-spot-3",
+    "name": "성산일출봉",
+    "latitude": 33.4581,
+    "longitude": 126.9426,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202409/20/c8bf6191-832c-4605-a948-96f07f6112d2.webp"
+  },
+  {
+    "id": "jeju-spot-4",
+    "name": "한담해안산책로",
+    "latitude": 33.4626,
+    "longitude": 126.3108,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202110/28/6a66021a-e571-4ebb-8ddd-2f42ceb46c9c.webp"
+  },
+  {
+    "id": "jeju-spot-5",
+    "name": "애월 카페 거리",
+    "latitude": 33.4635,
+    "longitude": 126.3094,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202409/25/4b1eef78-9b25-41c1-8839-30cc8796a7de.webp"
+  },
+  {
+    "id": "jeju-spot-6",
+    "name": "곽지해수욕장",
+    "latitude": 33.4507,
+    "longitude": 126.3055,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202110/25/daaa3e6e-822b-4acc-98df-8ba8e8453dd7.webp"
+  },
+  {
+    "id": "jeju-spot-7",
+    "name": "협재해수욕장",
+    "latitude": 33.3942,
+    "longitude": 126.2398,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202408/27/77cf6bb2-4d0d-4f46-8cfa-3f527a4d06b3.webp"
+  },
+  {
+    "id": "jeju-spot-8",
+    "name": "금능해변",
+    "latitude": 33.3904,
+    "longitude": 126.2359,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202110/25/f633561a-01c8-4e4a-a826-dd704e8bb5d9.webp"
+  },
+  {
+    "id": "jeju-spot-9",
+    "name": "새별오름",
+    "latitude": 33.3663,
+    "longitude": 126.3578,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202410/21/dd078476-3958-40e8-ab31-c3599ef97bcc.webp"
+  },
+  {
+    "id": "jeju-spot-10",
+    "name": "오설록 티 뮤지엄",
+    "latitude": 33.3059,
+    "longitude": 126.2895,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202110/20/003f420c-6efe-41e9-93b7-00fe6ac5e83b.webp"
+  },
+  {
+    "id": "jeju-spot-11",
+    "name": "카멜리아힐",
+    "latitude": 33.2897,
+    "longitude": 126.3701,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202410/15/fb2d2739-5e8e-4a87-9d1d-0281d95efeb7.webp"
+  },
+  {
+    "id": "jeju-spot-12",
+    "name": "산방산·용머리 해안",
+    "latitude": 33.2316,
+    "longitude": 126.3148,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202409/25/88cd0d87-306d-46e1-9b97-956fdf893f88.webp"
+  },
+  {
+    "id": "jeju-spot-13",
+    "name": "천제연폭포",
+    "latitude": 33.2528,
+    "longitude": 126.4173,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202110/27/617daa5f-d818-47c1-b80d-59f45e96371b.webp"
+  },
+  {
+    "id": "jeju-spot-14",
+    "name": "중문색달해수욕장",
+    "latitude": 33.245,
+    "longitude": 126.4115,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202407/24/a524251a-1057-43b5-b744-217f7f3ea78f.webp"
+  },
+  {
+    "id": "jeju-spot-15",
+    "name": "주상절리대",
+    "latitude": 33.2379,
+    "longitude": 126.426,
+    "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202410/21/1690de57-e791-4712-84e9-3963a82de0f1.webp"
+  }
+];
+
+export const toSpotDestination = (destination, spot, index) => ({
+  ...destination,
+  ...spot,
+  subSpots: undefined,
+  id: spot.id || `${destination.id}-spot-${index + 1}`,
+  parentDestinationId: destination.id,
+  title: spot.name,
+  subtitle: destination.title,
+  detail: spot.name,
+  countryCode: "KR",
+  scope: "domestic",
+  apiSearchKeyword: `${destination.title} ${spot.name}`,
+  needsGeocoding: false,
+});
+
+const normalizedText = (value) => String(value || "").replace(/\s+/g, "").toLocaleLowerCase("ko-KR");
 
 const getTitle = (destination) =>
   destination?.title || destination?.name || destination?.detail || destination?.region || "이름 없는 여행지";
@@ -68,8 +190,10 @@ const destinationSearchText = (destination) =>
     destination?.region,
     destination?.name,
     destination?.detail,
+    destination?.parentArea,
+    destination?.apiSearchKeyword,
     ...getTags(destination),
-    ...(destination?.subSpots || []),
+    ...(destination?.subSpots || []).map((spot) => spot.name),
   ].filter(Boolean).join(" "));
 
 /**
@@ -100,9 +224,11 @@ export default function DestinationExplorer({
   const [query, setQuery] = useState("");
   const [activeResult, setActiveResult] = useState(-1);
   const [activeRegionId, setActiveRegionId] = useState(selectedRegionId);
-  const [selectedTheme, setSelectedTheme] = useState("전체");
-  const [expandedDestinationId, setExpandedDestinationId] = useState(null);
-  const isMobile = useMediaQuery("(max-width: 760px)");
+  const [detailDestination, setDetailDestination] = useState(null);
+  const [jejuCustomQuery, setJejuCustomQuery] = useState("");
+  const panelRef = useRef(null);
+  const backRef = useRef(null);
+  const returnCardId = useRef(null);
   const inputRef = useRef(null);
 
   const validDestinations = TRENDING_DESTINATIONS;
@@ -110,19 +236,24 @@ export default function DestinationExplorer({
   const matchingDestinations = useMemo(() => {
     const keyword = normalizedText(query);
     if (!keyword) return [];
-    return validDestinations
+    const places = validDestinations.flatMap((destination) => [
+      destination,
+      ...(destination.id === "destination-jeju" ? JEJU_DESTINATIONS : destination.subSpots)
+        .map((subSpot, index) => toSpotDestination(destination, subSpot, index)),
+    ]).concat(regions.flatMap((region) => flattenDistricts(region.districts).map((district) => ({
+      ...district,
+      title: district.name,
+      subtitle: district.parentArea ? `${region.name} · ${district.parentArea}` : region.name,
+      region: region.name,
+      scope: "domestic",
+    }))));
+    return places
       .filter((destination) => destinationSearchText(destination).includes(keyword))
+      .sort((a, b) => Number(Boolean(b.parentDestinationId)) - Number(Boolean(a.parentDestinationId)))
       .slice(0, 6);
-  }, [query, validDestinations]);
+  }, [query, regions, validDestinations]);
 
-  const themeDestinations = useMemo(
-    () => selectedTheme === "전체"
-      ? validDestinations
-      : validDestinations.filter((destination) => getTags(destination).includes(selectedTheme)),
-    [selectedTheme],
-  );
-
-  const visibleDestinations = activeTab === TAB.THEME ? themeDestinations : validDestinations;
+  const visibleDestinations = validDestinations;
   const activeRegion = useMemo(
     () => regions.find((region) => region.id === activeRegionId) || null,
     [activeRegionId, regions],
@@ -164,6 +295,12 @@ export default function DestinationExplorer({
 
   const selectDestination = (destination) => {
     if (!destination) return;
+    if (destination.subSpots && !destination.parentDestinationId) {
+      returnCardId.current = destination.id;
+      setDetailDestination(destination);
+      setQuery("");
+      return;
+    }
     onSelect?.(destination);
     setQuery("");
     if (closeOnSelect) onClose?.();
@@ -190,19 +327,39 @@ export default function DestinationExplorer({
   };
 
   const selectSubSpot = (destination, subSpot, index) => {
+    selectDestination(toSpotDestination(destination, subSpot, index));
+  };
+
+  const selectCustomJejuDestination = (event) => {
+    event.preventDefault();
+    const name = jejuCustomQuery.trim();
+    if (!name || detailDestination?.id !== "destination-jeju") return;
     selectDestination({
-      ...destination,
-      id: `${destination.id}-spot-${index + 1}`,
-      parentDestinationId: destination.id,
-      title: subSpot,
-      name: subSpot,
-      detail: subSpot,
+      ...detailDestination,
+      id: `destination-jeju-custom-${normalizedText(name)}`,
+      parentDestinationId: detailDestination.id,
+      title: name,
+      name,
+      detail: name,
+      subtitle: "제주도 직접 입력",
+      subSpots: undefined,
       latitude: null,
       longitude: null,
-      apiSearchKeyword: `${destination.title} ${subSpot}`,
+      apiSearchKeyword: `제주도 ${name}`,
       needsGeocoding: true,
     });
+    setJejuCustomQuery("");
   };
+
+  useEffect(() => {
+    if (!open) { setDetailDestination(null); return; }
+    panelRef.current?.scrollTo({ top: 0, behavior: "instant" });
+    if (detailDestination) backRef.current?.focus();
+    else if (returnCardId.current) {
+      document.getElementById(returnCardId.current)?.focus();
+      returnCardId.current = null;
+    }
+  }, [detailDestination, open]);
 
   const handleSearchKeyDown = (event) => {
     if (!matchingDestinations.length) return;
@@ -227,6 +384,7 @@ export default function DestinationExplorer({
       if (event.target === event.currentTarget) onClose?.();
     }}>
       <section
+        ref={panelRef}
         className="destination-explorer"
         role="dialog"
         aria-modal="true"
@@ -236,6 +394,45 @@ export default function DestinationExplorer({
           <X size={19} strokeWidth={2.25} />
         </button>
 
+        {detailDestination ? (
+          <div key={detailDestination.id} className="destination-detail-view">
+            <button ref={backRef} className="destination-detail-back" type="button" onClick={() => { setActiveTab(TAB.TRENDING); setDetailDestination(null); }}>← 뒤로 가기</button>
+            <header className="destination-explorer-header destination-detail-header">
+              <span className="destination-explorer-kicker"><Compass size={14} /> {detailDestination.id === "destination-jeju" ? "JEJU ISLAND" : detailDestination.title}</span>
+              <h2 id="destination-explorer-title">{detailDestination.title} 어디를 여행하고 싶으세요?</h2>
+              <p>마음에 드는 장소를 골라 나만의 여행을 시작해 보세요.</p>
+            </header>
+            {detailDestination.id === "destination-jeju" ? (
+              <form className="destination-jeju-custom-search" onSubmit={selectCustomJejuDestination}>
+                <Search size={20} aria-hidden="true" />
+                <label htmlFor="jeju-custom-destination">
+                  <b>목록에 없는 제주 여행지도 찾아보세요</b>
+                  <span>관광지·해변·오름·마을 이름을 자유롭게 입력할 수 있어요.</span>
+                </label>
+                <input
+                  id="jeju-custom-destination"
+                  type="search"
+                  value={jejuCustomQuery}
+                  onChange={(event) => setJejuCustomQuery(event.target.value)}
+                  placeholder="예: 비자림, 검멀레해변, 사려니숲길"
+                  aria-label="목록에 없는 제주 여행지 입력"
+                />
+                <button type="submit" disabled={!jejuCustomQuery.trim()}>이 장소로 여행하기 <ArrowRight size={16} /></button>
+              </form>
+            ) : null}
+            <div className={detailDestination.id === "destination-jeju" ? "destination-detail-grid destination-jeju-grid" : "destination-detail-grid"}>
+              {(detailDestination.id === "destination-jeju" ? JEJU_DESTINATIONS : detailDestination.subSpots).map((spot, index) => (
+                <button key={spot.name} type="button" className="destination-spot-card" onClick={() => selectSubSpot(detailDestination, spot, index)}>
+                  <span className="destination-spot-image"><img src={spot.image} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /></span>
+                  <span className="destination-spot-caption"><b>{spot.name}</b><ArrowRight size={17} aria-hidden="true" /></span>
+                </button>
+              ))}
+            </div>
+            <p className="destination-photo-note">제주관광공사 공식 관광지 사진으로 미리 둘러보세요.</p>
+            <button className="destination-detail-region" type="button" onClick={() => selectDestination({ ...detailDestination, subSpots: undefined })}>{detailDestination.title} 전체를 여행지로 선택 <ArrowRight size={16} /></button>
+          </div>
+        ) : (
+        <div key="regions" className="destination-overview-view">
         <header className="destination-explorer-header">
           <span className="destination-explorer-kicker"><Sparkles size={14} /> AI 여행지 탐색</span>
           <h2 id="destination-explorer-title">{title}</h2>
@@ -285,9 +482,6 @@ export default function DestinationExplorer({
           <button type="button" className={activeTab === TAB.MAP ? "is-active" : ""} onClick={() => setActiveTab(TAB.MAP)}>
             <MapPinned size={17} /> 지도로 찾기
           </button>
-          <button type="button" className={activeTab === TAB.THEME ? "is-active" : ""} onClick={() => setActiveTab(TAB.THEME)}>
-            <Sparkles size={17} /> 테마별 추천
-          </button>
         </nav>
 
         {activeTab === TAB.MAP ? (
@@ -318,19 +512,10 @@ export default function DestinationExplorer({
           </div>
         ) : (
           <div className="destination-visual-panel">
-            {activeTab === TAB.THEME ? (
-              <div className="destination-theme-chips" role="group" aria-label="여행 테마 선택">
-                {THEME_OPTIONS.map((theme) => (
-                  <button type="button" key={theme} className={selectedTheme === theme ? "is-active" : ""} onClick={() => setSelectedTheme(theme)} aria-pressed={selectedTheme === theme}>
-                    {theme}
-                  </button>
-                ))}
-              </div>
-            ) : null}
             <div className="destination-visual-heading">
               <div>
-                <b>{activeTab === TAB.THEME ? `${selectedTheme} 테마 여행지` : "요즘 많이 찾는 국내 여행지"}</b>
-                <small>{activeTab === TAB.THEME ? "원하는 테마와 어울리는 지역을 골라보세요." : "카드에 마우스를 올리면 대표 관광지 4곳을 바로 선택할 수 있어요."}</small>
+                <b>요즘 많이 찾는 국내 여행지</b>
+                <small>지역 카드를 눌러 여행하고 싶은 명소를 찾아보세요.</small>
               </div>
               {onAiRecommend ? (
                 <button type="button" onClick={onAiRecommend}><Sparkles size={16} /> AI에게 추천받기</button>
@@ -344,9 +529,9 @@ export default function DestinationExplorer({
                   return (
                     <article
                       key={destination.id || `${getTitle(destination)}-${index}`}
-                      className={`destination-visual-card${selected ? " is-selected" : ""}${activeTab === TAB.TRENDING ? " has-sub-spots" : ""}${expandedDestinationId === destination.id ? " is-expanded" : ""}`}
+                      className={`destination-visual-card${selected ? " is-selected" : ""}`}
                     >
-                      <button type="button" className="destination-card-main" onClick={() => isMobile && activeTab === TAB.TRENDING ? setExpandedDestinationId((current) => current === destination.id ? null : destination.id) : selectDestination(destination)} aria-pressed={selected}>
+                      <button type="button" id={destination.id} className="destination-card-main" onClick={() => selectDestination(destination)} aria-pressed={selected}>
                         <span className="destination-card-image">
                           {destination.image ? <img src={destination.image} alt={`${destination.title} 대표 풍경`} onError={(event) => {
                             const fallback = DESTINATION_IMAGE_FALLBACKS[destination.id];
@@ -361,14 +546,6 @@ export default function DestinationExplorer({
                           {tags.length ? <span className="destination-card-tags">{tags.map((tag) => <em key={tag}>#{tag}</em>)}</span> : null}
                         </span>
                       </button>
-                      {activeTab === TAB.TRENDING ? (
-                        <div className="destination-subspot-overlay" aria-label={`${destination.title} 대표 관광지`}>
-                          <strong>{destination.title} 어디로 갈까요?</strong>
-                          {destination.subSpots.map((subSpot, subIndex) => (
-                            <button type="button" key={subSpot} onClick={() => selectSubSpot(destination, subSpot, subIndex)}>{subSpot}<ArrowRight size={13} /></button>
-                          ))}
-                        </div>
-                      ) : null}
                     </article>
                   );
                 })}
@@ -383,6 +560,8 @@ export default function DestinationExplorer({
           <span><Sparkles size={15} /> 여행 취향이 정해지지 않았나요?</span>
           {onAiRecommend ? <button type="button" onClick={onAiRecommend}>AI 추천으로 채우기 <ArrowRight size={15} /></button> : <small>메인 프롬프트에 원하는 여행을 자유롭게 적어도 좋아요.</small>}
         </footer>
+        </div>
+        )}
       </section>
     </div>
   );

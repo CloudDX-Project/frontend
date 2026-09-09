@@ -1,5 +1,6 @@
 import jejuCoastPhoto from "../assets/jeju-main-hero.jpeg";
 import { koreanRegions } from "./locationCatalog";
+import { safeTime, parseTicketLeg } from "./travelSchedule";
 
 // Mock catalog and state-independent planning helpers.
 export const heroSlides = [
@@ -116,35 +117,38 @@ export const quickLinks = [
 
 const product = (id, title, location, tag, price, image, rating = "4.8", reviews = "2,410") => ({ id, title, location, tag, price, image, rating, reviews });
 export const tourProducts = [
-  product("tour-01", "스위스 알프스 패러글라이딩", "스위스 · 인터라켄", "하늘에서 만나는 알프스", 219000, "https://images.unsplash.com/photo-1530789253388-582c481c54b0?q=80&w=600&auto=format&fit=crop"),
-  product("tour-02", "도쿄 디즈니 리조트 패스", "일본 · 도쿄", "하루 종일 마법 같은 시간", 81000, "https://images.unsplash.com/photo-1560109947-543149eceb16?q=80&w=600&auto=format&fit=crop"),
-  product("tour-03", "세부 프라이빗 호핑투어", "필리핀 · 세부", "에메랄드빛 섬 탐험", 65000, "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?q=80&w=600&auto=format&fit=crop"),
-  product("tour-04", "파리 바토무슈 야경 크루즈", "프랑스 · 파리", "센강 위 파리의 밤", 32000, "https://images.unsplash.com/photo-1502602898657-3e91760cbb34?q=80&w=600&auto=format&fit=crop"),
-  product("tour-05", "런던 아이 패스트트랙", "영국 · 런던", "런던 스카이라인 한눈에", 74000, "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?q=80&w=600&auto=format&fit=crop"),
-  product("tour-06", "도쿄 스카이트리 전망대", "일본 · 도쿄", "도쿄 최고층 파노라마", 28000, "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?q=80&w=600&auto=format&fit=crop"),
-  product("tour-07", "뉴욕 탑오브더락 입장권", "미국 · 뉴욕", "맨해튼 대표 전망", 61000, "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?q=80&w=600&auto=format&fit=crop"),
-  product("tour-08", "시드니 오페라하우스 투어", "호주 · 시드니", "아이코닉 건축 내부 탐방", 39000, "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?q=80&w=600&auto=format&fit=crop"),
-  product("tour-09", "방콕 왕궁 & 에메랄드 사원", "태국 · 방콕", "태국 왕실 문화 산책", 25000, "https://images.unsplash.com/photo-1508009603885-50cf7c579365?q=80&w=600&auto=format&fit=crop"),
-  product("tour-10", "오사카 유니버설 스튜디오", "일본 · 오사카", "인기 어트랙션 종일권", 89000, "https://images.unsplash.com/photo-1590559899731-a382839e5549?q=80&w=600&auto=format&fit=crop"),
-  product("tour-11", "괌 돌핀 크루즈 & 스노클링", "미국 · 괌", "남태평양 가족 액티비티", 72000, "https://images.unsplash.com/photo-1544551763-46a013bb70d5?q=80&w=600&auto=format&fit=crop"),
-  product("tour-12", "그랜드 캐년 헬기투어", "미국 · 애리조나", "대자연을 가장 가까이", 499000, "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?q=80&w=600&auto=format&fit=crop"),
-  product("tour-13", "다낭 바나힐 왕복 투어", "베트남 · 다낭", "골든브리지와 테마파크", 58000, "https://images.unsplash.com/photo-1528127269322-539801943592?q=80&w=600&auto=format&fit=crop"),
-  product("tour-14", "사그라다 파밀리아 패스트트랙", "스페인 · 바르셀로나", "가우디 대표작 집중 관람", 54000, "https://images.unsplash.com/photo-1583779457094-ab6f77f7bf57?q=80&w=600&auto=format&fit=crop"),
-  product("tour-15", "하와이 거북이 스노클링", "미국 · 하와이", "와이키키 바다 체험", 119000, "https://images.unsplash.com/photo-1507525428034-b723cf961d3e? q=80&w=600&auto=format&fit=crop".replace("? q", "?q")),
+  product("tour-01", "카파도키아 프리미엄 선라이즈 열기구", "튀르키예 · 괴레메", "호텔 픽업 · 조식 · 60분 비행", 319000, "https://images.unsplash.com/photo-1733303986601-16512557075c?auto=format&fit=crop&w=900&q=88", "4.93", "3,284"),
+  product("tour-02", "스위스 알프스 텐덤 패러글라이딩", "스위스 · 인터라켄", "전문 파일럿 · 장비 · 이동 포함", 329000, "https://images.unsplash.com/photo-1754415238305-0fe96068ee44?auto=format&fit=crop&w=900&q=88", "4.87", "1,746"),
+  product("tour-03", "팔라완 프라이빗 호핑투어", "필리핀 · 엘니도", "보트 1대 · 최대 5인 · 런치 포함", 399000, "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=900&q=88", "4.91", "892"),
+  product("tour-04", "파리 센강 파노라마 디너 크루즈", "프랑스 · 파리", "3코스 디너와 에펠탑 야경", 129000, "https://www.pelago.com/img/products/FR-France/seine-river-dinner-cruise-with-3course-gourmet-meal/96172bd8f2804167b3d7bb816a305fcf_seine-river-3-course-gourmet-dinner-cruise.jpg", "4.72", "5,108"),
+  product("tour-05", "두바이 프리미엄 사막 사파리", "아랍에미리트 · 두바이", "호텔 픽업 · 듄 드라이브 · 디너", 179000, "https://images.unsplash.com/photo-1509316785289-025f5b846b35?auto=format&fit=crop&w=900&q=88", "4.89", "7,431"),
+  product("tour-06", "시드니 하버 올인클루시브 디너 크루즈", "호주 · 시드니", "3코스 디너 · 음료 · 선셋 항해", 169000, "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=900&q=88", "4.76", "2,965"),
+  product("tour-07", "방콕 왕궁 & 왓 아룬 프라이빗 투어", "태국 · 방콕", "호텔 픽업 · 입장권 · 전용 가이드", 189000, "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=900&q=88", "4.84", "1,538"),
+  product("tour-08", "뉴욕 탑오브더락 선셋", "미국 · 뉴욕", "프라임 타임 지정 입장권", 79000, "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=900&q=88", "4.79", "9,216"),
+  product("tour-09", "하와이 터틀 캐년 스노클링", "미국 · 오아후", "왕복 셔틀 · 장비 · 선상 공연", 169000, "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=900&q=88", "4.86", "4,027"),
+  product("tour-10", "그랜드 캐년 랜딩 헬기투어", "미국 · 라스베이거스", "왕복 비행 · 협곡 착륙 · 호텔 이동", 809000, "https://images.unsplash.com/photo-1631811033319-f491bee790d5?auto=format&fit=crop&w=900&q=88", "4.97", "684"),
+  product("tour-11", "사그라다 파밀리아 패스트트랙", "스페인 · 바르셀로나", "입장권 · 공인 가이드 · 헤드셋", 119000, "https://d2prydcqrq5962.cloudfront.net/image/journal/article?img_id=1671564&t=1770326242028", "4.82", "6,573"),
+  product("tour-12", "아이슬란드 오로라 포토 헌팅", "아이슬란드 · 레이캬비크", "소그룹 · 전문 사진 · 핫초코", 229000, "https://images.unsplash.com/photo-1483347756197-71ef80e95f73?auto=format&fit=crop&w=900&q=88", "4.95", "2,119"),
 ];
 export const transportPasses = [
-  product("pass-01", "유레일 글로벌 패스", "유럽 33개국", "모바일 연속 패스", 436000, "https://images.unsplash.com/photo-1473445361085-b9a07f55608b?q=80&w=600&auto=format&fit=crop"),
-  product("pass-02", "오사카 메트로 패스", "일본 · 오사카", "지하철 무제한 탑승", 7500, "https://images.unsplash.com/photo-1570168007204-dfb528c6958f?q=80&w=600&auto=format&fit=crop"),
-  product("pass-03", "다낭 공항 단독 픽업", "베트남 · 다낭", "공항에서 숙소까지", 12000, "https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?q=80&w=600&auto=format&fit=crop"),
-  product("pass-04", "스위스 트래블 패스", "스위스 전역", "산악열차 할인 포함", 315000, "https://images.unsplash.com/photo-1527668752968-14dc70a27c95?q=80&w=600&auto=format&fit=crop"),
-  product("pass-05", "도쿄 서브웨이 티켓", "일본 · 도쿄", "24·48·72시간권", 8000, "https://images.unsplash.com/photo-1532236204992-f5e85c024202?q=80&w=600&auto=format&fit=crop"),
+  product("pass-01", "유레일 글로벌 패스 4일권", "유럽 33개국", "1개월 내 4일 · 성인 2등석", 443000, "https://images.unsplash.com/photo-1473445361085-b9a07f55608b?auto=format&fit=crop&w=900&q=88"),
+  product("pass-02", "스위스 트래블 패스 3일권", "스위스 전역", "연속 3일 · 성인 2등석", 423000, "https://images.unsplash.com/photo-1527668752968-14dc70a27c95?auto=format&fit=crop&w=900&q=88"),
+  product("pass-03", "JR 일본 전국 패스 7일권", "일본 전역", "연속 7일 · 성인 보통차", 436000, "https://images.unsplash.com/photo-1542051841857-5f90071e7989?auto=format&fit=crop&w=900&q=88"),
+  product("pass-04", "파리 뮤지엄 패스 2일권", "프랑스 · 파리", "48시간 · 박물관 50곳 이상", 133000, "https://images.unsplash.com/photo-1499856871958-5b9627545d1a?auto=format&fit=crop&w=900&q=88"),
+  product("pass-05", "런던 익스플로러 패스 3개권", "영국 · 런던", "30일 내 원하는 명소 3곳", 162000, "https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?auto=format&fit=crop&w=900&q=88"),
+  product("pass-06", "뉴욕 시티패스 5개권", "미국 · 뉴욕", "9일간 핵심 명소 5곳", 201000, "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=900&q=88"),
+  product("pass-07", "로마 패스 72시간권", "이탈리아 · 로마", "명소 2곳 · 시내 대중교통", 92000, "https://images.unsplash.com/photo-1552832230-c0197dd311b5?auto=format&fit=crop&w=900&q=88"),
+  product("pass-08", "싱가포르 투어리스트 패스 3일권", "싱가포르 전역", "연속 3일 · MRT·버스 무제한", 31000, "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=88"),
 ];
 export const eSimProducts = [
-  product("esim-01", "일본 데이터 eSIM", "일본 전역", "QR 즉시 발송", 5900, "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?q=80&w=600&auto=format&fit=crop"),
-  product("esim-02", "유럽 33개국 쓰리심", "유럽 전역", "국가 이동에도 그대로", 27900, "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?q=80&w=600&auto=format&fit=crop"),
-  product("esim-03", "베트남 공항수령 유심", "베트남 전역", "현지 번호 포함", 8900, "https://images.unsplash.com/photo-1526139334526-f591a54b477c?q=80&w=600&auto=format&fit=crop"),
-  product("esim-04", "미국 무제한 데이터", "미국 전역", "5G 무제한 플랜", 43900, "https://images.unsplash.com/photo-1485738422979-f5c462d49f74?q=80&w=600&auto=format&fit=crop"),
-  product("esim-05", "대만 데이터 eSIM", "대만 전역", "개통부터 간편하게", 6900, "https://images.unsplash.com/photo-1470004914212-05527e49370b?q=80&w=600&auto=format&fit=crop"),
+  product("esim-01", "일본 5G 데이터 eSIM", "일본 전역", "QR 즉시 발송 · 3GB부터", 5900, "https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?auto=format&fit=crop&w=900&q=88"),
+  product("esim-02", "유럽 33개국 통합 eSIM", "유럽 전역", "국경을 넘어도 자동 연결", 27900, "https://images.unsplash.com/photo-1521295121783-8a321d551ad2?auto=format&fit=crop&w=900&q=88"),
+  product("esim-03", "베트남 무제한 eSIM", "베트남 전역", "매일 고속 데이터 · 핫스팟", 8900, "https://images.unsplash.com/photo-1528127269322-539801943592?auto=format&fit=crop&w=900&q=88"),
+  product("esim-04", "미국·캐나다 데이터 eSIM", "북미 2개국", "5G 고속 데이터 · 현지 개통", 43900, "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=900&q=88"),
+  product("esim-05", "대만 무제한 eSIM", "대만 전역", "타이베이 공항 도착 즉시 연결", 6900, "https://images.unsplash.com/photo-1470004914212-05527e49370b?auto=format&fit=crop&w=900&q=88"),
+  product("esim-06", "태국 데이터 eSIM", "태국 전역", "방콕·푸껫 하나로 연결", 7500, "https://images.unsplash.com/photo-1508009603885-50cf7c579365?auto=format&fit=crop&w=900&q=88"),
+  product("esim-07", "호주·뉴질랜드 eSIM", "오세아니아 2개국", "도시와 로드트립 모두 커버", 24900, "https://images.unsplash.com/photo-1506973035872-a4ec16b8e8d9?auto=format&fit=crop&w=900&q=88"),
+  product("esim-08", "싱가포르·말레이시아 eSIM", "동남아 2개국", "환승 여행도 재설정 없이", 9900, "https://images.unsplash.com/photo-1525625293386-3f8f99389edd?auto=format&fit=crop&w=900&q=88"),
 ];
 export const saleStays = [
   product("sale-01", "제주 신라호텔 오션뷰", "대한민국 · 제주", "무료 조식 · 오늘 마감", 280000, "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=600&auto=format&fit=crop"),
@@ -154,6 +158,20 @@ export const saleStays = [
   product("sale-05", "파리 부티크 호텔", "프랑스 · 파리", "에펠탑 도보권", 249000, "https://images.unsplash.com/photo-1455587734955-081b22074882?q=80&w=600&auto=format&fit=crop"),
 ];
 export const paceOptions = ["여유롭게", "보통", "빡빡하게"];
+export const foodPreferenceOptions = [
+  { code: "KOREAN", label: "한식", description: "향토음식·고기·국수", image: "https://images.unsplash.com/photo-1498654896293-37aacf113fd9?auto=format&fit=crop&w=900&q=90" },
+  { code: "JAPANESE", label: "일식", description: "스시·우동·이자카야", image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&w=900&q=90" },
+  { code: "CHINESE", label: "중식", description: "면·딤섬·요리", image: "https://images.unsplash.com/photo-1563245372-f21724e3856d?auto=format&fit=crop&w=900&q=90" },
+  { code: "WESTERN", label: "양식", description: "파스타·브런치·그릴", image: "https://images.unsplash.com/photo-1473093295043-cdd812d0e601?auto=format&fit=crop&w=900&q=90" },
+  { code: "ASIAN", label: "아시안", description: "태국·베트남·동남아", image: "https://images.unsplash.com/photo-1559314809-0d155014e29e?auto=format&fit=crop&w=900&q=90" },
+  { code: "CASUAL", label: "분식·간편식", description: "김밥·떡볶이·간단한 한 끼", image: "https://images.unsplash.com/photo-1585032226651-759b368d7246?auto=format&fit=crop&w=900&q=90" },
+  { code: "CAFE", label: "카페·디저트", description: "베이커리·커피·디저트", image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=90" },
+  { code: "VEGETARIAN", label: "채식·건강식", description: "비건·샐러드·건강식", image: "https://images.unsplash.com/photo-1540420773420-3366772f4999?auto=format&fit=crop&w=900&q=90" },
+];
+export const foodPreferenceCardOptions = [
+  { code: "ANY", label: "상관없음", description: "동선과 평점 우선", image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?auto=format&fit=crop&w=900&q=90" },
+  ...foodPreferenceOptions,
+];
 export const themeOptions = [
   {
     title: "맛집",
@@ -347,7 +365,28 @@ export const generateMockHotels = (location) => {
   });
 };
 
-export const demoStaysForLocation = (location) => generateMockHotels(location);
+const exactDistanceKm = (from, to) => {
+  if (!from || !to || !Number.isFinite(from.latitude) || !Number.isFinite(from.longitude) || !Number.isFinite(to.latitude) || !Number.isFinite(to.longitude)) return null;
+  const earthRadiusKm = 6371;
+  const latitudeDelta = toRadians(to.latitude - from.latitude);
+  const longitudeDelta = toRadians(to.longitude - from.longitude);
+  const a = Math.sin(latitudeDelta / 2) ** 2 + Math.cos(toRadians(from.latitude)) * Math.cos(toRadians(to.latitude)) * Math.sin(longitudeDelta / 2) ** 2;
+  return Math.round(earthRadiusKm * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a)) * 10) / 10;
+};
+
+export const demoStaysForLocation = (location) => {
+  if (location?.regionCode !== "KR-49") return generateMockHotels(location);
+  return stays.map((stay) => {
+    const distanceKm = exactDistanceKm(location, stay);
+    return {
+      ...stay,
+      distanceKm,
+      insight: distanceKm == null
+        ? stay.insight
+        : `${location.detail || location.name || "선택한 관광지"}에서 약 ${distanceKm}km 거리로, 선택한 동선을 시작하기 편리해요.`,
+    };
+  });
+};
 
 export const demoRentalsForLocation = (location) => {
   if (!location || location.regionCode === "KR-49") return rentals;
@@ -364,7 +403,6 @@ export const demoRentalsForLocation = (location) => {
     originalPrice: Math.round(price * 1.26),
     discount: index === 0 ? 21 : 0,
     badge: index === 0 ? "시연 특가" : index === 1 ? "균형 추천" : "편의 추천",
-    left: 3 + index,
     note: "2박 3일 · 48시간 · 더미 견적",
     insurance,
     fuel: "동일 연료 또는 충전량 반납",
@@ -373,6 +411,7 @@ export const demoRentalsForLocation = (location) => {
     score,
     reviews: 1800 + index * 901,
     age: "만 21세 · 1년",
+    specs: index === 0 ? "4인승 · 자동 · 캐리어 2개" : index === 1 ? "5인승 · 자동 · 캐리어 3개" : "5인승 · 자동 · 캐리어 4개",
     benefit: `${area} 기준으로 생성한 시연 차량 견적입니다. 실제 계약 전 보장 범위와 반납 조건을 확인하세요.`,
     image: rentalImages[["billycar", "jeju-pass", "lotte-rent"][index]],
     isMock: true,
@@ -387,7 +426,6 @@ export const rentals = [
     originalPrice: 133000,
     discount: 32,
     badge: "오늘만 특가",
-    left: 3,
     note: "2박 3일 48시간 · 시연 계약 조건 기준",
     insurance: "완전자차 · 면책 0원",
     fuel: "동일 연료 반납",
@@ -396,6 +434,7 @@ export const rentals = [
     score: "4.82",
     reviews: 4821,
     age: "만 21세 · 1년",
+    specs: "4인승 · 자동 · 캐리어 2개",
     benefit: "최저가인데 완전자차 포함 · 단, 휴차보상료는 현장 약관 확인",
   },
   {
@@ -404,7 +443,6 @@ export const rentals = [
     car: "K3 · 준중형",
     price: 112000,
     badge: "제휴 특가",
-    left: 5,
     note: "2박 3일 48시간 · 시연 계약 조건 기준",
     insurance: "일반자차 · 면책 30만원",
     fuel: "동일 연료 반납",
@@ -413,6 +451,7 @@ export const rentals = [
     score: "4.76",
     reviews: 3926,
     age: "만 21세 · 1년",
+    specs: "5인승 · 자동 · 캐리어 3개",
     benefit:
       "준중형 공간이 장점 · 사고 시 면책금과 보장 제외 항목을 확인하세요",
   },
@@ -422,7 +461,6 @@ export const rentals = [
     car: "캐스퍼 · 경형 SUV",
     price: 128000,
     badge: "빠른 인수",
-    left: 4,
     note: "2박 3일 48시간 · 시연 계약 조건 기준",
     insurance: "일반자차 · 면책 50만원",
     fuel: "동일 연료 반납",
@@ -431,6 +469,7 @@ export const rentals = [
     score: "4.79",
     reviews: 3670,
     age: "만 21세 · 1년",
+    specs: "5인승 · 자동 · 캐리어 3개",
     benefit: "공항 셔틀 7분으로 인수 시간이 짧아요 · 보장 범위는 상품별 확인",
   },
   {
@@ -439,7 +478,6 @@ export const rentals = [
     car: "코나 · SUV",
     price: 156000,
     badge: "인기 차종",
-    left: 2,
     note: "2박 3일 48시간 · 시연 계약 조건 기준",
     insurance: "완전자차 · 면책 0원",
     fuel: "동일 연료 반납",
@@ -448,6 +486,7 @@ export const rentals = [
     score: "4.88",
     reviews: 6452,
     age: "만 21세 · 1년",
+    specs: "5인승 · 자동 · 캐리어 4개",
     benefit:
       "SUV·완전자차·오토하우스 인수로 편의성 강화 · 비싼 이유를 한눈에 비교",
   },
@@ -457,7 +496,6 @@ export const rentals = [
     car: "아반떼 · 준중형",
     price: 119000,
     badge: "후기 추천",
-    left: 6,
     note: "2박 3일 48시간 · 시연 계약 조건 기준",
     insurance: "일반자차 · 면책 30만원",
     fuel: "동일 연료 반납",
@@ -466,6 +504,7 @@ export const rentals = [
     score: "4.71",
     reviews: 2814,
     age: "만 21세 · 1년",
+    specs: "5인승 · 자동 · 캐리어 3개",
     benefit: "48시간 전 무료 취소가 강점 · 사고 보장 한도는 예약 전 확인",
   },
   {
@@ -474,7 +513,6 @@ export const rentals = [
     car: "니로 EV · 전기차",
     price: 144000,
     badge: "친환경 픽",
-    left: 3,
     note: "2박 3일 48시간 · 시연 계약 조건 기준",
     insurance: "완전자차 · 면책 0원",
     fuel: "충전 70% 이상 반납",
@@ -483,6 +521,7 @@ export const rentals = [
     score: "4.75",
     reviews: 3198,
     age: "만 26세 · 2년",
+    specs: "5인승 · 자동 · 캐리어 3개",
     benefit: "충전카드·완전자차 포함 · 반납 전 충전 잔량 조건을 확인하세요",
   },
 ];
@@ -716,7 +755,53 @@ export const flightDeals = {
   "ICN-0": { fare: 149000, originalFare: 264000, discount: 44, seats: 2 },
   "ICN-7": { fare: 99900, originalFare: 169900, discount: 41, seats: 3 },
 };
-export const flights = [
+export const flightOriginAirports = [
+  { code: "GMP", city: "서울", name: "김포국제공항", shortName: "김포", region: "수도권" },
+  { code: "ICN", city: "인천", name: "인천국제공항", shortName: "인천", region: "수도권" },
+  { code: "PUS", city: "부산", name: "김해국제공항", shortName: "김해", region: "경상권" },
+  { code: "CJJ", city: "청주", name: "청주국제공항", shortName: "청주", region: "충청권" },
+  { code: "TAE", city: "대구", name: "대구국제공항", shortName: "대구", region: "경상권" },
+  { code: "KWJ", city: "광주", name: "광주공항", shortName: "광주", region: "호남권" },
+  { code: "RSU", city: "여수", name: "여수공항", shortName: "여수", region: "호남권" },
+  { code: "MWX", city: "무안", name: "무안국제공항", shortName: "무안", region: "호남권" },
+  { code: "WJU", city: "원주", name: "원주공항", shortName: "원주", region: "강원권" },
+  { code: "USN", city: "울산", name: "울산공항", shortName: "울산", region: "경상권" },
+  { code: "YNY", city: "양양", name: "양양국제공항", shortName: "양양", region: "강원권" },
+  { code: "KUV", city: "군산", name: "군산공항", shortName: "군산", region: "호남권" },
+  { code: "KPO", city: "포항", name: "포항경주공항", shortName: "포항경주", region: "경상권" },
+  { code: "HIN", city: "사천", name: "사천공항", shortName: "사천", region: "경상권" },
+];
+const regionalFlightProfiles = {
+  PUS: { duration: 65, baseFare: 118000 }, CJJ: { duration: 65, baseFare: 124000 },
+  TAE: { duration: 65, baseFare: 121000 }, KWJ: { duration: 55, baseFare: 108000 },
+  RSU: { duration: 55, baseFare: 112000 }, MWX: { duration: 60, baseFare: 126000 },
+  WJU: { duration: 75, baseFare: 139000 },
+  USN: { duration: 65, baseFare: 128000 }, YNY: { duration: 80, baseFare: 146000 },
+  KUV: { duration: 60, baseFare: 122000 }, KPO: { duration: 70, baseFare: 134000 },
+  HIN: { duration: 60, baseFare: 126000 },
+};
+const flightClockMinutes = (time) => {
+  const [hour, minute] = String(time || "00:00").split(":").map(Number);
+  return hour * 60 + minute;
+};
+const routeTime = (timeRange, duration) => {
+  const departure = timeRange.slice(0, 5);
+  const total = flightClockMinutes(departure) + duration;
+  return `${departure} → ${String(Math.floor(total / 60) % 24).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+};
+const enrichFlight = (flight, airport) => ({
+  ...flight,
+  originName: airport.name,
+  originCity: airport.city,
+  destination: "CJU",
+  destinationName: "제주국제공항",
+  durationMinutes: Math.max(45, flightClockMinutes(flight.out.slice(-5)) - flightClockMinutes(flight.out.slice(0, 5))),
+  cabin: "일반석",
+  baggage: /대한항공|아시아나/.test(flight.airline) ? "위탁 20kg 포함" : "기내 10kg · 위탁 별도",
+  fareNote: "세금·유류할증료 포함",
+  isMock: true,
+});
+const baseFlights = [
   ...carriers.map(([airline, code, out, back, fare, tone], index) => ({
     id: `GMP-${index}`,
     origin: "GMP",
@@ -739,7 +824,22 @@ export const flights = [
     fare: fare - 6000,
     tone,
   })),
-].map((flight) => ({ ...flight, ...(flightDeals[flight.id] || {}) }));
+].map((flight) => enrichFlight({ ...flight, ...(flightDeals[flight.id] || {}) }, flightOriginAirports.find((airport) => airport.code === flight.origin)));
+const regionalFlights = Object.entries(regionalFlightProfiles).flatMap(([origin, profile], airportIndex) => {
+  const airport = flightOriginAirports.find((item) => item.code === origin);
+  return carriers.slice(0, 6).map(([airline, code, out, back, , tone], index) => enrichFlight({
+    id: `${origin}-${index}`,
+    origin,
+    airline,
+    code,
+    out: routeTime(out, profile.duration),
+    back: routeTime(back, profile.duration),
+    originalFare: profile.baseFare + index * 12800 + airportIndex * 1700,
+    fare: profile.baseFare - 9000 + index * 11200 + airportIndex * 1500,
+    tone,
+  }, airport));
+});
+export const flights = [...baseFlights, ...regionalFlights];
 export const saleFlightIds = new Set(Object.keys(flightDeals));
 export const isSaleFlight = (flight) => saleFlightIds.has(flight.id);
 export const oneWayFare = (flight) => Math.round((flight?.fare || 0) / 2);
@@ -830,8 +930,45 @@ export const hotelGroups = [
       ["호텔 케니 서귀포", 126000],
     ],
   ],
+  [
+    "안덕·오설록",
+    [
+      ["제주신화월드 메리어트 리조트", 248000],
+      ["랜딩관 제주신화월드", 176000],
+      ["서머셋 제주신화월드", 289000],
+      ["루체빌 리조트", 132000],
+      ["호텔 스카브로", 158000],
+    ],
+  ],
+  [
+    "함덕·조천",
+    [
+      ["유탑 유블레스 호텔 제주", 146000],
+      ["소노벨 제주", 189000],
+      ["에벤에셀 호텔", 124000],
+    ],
+  ],
+  [
+    "성산·표선",
+    [
+      ["휘닉스 아일랜드 제주", 264000],
+      ["골든튤립 제주 성산 호텔", 128000],
+      ["코업시티호텔 성산", 116000],
+      ["소노캄 제주", 218000],
+      ["해비치 호텔앤드리조트 제주", 342000],
+    ],
+  ],
 ];
 hotelGroups.push(["기타 지역", []]);
+const jejuStayAreaCenters = {
+  "제주공항·시내": { latitude: 33.4996, longitude: 126.5180 },
+  애월: { latitude: 33.4625, longitude: 126.3300 },
+  "협재·한림": { latitude: 33.3908, longitude: 126.2520 },
+  "중문·서귀포": { latitude: 33.2525, longitude: 126.4770 },
+  "안덕·오설록": { latitude: 33.3060, longitude: 126.3020 },
+  "함덕·조천": { latitude: 33.5400, longitude: 126.6680 },
+  "성산·표선": { latitude: 33.4200, longitude: 126.8420 },
+};
 export const stays = hotelGroups.flatMap(([area, list], region) =>
   list.map(([name, price], index) => {
     const order = region * 5 + index;
@@ -846,6 +983,8 @@ export const stays = hotelGroups.flatMap(([area, list], region) =>
       reviewCount: 3460 + ((order * 317) % 4210),
       deal: [0, 6, 11, 17].includes(order),
       left: 2 + (order % 5),
+      latitude: jejuStayAreaCenters[area]?.latitude ?? null,
+      longitude: jejuStayAreaCenters[area]?.longitude ?? null,
       insight:
         region === 1
           ? "애월 해안 동선과 노을 시간에 잘 맞아요."
@@ -1035,16 +1174,19 @@ export const today = (() => {
 export const dateLabel = (date) => (date ? date.replaceAll("-", ". ") : "날짜 미선택");
 export const timeLabel = (time) => time || "시간 미선택";
 export const timeToMinutes = (time) => {
-  const [hour = 0, minute = 0] = String(time || "00:00")
+  const [hour = 0, minute = 0] = safeTime(time, "00:00")
     .split(":")
     .map(Number);
   return hour * 60 + minute;
 };
 export const minutesToTime = (minutes) => {
-  const normalized = ((Math.round(minutes) % 1440) + 1440) % 1440;
+  const normalized = ((Math.round(Number.isFinite(minutes) ? minutes : 0) % 1440) + 1440) % 1440;
   return `${String(Math.floor(normalized / 60)).padStart(2, "0")}:${String(normalized % 60).padStart(2, "0")}`;
 };
-export const durationToMinutes = (duration) => Number.parseInt(duration, 10) || 55;
+export const durationToMinutes = (duration) => {
+  const value = Number.parseInt(duration, 10);
+  return Number.isFinite(value) && value >= 0 ? value : 55;
+};
 export const shiftDayTimes = (day, fromTime, toTime) => {
   const base = timeToMinutes(fromTime);
   const target = timeToMinutes(toTime);
@@ -1323,7 +1465,7 @@ export const makeJejuDayPlans = (arrivalTime, endTime, stay, flight, dayCount = 
     ? `제주국제공항 도착 · ${flight.airline}${outboundCode ? ` ${outboundCode}` : ""}`
     : "제주국제공항 도착";
   const flightDetail = flight
-    ? `${flight.origin === "ICN" ? "인천" : "김포"} ${flight.out.slice(0, 5)} 출발 · 제주 ${flight.out.slice(-5)} 도착 항공편을 기준으로 수하물 수령과 현지 이동을 시작해요.`
+    ? `${flight.originName || flight.origin || "출발 공항"} ${flight.out.slice(0, 5)} 출발 · 제주 ${flight.out.slice(-5)} 도착 항공편을 기준으로 수하물 수령과 현지 이동을 시작해요.`
     : "수하물 수령 후, 선택한 제주 이동 수단으로 여행을 시작해요.";
   const arrivalRows = [
     scheduleEvent("✈", flightName, flightDetail, "30분", 25),
@@ -1765,15 +1907,15 @@ export const makeRegionalDayPlans = (
   const destination = locationLabel(destinationLocation);
   const origin = locationLabel(originLocation, "출발지");
   const arrivalAt = timeToMinutes(arrivalTime || "10:00");
-  const arrivalTransport = transport || (flight ? "항공" : "선택한 교통수단");
+  const arrivalTransport = transportName(transport, outboundOptions) || (flight ? "항공" : "선택한 교통수단");
   const flightCode = flight?.code?.split("·")[0]?.trim();
   const arrivalName = flight
-    ? `${destination} 도착 · ${flight.airline}${flightCode ? ` ${flightCode}` : ""}`
+    ? `${destination} 도착 · ${flight.airline || flight.name || arrivalTransport}${flightCode ? ` ${flightCode}` : ""}`
     : `${destination} 도착`;
   const arrivalDetail = flight
-    ? `${origin}에서 출발한 ${flight.out || "선택 항공편"}을 기준으로 도착·수하물 수령 시간을 반영했어요.`
+    ? `${origin}에서 출발한 ${flight.out || "선택 티켓"}의 도착 시간을 반영했어요.`
     : `${origin}에서 ${arrivalTransport}으로 이동한 뒤, 선택한 지역의 실제 이동 시간을 반영해 여행을 시작해요.`;
-  const arrivalRows = [scheduleEvent("✈", arrivalName, arrivalDetail, "30분", 25)];
+  const arrivalRows = [scheduleEvent(transport === "CAR" ? "🚗" : transport === "KTX" ? "🚆" : transport === "BUS" ? "🚌" : "✈", arrivalName, arrivalDetail, "30분", 25)];
   if (stay) {
     arrivalRows.push(
       scheduleEvent(
@@ -1858,24 +2000,137 @@ export const makeDayPlans = (
   transport,
   dayCount = 3,
 ) => {
+  const ticketMode = ["FLIGHT", "KTX", "BUS"].includes(transport) || (!transport && Boolean(flight));
+  const outbound = ticketMode ? parseTicketLeg(flight?.out) : null;
+  const inbound = ticketMode ? parseTicketLeg(flight?.back) : null;
+  const safeArrival = outbound?.arrival || safeTime(arrivalTime, "10:00");
+  const safeEnd = inbound?.departure || safeTime(endTime, "18:00");
+  const count = Number.isFinite(dayCount) ? Math.max(1, Math.min(60, Math.floor(dayCount))) : 3;
+  const activeTicket = ticketMode && outbound && inbound ? flight : null;
+  if (count === 1 && timeToMinutes(safeEnd) <= timeToMinutes(safeArrival)) return [];
   const isJejuDestination =
     destinationLocation?.regionCode === "KR-49" ||
     /제주/.test(`${destinationLocation?.region || ""} ${destinationLocation?.detail || ""}`);
-  if (isJejuDestination || !destinationLocation)
-    return makeJejuDayPlans(arrivalTime, endTime, stay, flight, dayCount);
-  return makeRegionalDayPlans(
-    arrivalTime,
-    endTime,
+  const plans = (isJejuDestination || !destinationLocation) && (!transport || transport === "FLIGHT")
+    ? makeJejuDayPlans(safeArrival, safeEnd, stay, activeTicket, count)
+    : makeRegionalDayPlans(
+    safeArrival,
+    safeEnd,
     stay,
-    flight,
+    activeTicket,
     destinationLocation,
     originLocation,
     transport,
-    dayCount,
+    count,
   );
+  return decoratePlanEvents(constrainPlanTimes(plans, safeArrival, safeEnd, transport));
+};
+
+const lockedStopPattern = /항공|공항 도착|오는 편 출발|역·터미널|귀가 출발|렌터카|체크인|체크아웃|탑승 준비/;
+const bookableStopPattern = /항공|오는 편|렌터카|체크인|숙소|뮤지엄|케이블카|아쿠아|테마파크/;
+
+export const decoratePlanEvents = (plans = []) => plans.map((day, dayIndex) => [
+  day[0],
+  day[1],
+  day[2].map((event, stopIndex) => {
+    const name = event[2] || "일정";
+    return [
+      ...event.slice(0, 6),
+      {
+        ...(event[6] || {}),
+        id: event[6]?.id || `day-${dayIndex + 1}-stop-${stopIndex + 1}`,
+        isLocked: event[6]?.isLocked ?? lockedStopPattern.test(name),
+        bookingUrl: event[6]?.bookingUrl || (bookableStopPattern.test(name) ? `pending:${encodeURIComponent(name)}` : null),
+      },
+    ];
+  }),
+]);
+
+const jejuRestaurantsByCuisine = {
+  KOREAN: ["숙성도 중문점", "자매국수", "이춘옥 원조고등어쌈밥"],
+  JAPANESE: ["스시 호시카이", "제주 해녀의집 회국수", "모리노아루요"],
+  CHINESE: ["도두반점 제주사수점", "아서원", "신해바라기분식 짬뽕"],
+  WESTERN: ["글라글라하와이", "르토아 베이스먼트", "제주 키친오즈"],
+  ASIAN: ["반미하노이 제주", "타이웍 제주", "제주 아시안키친"],
+  CASUAL: ["오는정김밥", "명랑스낵", "제주김만복 애월점"],
+  CAFE: ["카페 델문도", "원앤온리", "우무 제주점"],
+  VEGETARIAN: ["앤드유 카페", "제주 비건 테이블", "제주 샐러드랩"],
+};
+
+export const applyFoodPreferences = (plans = [], preferences = [], destinationLocation) => {
+  if (!preferences.length) return plans;
+  const preferenceLabels = new Map(foodPreferenceOptions.map((item) => [item.code, item.label]));
+  let restaurantIndex = 0;
+  return plans.map((day) => [
+    day[0],
+    day[1],
+    (day[2] || []).map((event) => {
+      const [time, icon, name, detail, duration, travel, metadata = {}] = event;
+      const isDiningStop = /🍽|🍚|🍜|🍲|☕/.test(icon || "") || /점심|저녁|식사|카페|간식/.test(name || "");
+      if (!isDiningStop || /조식|숙소/.test(name || "")) return event;
+      const preference = preferences[restaurantIndex % preferences.length];
+      const candidates = jejuRestaurantsByCuisine[preference] || [];
+      const replacement = candidates[Math.floor(restaurantIndex / preferences.length) % Math.max(1, candidates.length)];
+      restaurantIndex += 1;
+      if (!replacement || destinationLocation?.regionCode !== "KR-49") return event;
+      return [
+        time,
+        icon,
+        replacement,
+        `${preferenceLabels.get(preference) || "음식"} 선호도와 현재 여행 동선을 반영해 추천한 식당이에요. ${detail || ""}`.trim(),
+        duration,
+        travel,
+        {
+          ...metadata,
+          cuisineCode: preference,
+          originalRecommendation: name,
+          apiSearchKeyword: `${replacement} 제주`,
+          isGeographical: true,
+        },
+      ];
+    }),
+  ]);
+};
+
+// A ticket deadline is a hard boundary: never wrap late activities to the next morning.
+export const constrainPlanTimes = (plans, arrivalTime, endTime, mode) => {
+  const deadline = timeToMinutes(safeTime(endTime, "18:00"));
+  const buffer = mode === "FLIGHT" ? 90 : ["KTX", "BUS"].includes(mode) ? 30 : 0;
+  return plans.map((day, index) => {
+    const isLast = index === plans.length - 1;
+    const start = index === 0 ? timeToMinutes(safeTime(arrivalTime, "10:00")) : 0;
+    const cutoff = isLast ? Math.max(start, deadline - buffer) : 1439;
+    let previous = start;
+    const events = day[2].filter((event) => {
+      const minute = timeToMinutes(event[0]);
+      const finish = minute + durationToMinutes(event[4]) + (Number(event[5]) || 0);
+      if (minute < previous || finish > cutoff) return false;
+      previous = finish;
+      return true;
+    });
+    if (isLast) {
+      if (buffer) events.push([minutesToTime(Math.max(start, deadline - buffer)), "🎫", mode === "FLIGHT" ? "공항 도착 · 탑승 준비" : "역·터미널 도착 · 탑승 준비", "선택한 오는 편의 출발 시각에 맞춰 탑승을 준비해요.", `${buffer}분`, 0]);
+      events.push([minutesToTime(deadline), mode === "CAR" ? "🚗" : "🎫", mode === "CAR" ? "귀가 출발" : "오는 편 출발", mode === "CAR" ? "설정한 귀가 도착 시각에 맞춰 출발해요." : "선택한 왕복 티켓의 출발 시각입니다.", "0분", 0]);
+    }
+    return [day[0], day[1], events];
+  });
 };
 
 export const regionalPlaceAlternatives = {
+  "제주특별자치도": [
+    { icon: "📸", name: "성산일출봉", latitude: 33.4581, longitude: 126.9426, detail: "동부 대표 명소를 중심으로 이동 동선을 다시 계산해요.", duration: "100분", travel: 35 },
+    { icon: "🌊", name: "함덕해수욕장", latitude: 33.5431, longitude: 126.6692, detail: "에메랄드빛 해변 산책과 주변 이동 시간을 반영해요.", duration: "85분", travel: 30 },
+    { icon: "🌿", name: "오설록 티 뮤지엄", latitude: 33.3059, longitude: 126.2895, detail: "서부 녹차밭과 실내 관람 시간을 일정에 반영해요.", duration: "90분", travel: 30 },
+    { icon: "📸", name: "새별오름", latitude: 33.3663, longitude: 126.3578, detail: "오름 산책과 전망 감상 시간을 포함해 다시 설계해요.", duration: "95분", travel: 35 },
+    { icon: "🌺", name: "카멜리아힐", latitude: 33.2897, longitude: 126.3701, detail: "계절 정원 산책과 안덕권 이동 시간을 반영해요.", duration: "95분", travel: 30 },
+    { icon: "🌊", name: "주상절리대", latitude: 33.2379, longitude: 126.4260, detail: "중문 해안 경관과 관람 시간을 일정에 넣어요.", duration: "80분", travel: 25 },
+    { icon: "🍽", name: "고집돌우럭", latitude: 33.5169, longitude: 126.5034, detail: "제주 향토 생선요리와 대기 시간을 함께 반영해요.", duration: "75분", travel: 25 },
+    { icon: "🍽", name: "숙성도", latitude: 33.4850, longitude: 126.4817, detail: "제주 흑돼지 식사와 웨이팅을 고려해 일정을 조정해요.", duration: "85분", travel: 30 },
+    { icon: "🍜", name: "자매국수", latitude: 33.5167, longitude: 126.5142, detail: "고기국수 식사와 제주시내 이동 시간을 반영해요.", duration: "65분", travel: 20 },
+    { icon: "🍱", name: "오는정김밥", latitude: 33.2498, longitude: 126.5672, detail: "예약 수령 시간과 서귀포시내 동선을 함께 계산해요.", duration: "55분", travel: 20 },
+    { icon: "🍽", name: "명진전복", latitude: 33.5326, longitude: 126.8502, detail: "동부 해안 전복 식사와 이동 시간을 반영해요.", duration: "75분", travel: 30 },
+    { icon: "🍲", name: "네거리식당", latitude: 33.2487, longitude: 126.5592, detail: "서귀포 갈치요리 식사와 주변 동선을 조정해요.", duration: "75분", travel: 25 },
+  ],
   "서울특별시": [
     { icon: "🏯", name: "북촌한옥마을", detail: "궁궐과 가까운 전통 골목으로 동선을 다시 계산해요.", duration: "80분", travel: 25 },
     { icon: "🌳", name: "서울숲", detail: "성수권 자연 산책을 넣어 휴식 시간을 조정해요.", duration: "85분", travel: 30 },
@@ -1902,68 +2157,47 @@ export const regionalPlaceAlternatives = {
   ],
 };
 
-export const getPlaceAlternatives = (destinationLocation) => {
-  const region = destinationLocation?.region || destinationLocation?.name;
-  const fallback = regionalPlaceAlternatives.default;
-  return regionalPlaceAlternatives[region] || fallback;
+const foodIcons = /🍽|🍜|🥐|☕|🍴|🍲|🥘|🍱|🍣|🍖|🍗|🥩|🍛|🍚/;
+const placeCategory = (item) => foodIcons.test(item?.icon || item?.[1] || "") ? "food" : "sight";
+
+const recommendationTemplates = {
+  food: [
+    ["🍽", "로컬 식당", "현지 대표 메뉴를 맛보는 식사 동선으로 바꿔요.", "70분"],
+    ["🍜", "향토 음식점", "지역 향토 메뉴와 대기 시간을 일정에 반영해요.", "65분"],
+    ["🍱", "전통시장 맛집", "시장 먹거리와 간식 예산을 함께 계산해요.", "75분"],
+    ["☕", "로컬 카페", "이동 중 쉬어가기 좋은 카페 시간을 넣어요.", "60분"],
+    ["🍲", "현지인 추천 식당", "숙소와 가까운 식당 중심으로 동선을 줄여요.", "70분"],
+    ["🍽", "제철 음식점", "여행 시기의 제철 메뉴를 반영해요.", "70분"],
+  ],
+  sight: [
+    ["📸", "대표 관광지", "지역 대표 명소 중심으로 관람 동선을 다시 계산해요.", "90분"],
+    ["🌿", "자연 명소", "산책과 휴식 시간을 포함해 일정을 조정해요.", "85분"],
+    ["🏛", "문화 명소", "전시·역사 공간의 관람 시간을 반영해요.", "90분"],
+    ["🌊", "풍경 명소", "전망과 사진 촬영 시간을 일정에 넣어요.", "80분"],
+    ["🛍", "전통시장", "시장 구경과 이동 시간을 함께 반영해요.", "75분"],
+    ["🎨", "체험 공간", "현지 체험과 예약 소요 시간을 반영해요.", "90분"],
+  ],
 };
 
-export const placeAlternatives = [
-  {
-    icon: "🌅",
-    name: "성산일출봉",
-    image:
-      "https://api.cdn.visitjeju.net/photomng/imgpath/201810/17/654ec69c-ca81-443d-9b10-3cfe4a8e98f0.webp",
-    detail: "동부권 대표 명소를 중심으로 동선과 체험 예산을 다시 계산해요.",
-    duration: "100분",
-    travel: 65,
-  },
-  {
-    icon: "🌺",
-    name: "카멜리아힐",
-    image:
-      "https://api.cdn.visitjeju.net/photomng/imgpath/202410/15/fb2d2739-5e8e-4a87-9d1d-0281d95efeb7.jpg",
-    detail: "계절 정원 산책을 넣어 서귀포권 이동 시간까지 반영해요.",
-    duration: "95분",
-    travel: 45,
-  },
-  {
-    icon: "🖼",
-    name: "아르떼뮤지엄 제주",
-    image:
-      "https://api.cdn.visitjeju.net/photomng/imgpath/202608/24/6d5b6c9d-8335-4442-979c-2f0cbb5504d4.webp",
-    detail: "실내 전시 관람 시간과 입장권 예산을 포함해 다시 설계해요.",
-    duration: "100분",
-    travel: 35,
-  },
-  {
-    icon: "🌊",
-    name: "함덕해수욕장",
-    image:
-      "https://api.cdn.visitjeju.net/photomng/imgpath/201804/30/f4bb8c53-a598-4523-a34b-e591aa0f0a0e.webp",
-    detail: "동부 바다 산책으로 바꾸고 공항·숙소 이동 거리를 재계산해요.",
-    duration: "85분",
-    travel: 55,
-  },
-  {
-    icon: "🛍",
-    name: "동문시장",
-    image:
-      "https://api.cdn.visitjeju.net/photomng/imgpath/202410/16/bdf6c336-fde3-4312-92be-7db8f3a37fbc.webp",
-    detail: "제주시 시장 동선을 넣고 간식·선물 예상비용을 반영해요.",
-    duration: "80분",
-    travel: 25,
-  },
-  {
-    icon: "☕",
-    name: "애월 카페 거리",
-    image:
-      "https://storage.googleapis.com/public.firstage.ai/images/spots/KR/cafe/jeju-aewol-cafe-street-0.webp",
-    detail: "바다 전망 카페 휴식 시간을 넣어 서부권 동선으로 조정해요.",
-    duration: "70분",
-    travel: 30,
-  },
-];
+export const getPlaceAlternatives = (destinationLocation, currentItem) => {
+  const region = destinationLocation?.region || destinationLocation?.name;
+  const area = destinationLocation?.detail || destinationLocation?.name || region || "여행지";
+  const category = placeCategory(currentItem);
+  const localCandidates = (regionalPlaceAlternatives[region] || regionalPlaceAlternatives.default)
+    .filter((place) => placeCategory(place) === category)
+    .sort((a, b) => (exactDistanceKm(destinationLocation, a) ?? Number.POSITIVE_INFINITY) - (exactDistanceKm(destinationLocation, b) ?? Number.POSITIVE_INFINITY));
+  const generatedCandidates = recommendationTemplates[category].map(([icon, suffix, detail, duration], index) => ({
+    icon,
+    name: `${area} ${suffix}`,
+    detail,
+    duration,
+    travel: 20 + index * 5,
+    category,
+  }));
+  return [...localCandidates, ...generatedCandidates]
+    .filter((place, index, list) => place.name !== (currentItem?.name || currentItem?.[2]) && list.findIndex((item) => item.name === place.name) === index)
+    .slice(0, 6);
+};
 
 export const stayChangeSummaryFor = (change) => {
   const isJungmun = change?.to?.area === "중문·서귀포";
@@ -2042,6 +2276,13 @@ export const applyPlanEdits = (plans, edits) =>
             replacement.detail,
             replacement.duration,
             replacement.travel,
+            {
+              ...(event[6] || {}),
+              bookingUrl: replacement.bookingUrl ?? event[6]?.bookingUrl ?? null,
+              latitude: replacement.latitude ?? null,
+              longitude: replacement.longitude ?? null,
+              isGeographical: true,
+            },
           ]
         : event;
       const next = [minutesToTime(cursor), ...source.slice(1)];

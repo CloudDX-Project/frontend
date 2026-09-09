@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { dateLabel, locationLabel, timeLabel } from "../../data/mockData";
+import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
+import { dateLabel, getPlaceAlternatives, locationLabel, timeLabel } from "../../data/mockData";
 import TransitionIcon from "../common/TransitionIcon";
 import BrandPolygon from "../icons/BrandPolygon";
 import CampusTimetable from "./CampusTimetable";
@@ -17,7 +18,7 @@ function PlanFullscreen({
   onChangeStop,
   onOpenStay,
   onOpenStayComparison,
-  placeOptions,
+  onReorderStops,
   planRevision,
   originLocation,
   selectedFlight,
@@ -44,6 +45,7 @@ function PlanFullscreen({
   const [routeRecalculation, setRouteRecalculation] = useState(null);
   const [routeResult, setRouteResult] = useState(null);
   const [utilityMessage, setUtilityMessage] = useState("");
+  const placeOptions = getPlaceAlternatives(destinationLocation, placePicker?.item);
   const destinationName = locationLabel(destinationLocation);
   const originName = locationLabel(originLocation, "출발지");
   const destinationRegion =
@@ -135,7 +137,7 @@ function PlanFullscreen({
     setPlacePicker(null);
     setRouteRecalculation(update);
     window.setTimeout(() => {
-      onChangeStop(activeDay, placePicker.index, place);
+      onChangeStop(activeDay, placePicker.eventId, place);
       setRouteRecalculation(null);
       setRouteResult(update);
     }, 1900);
@@ -278,9 +280,13 @@ function PlanFullscreen({
             </div>
           </div>
           {scheduleView === "timeline" ? (
-            <div className="full-timeline">
-              {day[2].map(([time, icon, name, detail, stay], index) => {
-                const price = eventCost(name);
+            <DragDropContext onDragEnd={({ source, destination }) => {
+              if (destination) onReorderStops?.(activeDay, source.index, destination.index);
+            }}>
+            <Droppable droppableId={`day-${activeDay}-timeline`}>
+              {(dropProvided) => <div className="full-timeline" ref={dropProvided.innerRef} {...dropProvided.droppableProps}>
+              {day[2].map(([time, icon, name, detail, stay, travel, metadata = {}], index) => {
+                const price = eventCost(name, metadata);
                 const approximate = /저녁|점심|카페|고등어|시장|오설록/.test(
                   name,
                 );
@@ -292,19 +298,28 @@ function PlanFullscreen({
                   : price
                     ? `${approximate ? "약 " : ""}1인 ${money(price)}원`
                     : "";
+                const eventId = metadata.id || `day-${activeDay + 1}-stop-${index + 1}`;
+                const liveBookingUrl = /^https?:\/\//i.test(metadata.bookingUrl || "")
+                  ? metadata.bookingUrl
+                  : null;
                 return (
+                  <Draggable
+                    key={eventId}
+                    draggableId={eventId}
+                    index={index}
+                    isDragDisabled={Boolean(metadata.isLocked)}
+                  >
+                  {(dragProvided, dragSnapshot) => (
                   <article
-                    className="itinerary-stop"
-                    key={`${time}-${name}`}
-                    role="button"
-                    tabIndex="0"
-                    onClick={() => setPlacePicker({ index, name })}
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setPlacePicker({ index, name });
-                      }
+                    ref={dragProvided.innerRef}
+                    {...dragProvided.draggableProps}
+                    {...(!metadata.isLocked ? dragProvided.dragHandleProps : {})}
+                    style={{
+                      ...dragProvided.draggableProps.style,
+                      ...(!metadata.isLocked ? dragProvided.dragHandleProps?.style : {}),
+                      cursor: metadata.isLocked ? "default" : undefined,
                     }}
+                    className={`itinerary-stop${metadata.isLocked ? "" : " is-draggable"}${dragSnapshot.isDragging ? " is-dragging" : ""}`}
                   >
                     <time>{time}</time>
                     <span>{icon}</span>
@@ -312,23 +327,38 @@ function PlanFullscreen({
                       <small>
                         STOP {String(index + 1).padStart(2, "0")} · {stay}
                       </small>
-                      <b>
-                        {name}
-                        {costLabel && (
-                          <em className="stop-price">{costLabel}</em>
-                        )}
-                      </b>
+                      <div className="stop-title-row">
+                        <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
+                        {liveBookingUrl ? (
+                          <a
+                            className="stop-booking-link"
+                            href={liveBookingUrl}
+                            target="_blank"
+                            rel="noreferrer noopener sponsored"
+                            onClick={(event) => event.stopPropagation()}
+                            aria-label={`${metadata.bookingProvider || "제휴사"}에서 ${name} 예약하기`}
+                          >
+                            <span>{metadata.bookingProvider || "제휴사"} 예약하기</span>
+                            <small>바로가기 ↗</small>
+                          </a>
+                        ) : metadata.bookingUrl ? (
+                          <button type="button" className="stop-booking-link" onClick={(event) => { event.stopPropagation(); showUtilityMessage("백엔드 예약 시스템 연동 대기 중입니다."); }}>
+                            <span>제휴사 예약하기</span>
+                            <small>예약 확인 ↗</small>
+                          </button>
+                        ) : null}
+                      </div>
                       <p>{detail}</p>
-                      <button
+                      {!metadata.isLocked ? <button
                         type="button"
                         className="stop-change"
                         onClick={(event) => {
                           event.stopPropagation();
-                          setPlacePicker({ index, name });
+                          setPlacePicker({ eventId, name, item: { icon, name, detail } });
                         }}
                       >
                         장소 변경
-                      </button>
+                      </button> : null}
                     </div>
                     <i>
                       {index === 0
@@ -338,9 +368,14 @@ function PlanFullscreen({
                           : "이동 포함"}
                     </i>
                   </article>
+                  )}
+                  </Draggable>
                 );
               })}
-            </div>
+              {dropProvided.placeholder}
+              </div>}
+            </Droppable>
+            </DragDropContext>
           ) : (
             <CampusTimetable dates={dates} dayPlans={dayPlans} />
           )}
@@ -374,13 +409,11 @@ function PlanFullscreen({
                 {costDetails.map((group) => (
                   <section key={group.group}>
                     <h3>{group.group}</h3>
-                    {group.rows.map(([name, value, note]) => {
+                    {group.rows.map(([name, value, note], rowIndex) => {
                       const approximate =
-                        /고등어|카페|점심|저녁|시장|오설록|새별|카멜리아|성산/.test(
-                          name,
-                        );
+                        /예상/.test(note || "") || /고등어|카페|점심|저녁|시장|오설록|새별|카멜리아|성산/.test(name);
                       return (
-                        <p key={name}>
+                        <p key={`${name}-${rowIndex}`}>
                           <span>
                             <b>{name}</b>
                             <small>{note}</small>

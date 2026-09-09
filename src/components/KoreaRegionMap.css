@@ -67,9 +67,15 @@
 .region-detail-quick-select > div:first-child { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 10px; }
 .region-detail-quick-select > div:first-child b { color: #145f58; font-size: 13px; }
 .region-detail-quick-select > div:first-child small { color: #78918c; font-size: 10px; font-weight: 700; }
-.region-detail-quick-select > div:last-child { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; }
+.region-detail-quick-list { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 7px; }
+.region-detail-quick-group { min-width: 0; }
+.region-detail-quick-group > strong { display: block; margin-bottom: 8px; color: #245f59; font-size: 11px; }
+.region-detail-quick-select.is-grouped .region-detail-quick-groups { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.region-detail-quick-select.is-grouped .region-detail-quick-group { padding: 12px; border-radius: 11px; background: #f1faf6; }
+.region-detail-quick-select.is-grouped .region-detail-quick-group > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 7px; }
 .region-detail-quick-select button { min-height: 40px; padding: 8px 6px; border: 1px solid #bddfd6; border-radius: 9px; background: #fff; color: #176c64; font: 800 11px "Noto Sans KR", sans-serif; cursor: pointer; }
 .region-detail-quick-select button:hover, .region-detail-quick-select button:focus-visible { border-color: #078a80; outline: 0; background: #0c877d; color: #fff; box-shadow: 0 5px 10px rgba(8, 117, 106, .16); }
+.region-detail-quick-select button.is-selected { border-color: #078a80; background: #e1f5ef; color: #086e66; }
 
 .administrative-map-status {
   display: grid;
@@ -101,7 +107,9 @@
   .administrative-region-label { font-size: 11px; }
   .administrative-district-label { font-size: 9px; }
   .region-detail-quick-select > div:first-child { align-items: flex-start; flex-direction: column; gap: 3px; }
-  .region-detail-quick-select > div:last-child { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .region-detail-quick-list { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .region-detail-quick-select.is-grouped .region-detail-quick-groups { grid-template-columns: 1fr; }
+  .region-detail-quick-select.is-grouped .region-detail-quick-group > div { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .region-detail-map-meta { align-items: flex-start; flex-direction: column; gap: 2px; }
   .korea-map-fallback, .district-map-fallback-list { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

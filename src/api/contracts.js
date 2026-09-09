@@ -87,6 +87,7 @@
  * @typedef {Object} TourismSearchRequest
  * @property {ApiLocation} near
  * @property {string[]=} themes 맛집, 관광, 휴식 등
+ * @property {{cuisineCodes:string[], matchMode:'ANY'|'ALL', noPreference:boolean, prioritizeNearby:boolean}=} diningPreferences 식당 검색용 음식 선호 필터
  * @property {number=} radiusMeters
  * @property {number=} limit
  */

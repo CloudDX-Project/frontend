@@ -3,7 +3,7 @@
  * 외부 지도/관광/사업자 API 키는 절대 여기서 직접 호출하지 않고 백엔드 BFF를 통한다.
  */
 
-const DEFAULT_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:8080';
+const DEFAULT_BASE_URL = import.meta.env?.VITE_API_BASE_URL ?? 'http://localhost:8080';
 
 export class ApiClientError extends Error {
   constructor(message, { status = 0, code = 'API_ERROR', payload = null, cause } = {}) {

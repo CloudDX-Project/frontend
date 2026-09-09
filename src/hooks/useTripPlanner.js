@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { requestTripPlan } from "../api/tripPlanApi";
+import { makeDemoTicketOptions, resolveTripSchedule } from "../data/travelSchedule";
 import {
   destinationCoordinatesByName,
   jejuRegionCoordinates,
@@ -8,6 +9,7 @@ import {
 } from "../data/locationCatalog";
 import jejuCoastPhoto from "../assets/jeju-main-hero.jpeg";
 import {
+  applyFoodPreferences,
   applyPlanEdits,
   demoRentalsForLocation,
   demoStaysForLocation,
@@ -33,13 +35,22 @@ import {
   transportName,
 } from "../data/mockData";
 
+const applyPlanOrders = (plans, orders) => plans.map((day, dayIndex) => {
+  const order = orders[dayIndex];
+  if (!order?.length) return day;
+  const byId = new Map(day[2].map((event) => [event[6]?.id, event]));
+  const ordered = order.map((id) => byId.get(id)).filter(Boolean);
+  const known = new Set(order);
+  return [day[0], day[1], [...ordered, ...day[2].filter((event) => !known.has(event[6]?.id))]];
+});
+
 function useTripPlanner() {
   const [initialDraft] = useState(() => {
     try { return JSON.parse(window.localStorage.getItem("tripDraft") || "{}"); }
     catch { return {}; }
   });
   const [destinationType, setDestinationType] = useState(initialDraft.destinationType || "");
-  const [destination, setDestination] = useState("");
+  const [destination, setDestination] = useState(initialDraft.destinationLocation?.detail || initialDraft.destinationLocation?.name || "");
   const [destinationLocation, setDestinationLocation] = useState(initialDraft.destinationLocation || null);
   const [destinationRegionId, setDestinationRegionId] = useState("");
   const [menuOpen, setMenuOpen] = useState(false);
@@ -53,18 +64,22 @@ function useTripPlanner() {
   const [endDate, setEndDate] = useState(initialDraft.endDate || "");
   const [startTime, setStartTime] = useState(initialDraft.startTime || "09:00");
   const [endTime, setEndTime] = useState(initialDraft.endTime || "18:00");
-  const [showTimeFields, setShowTimeFields] = useState(false);
+  const [manualTimeConfirmed, setManualTimeConfirmed] = useState(false);
+  const [ticketLeg, setTicketLeg] = useState("outbound");
+  const [outboundTicketId, setOutboundTicketId] = useState("");
+  const [returnTicketId, setReturnTicketId] = useState("");
   const [travelers, setTravelers] = useState(initialDraft.travelers || null);
   const [travelerInput, setTravelerInput] = useState("");
   const [travelerPromptOpen, setTravelerPromptOpen] = useState(false);
   const [budget, setBudget] = useState(initialDraft.budget || 900000);
   const [pace, setPace] = useState(initialDraft.pace || "보통");
   const [themes, setThemes] = useState(initialDraft.themes || ["맛집", "관광"]);
+  const [foodPreferences, setFoodPreferences] = useState(initialDraft.foodPreferences || []);
   useEffect(() => {
     try {
-      window.localStorage.setItem("tripDraft", JSON.stringify({ destinationType, destinationLocation, departureLocation, prompt, startDate, endDate, startTime, endTime, travelers, budget, pace, themes }));
+      window.localStorage.setItem("tripDraft", JSON.stringify({ destinationType, destinationLocation, departureLocation, prompt, startDate, endDate, startTime, endTime, travelers, budget, pace, themes, foodPreferences }));
     } catch { /* Private browsing/storage restrictions should not block planning. */ }
-  }, [destinationType, destinationLocation, departureLocation, prompt, startDate, endDate, startTime, endTime, travelers, budget, pace, themes]);
+  }, [destinationType, destinationLocation, departureLocation, prompt, startDate, endDate, startTime, endTime, travelers, budget, pace, themes, foodPreferences]);
   const resetTripDraft = () => {
     try { window.localStorage.removeItem("tripDraft"); } catch { /* no-op */ }
     window.location.reload();
@@ -110,7 +125,7 @@ function useTripPlanner() {
   const [flightOpen, setFlightOpen] = useState(false);
   const [flightPickerLeg, setFlightPickerLeg] = useState("outbound");
   const [flightTransitionOpen, setFlightTransitionOpen] = useState(false);
-  const [flightSort, setFlightSort] = useState("time");
+  const [flightSort, setFlightSort] = useState("recommended");
   const [flightId, setFlightId] = useState("");
   const [returnFlightId, setReturnFlightId] = useState("");
   const [rentalOpen, setRentalOpen] = useState(false);
@@ -123,7 +138,7 @@ function useTripPlanner() {
   const [stayOpen, setStayOpen] = useState(false);
   const [stayArea, setStayArea] = useState("전체");
   const [stayCustomArea, setStayCustomArea] = useState("");
-  const [priceBand, setPriceBand] = useState("10-20");
+  const [priceBand, setPriceBand] = useState("all");
   useEffect(() => {
     try {
       const savedDraft = JSON.parse(window.localStorage.getItem("tripDraft") || "{}");
@@ -151,7 +166,19 @@ function useTripPlanner() {
   const [planRevision, setPlanRevision] = useState(1);
   const [activeDay, setActiveDay] = useState(0);
   const [planEdits, setPlanEdits] = useState({});
+  const [planOrders, setPlanOrders] = useState({});
+  const [backendPlan, setBackendPlan] = useState(null);
   const [message, setMessage] = useState("");
+  useEffect(() => {
+    if (!stayOpen) return;
+    const hasDestinationAnchor = destinationLocation?.regionCode === "KR-49"
+      && Number.isFinite(destinationLocation?.latitude)
+      && Number.isFinite(destinationLocation?.longitude);
+    setStayArea(hasDestinationAnchor ? `${destinationLocation.detail || destinationLocation.name} 인근` : "전체");
+    setPriceBand("all");
+    setStaySearch("");
+    setStayCustomArea("");
+  }, [destinationLocation, stayOpen]);
   useEffect(() => {
     const filterBar = document.querySelector(".stay-picker .area-filters");
     if (!filterBar) return undefined;
@@ -190,7 +217,7 @@ function useTripPlanner() {
     (flight) => flight.id === returnFlightId,
   );
   const selectedFlight = useMemo(() => {
-    if (!selectedOutboundFlight || !selectedReturnFlight) return null;
+    if (transport !== "FLIGHT" || !selectedOutboundFlight || !selectedReturnFlight) return null;
     const originalFare =
       oneWayOriginalFare(selectedOutboundFlight) +
       oneWayOriginalFare(selectedReturnFlight);
@@ -199,10 +226,13 @@ function useTripPlanner() {
     return {
       id: `${selectedOutboundFlight.id}-${selectedReturnFlight.id}`,
       origin,
+      originName: selectedOutboundFlight.originName,
+      originCity: selectedOutboundFlight.originCity,
       airline:
         selectedOutboundFlight.airline === selectedReturnFlight.airline
           ? selectedOutboundFlight.airline
           : `${selectedOutboundFlight.airline} · ${selectedReturnFlight.airline}`,
+      code: `${selectedOutboundFlight.code.split("·")[0].trim()} · ${selectedReturnFlight.code.split("·").at(-1).trim()}`,
       out: selectedOutboundFlight.out,
       back: selectedReturnFlight.back,
       fare,
@@ -213,7 +243,7 @@ function useTripPlanner() {
         selectedReturnFlight.seats || 9,
       ),
     };
-  }, [origin, selectedOutboundFlight, selectedReturnFlight]);
+  }, [transport, origin, selectedOutboundFlight, selectedReturnFlight]);
   const stayCatalog = useMemo(
     () => demoStaysForLocation(destinationLocation),
     [destinationLocation],
@@ -229,37 +259,51 @@ function useTripPlanner() {
   const nights = Math.max(1, dates.length - 1);
   const party = travelers || 1;
   const rooms = selectedStay ? Math.ceil(party / 3) : 0;
-  const scheduledStartTime = selectedFlight?.out.slice(0, 5) || startTime;
-  const scheduledArrivalTime =
-    selectedFlight?.out.slice(-5) ||
-    minutesToTime(timeToMinutes(startTime) + 80);
-  const scheduledEndTime = selectedFlight?.back.slice(0, 5) || endTime;
+  const routeDistanceKm = distanceBetween(departureLocation, destinationLocation);
+  const estimatedCarMinutes = Math.max(15, Math.round(routeDistanceKm * 1.25 / 65 * 60));
+  const ticketOptions = useMemo(() => makeDemoTicketOptions(transport, routeDistanceKm), [transport, routeDistanceKm]);
+  const selectedOutboundTicket = ticketOptions.find((ticket) => ticket.id === outboundTicketId);
+  const selectedReturnTicket = ticketOptions.find((ticket) => ticket.id === returnTicketId);
+  const selectedTicket = useMemo(() => transport === "FLIGHT" ? selectedFlight
+    : selectedOutboundTicket && selectedReturnTicket ? {
+      id: `${selectedOutboundTicket.id}-${selectedReturnTicket.id}`,
+      mode: transport, name: transportName(transport, outboundOptions),
+      out: selectedOutboundTicket.out, back: selectedReturnTicket.back,
+      fare: selectedOutboundTicket.fare + selectedReturnTicket.fare, isMock: true,
+    } : null, [transport, selectedFlight, selectedOutboundTicket, selectedReturnTicket]);
+  const tripSchedule = resolveTripSchedule({ mode: transport, ticket: selectedTicket, startTime, endTime, startDate, endDate, manualConfirmed: manualTimeConfirmed, carMinutes: estimatedCarMinutes });
+  const scheduledStartTime = tripSchedule.ready ? tripSchedule.departureTime : "";
+  const scheduledArrivalTime = tripSchedule.ready ? tripSchedule.arrivalTime : "";
+  const scheduledEndTime = tripSchedule.ready ? tripSchedule.endTime : "";
   const baseDayPlans = useMemo(
-    () =>
-      makeDayPlans(
+    () => backendPlan?.dayPlans?.length
+      ? backendPlan.dayPlans
+      : applyFoodPreferences(makeDayPlans(
         scheduledArrivalTime,
         scheduledEndTime,
         selectedStay,
-        selectedFlight,
+        selectedTicket,
         destinationLocation,
         departureLocation,
         transport,
         dates.length,
-      ),
+      ), foodPreferences, destinationLocation),
     [
       scheduledArrivalTime,
       scheduledEndTime,
-      selectedFlight,
+      selectedTicket,
       selectedStay,
       destinationLocation,
       departureLocation,
       transport,
       dates.length,
+      foodPreferences,
+      backendPlan,
     ],
   );
   const dayPlans = useMemo(
-    () => applyPlanEdits(baseDayPlans, planEdits),
-    [baseDayPlans, planEdits],
+    () => applyPlanOrders(applyPlanEdits(baseDayPlans, planEdits), planOrders),
+    [baseDayPlans, planEdits, planOrders],
   );
   const placeEditAdjustment = Object.entries(planEdits).reduce(
     (sum, [key, place]) => {
@@ -276,14 +320,21 @@ function useTripPlanner() {
   const filteredFlights = flights.filter((flight) => flight.origin === origin);
   const saleFirstFlights = [...filteredFlights].sort((a, b) => {
     const saleOrder = Number(isSaleFlight(b)) - Number(isSaleFlight(a));
-    if (saleOrder) return saleOrder;
+    if (flightSort === "recommended" && saleOrder) return saleOrder;
     return flightSort === "price"
       ? oneWayFare(a) - oneWayFare(b)
-      : timeToMinutes(flightTimeForLeg(a)) -
-          timeToMinutes(flightTimeForLeg(b)) || oneWayFare(a) - oneWayFare(b);
+      : flightSort === "time"
+        ? timeToMinutes(flightTimeForLeg(a)) - timeToMinutes(flightTimeForLeg(b)) || oneWayFare(a) - oneWayFare(b)
+        : (a.durationMinutes || 999) - (b.durationMinutes || 999) || oneWayFare(a) - oneWayFare(b);
   });
-  const stayAreas = ["전체", ...new Set(stayCatalog.map((stay) => stay.area))];
+  const nearbyStayArea = isJeju
+    && Number.isFinite(destinationLocation?.latitude)
+    && Number.isFinite(destinationLocation?.longitude)
+    ? `${destinationLocation.detail || destinationLocation.name} 인근`
+    : null;
+  const stayAreas = [nearbyStayArea, "전체", ...new Set(stayCatalog.map((stay) => stay.area))].filter(Boolean);
   const isInPriceBand = (price) => {
+    if (priceBand === "all") return true;
     if (priceBand === "0-5") return price < 50000;
     if (priceBand === "5-10") return price >= 50000 && price < 100000;
     if (priceBand === "10-20") return price >= 100000 && price < 200000;
@@ -296,12 +347,15 @@ function useTripPlanner() {
       (stay) =>
         isInPriceBand(stay.price) &&
         (stayArea === "전체" ||
+          stayArea === nearbyStayArea ||
           stayArea === "기타 지역" ||
           stay.area === stayArea) &&
         stay.name.toLowerCase().includes(staySearch.toLowerCase()),
     )
     .sort((a, b) =>
-      staySort === "price"
+      stayArea === nearbyStayArea
+        ? (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY)
+        : staySort === "price"
         ? a.price - b.price
         : Number(b.rating) - Number(a.rating) || b.reviewCount - a.reviewCount,
     );
@@ -327,11 +381,10 @@ function useTripPlanner() {
     localTransport,
     localOptions,
   );
-  const routeDistanceKm = distanceBetween(departureLocation, destinationLocation);
   const intercityTransportTotal =
     selectedTransportMode === "FLIGHT"
       ? selectedFlight?.fare || 0
-      : selectedTransportMode
+      : selectedTicket ? selectedTicket.fare : selectedTransportMode
         ? estimateIntercityFare({
             mode: selectedTransportMode,
             origin: departureLocation,
@@ -343,8 +396,10 @@ function useTripPlanner() {
     45,
     Math.round(nights * 72 + Object.keys(planEdits).length * 18),
   );
+  const vehicleEfficiency = { "경차": 14.5, "세단": 12.5, SUV: 10.2, "승합": 8.5 }[carType] || 12.5;
+  const fuelPrice = { "휘발유": 1750, "경유": 1650, LPG: 1100 }[carFuel] || 1750;
   const localFuelAndParkingTotal = Math.round(
-    (itineraryDistanceKm / 11.5) * 1750 + nights * 9000,
+    (itineraryDistanceKm / vehicleEfficiency) * fuelPrice + nights * 9000,
   );
   const usesRental = localTransport === "RENTAL" && Boolean(selectedRental);
   const rentalFeePerPerson = usesRental ? selectedRental.price / party : 0;
@@ -361,39 +416,33 @@ function useTripPlanner() {
   const localTravelTotal =
     rentalFeePerPerson + localFuelAndParkingPerPerson + localTransitTotal;
   const tripDurationLabel = `${nights}박 ${Math.max(1, nights + 1)}일`;
-  const mealRows = [
-    [`${destinationLabel} 로컬 점심 · 1일차`, 23000, "현지 식당 1인 식사 예상"],
-    [
-      `${destinationLabel} 로컬 저녁 · 1일차`,
-      33000,
-      "숙소 또는 주요 동선 인근 1인 식사 예상",
-    ],
-    [`${destinationLabel} 카페·간식`, 12000, "음료와 간식 1회 기준"],
-    [
-      `${destinationLabel} 로컬 점심 · ${Math.max(2, nights)}일차`,
-      22000,
-      "둘째 날 이동 전 1인 식사 예상",
-    ],
-    [
-      `${destinationLabel} 지역 특색 저녁`,
-      35000,
-      "여행지 대표 메뉴와 곁들임 1인 기준",
-    ],
-    [`${destinationLabel} 간식·기념품`, 15000, "간식과 소형 기념품 1인 예상"],
-  ];
-  const activityRows = [
-    [
-      `${destinationLabel} 대표 관광지 입장·체험`,
-      12000,
-      "대표 관광지 1곳의 입장 또는 체험 1인 기준",
-    ],
-    [
-      `${destinationLabel} 지역 체험`,
-      18000,
-      "현지 문화·자연 체험 1회 1인 기준",
-    ],
-    [`${destinationLabel} 자유 산책`, 0, "공원·거리·자연 경관을 즐기는 무료 일정"],
-  ];
+  const costForEvent = (name, metadata = {}) =>
+    metadata.pricePerPerson != null && Number.isFinite(Number(metadata.pricePerPerson)) && Number(metadata.pricePerPerson) >= 0
+      ? Number(metadata.pricePerPerson)
+      : eventPrice(name, {
+          selectedFlight,
+          selectedRental,
+          selectedStay,
+          party,
+          rooms,
+          nights,
+        });
+  const itineraryCostRows = dayPlans.flatMap((day, dayIndex) =>
+    (day?.[2] || []).flatMap(([time, icon, name, , , , metadata = {}]) => {
+      if (!name || /항공|공항|렌터카|체크인|체크아웃|탑승 준비|출발 준비|귀가|이동 준비/.test(name)) return [];
+      const isMeal = /🍽|🍚|🍜|🍲|☕|🥐/.test(icon || "") || /점심|저녁|식사|카페|간식|조식|시장/.test(name);
+      return [{
+        type: isMeal ? "meal" : "activity",
+        row: [
+          name,
+          costForEvent(name, metadata),
+          `${dayIndex + 1}일차 ${time} · ${metadata.provider ? `${metadata.provider} 제공가` : isMeal ? "1인 예상 이용금액" : "1인 입장·체험 기준"}`,
+        ],
+      }];
+    }),
+  );
+  const mealRows = itineraryCostRows.filter((item) => item.type === "meal").map((item) => item.row);
+  const activityRows = itineraryCostRows.filter((item) => item.type === "activity").map((item) => item.row);
   const foodTotal = mealRows.reduce((sum, [, value]) => sum + value, 0);
   const activityTotal = Math.max(
     0,
@@ -442,7 +491,7 @@ function useTripPlanner() {
       usesRental,
     ],
   );
-  const costDetails = useMemo(
+  const mockCostDetails = useMemo(
     () => [
       {
         group: "1인 이동·식사 비용",
@@ -556,7 +605,29 @@ function useTripPlanner() {
       usesRental,
     ],
   );
-  const total = items.reduce((sum, item) => sum + item.total, 0);
+  const backendCostItems = Array.isArray(backendPlan?.costEstimate?.items)
+    ? backendPlan.costEstimate.items
+    : [];
+  const costDetails = backendCostItems.length
+    ? Object.values(backendCostItems.reduce((groups, item) => {
+        const key = item.scope === "shared" ? `공통 비용 · ${party}명 N/1` : "1인 이동·식사 비용";
+        groups[key] ||= { group: key, rows: [] };
+        groups[key].rows.push([
+          item.placeName || item.vendorName || item.name || item.label || item.category || "여행 비용",
+          Number(item.perPerson ?? item.total ?? 0),
+          item.note || (item.approximate ? "백엔드 예상 견적" : "백엔드 확정 견적"),
+        ]);
+        return groups;
+      }, {}))
+    : mockCostDetails;
+  const mockTotal = items.reduce((sum, item) => sum + item.total, 0);
+  const backendPerPerson = Number(backendPlan?.costEstimate?.perPerson);
+  const backendGrandTotal = Number(backendPlan?.costEstimate?.total);
+  const total = Number.isFinite(backendPerPerson) && backendPerPerson >= 0
+    ? backendPerPerson
+    : Number.isFinite(backendGrandTotal) && backendGrandTotal >= 0
+      ? backendGrandTotal / party
+      : mockTotal;
   const confirmedTotal = selectedStay ? total : budgetStatus?.total || total;
   const confirmedInBudget = budget >= confirmedTotal;
   const gap = Math.abs(budget - total);
@@ -572,11 +643,16 @@ function useTripPlanner() {
   const resetRouteBookings = () => {
     setFlightId("");
     setReturnFlightId("");
+    setOutboundTicketId("");
+    setReturnTicketId("");
+    setManualTimeConfirmed(false);
     setRentalId("");
     setStayId("");
     setTransport("");
     setLocalTransport("");
     setPlanEdits({});
+    setPlanOrders({});
+    setBackendPlan(null);
   };
   const chooseDepartureDistrict = (region, district) => {
     setDepartureLocation({
@@ -834,12 +910,20 @@ function useTripPlanner() {
     setTransportStep("mode");
   };
   const chooseTransportMode = (mode) => {
-    const selectedMode = outboundOptions.find((option) => option.id === mode);
+    if (isJeju && ["KTX", "BUS"].includes(mode)) return notify("제주까지는 철도·버스 직행편이 없어요. 항공 또는 차량 선적을 포함한 자차 이동을 선택해 주세요.");
+    setFlightId("");
+    setReturnFlightId("");
+    setOutboundTicketId("");
+    setReturnTicketId("");
+    setManualTimeConfirmed(false);
+    setPlanEdits({});
+    setPlanOrders({});
+    setShowPlan(false);
+    setPlanViewOpen(false);
     setTransport(mode);
     setLocalTransport("");
     if (mode === "FLIGHT") {
       setTransport("FLIGHT");
-      setShowTimeFields(false);
       setFlightPickerLeg("outbound");
       setTransportModalOpen(false);
       setFlightOpen(true);
@@ -847,36 +931,69 @@ function useTripPlanner() {
     }
     if (mode === "CAR") {
       setLocalTransport("CAR");
-      setShowTimeFields(true);
-      setTransportStep("car-detail");
+      setTransportStep("manual-time");
       return;
     }
-    setShowTimeFields(true);
+    setTicketLeg("outbound");
+    setTransportStep("tickets");
+  };
+  const confirmManualTimes = ({ startTime: nextStart, endTime: nextEnd }) => {
+    const schedule = resolveTripSchedule({ mode: "CAR", startTime: nextStart, endTime: nextEnd, startDate, endDate, manualConfirmed: true, carMinutes: estimatedCarMinutes });
+    if (!schedule.ready) return schedule.reason;
+    setStartTime(nextStart);
+    setEndTime(nextEnd);
+    setManualTimeConfirmed(true);
+    setTransportStep("car-detail");
+    return null;
+  };
+  const chooseTicket = (id) => {
+    const ticket = ticketOptions.find((item) => item.id === id);
+    if (!ticket) return;
+    if (ticketLeg === "outbound") {
+      setOutboundTicketId(id);
+      setReturnTicketId("");
+      setTicketLeg("return");
+      return;
+    }
+    const schedule = resolveTripSchedule({ mode: transport, ticket: { out: selectedOutboundTicket?.out, back: ticket.back }, startDate, endDate });
+    if (!schedule.ready) return notify(schedule.reason);
+    setReturnTicketId(id);
     setTransportStep("local");
-    notify(
-      `${selectedMode?.title || "선택한 교통수단"} 기준으로 출발·귀국 시간을 설정해 주세요. 이후 현지 이동수단도 이어서 고를 수 있어요.`,
-    );
+  };
+  const confirmTravelDates = ({ startDate: nextStartDate, endDate: nextEndDate }) => {
+    if (nextStartDate === startDate && nextEndDate === endDate) return;
+    setStartDate(nextStartDate);
+    setEndDate(nextEndDate);
+    resetRouteBookings();
+    setShowPlan(false);
+    setPlanViewOpen(false);
+    setTransportPromptReady(Boolean(destinationLocation && travelers && departureLocation));
+    notify("여행 날짜를 반영했어요. 새 날짜의 교통편과 시간을 선택해 주세요.");
   };
   const chooseLocal = (mode) => {
     setLocalTransport(mode);
     setTransportModalOpen(false);
     if (mode === "RENTAL") setRentalOpen(true);
+    else setStayOpen(true);
   };
   const completeCarDetails = () => {
     setTransport("CAR");
     setLocalTransport("CAR");
-    setShowTimeFields(true);
     setTransportModalOpen(false);
-    setPreferenceModalOpen(true);
+    setStayOpen(true);
     notify(`${carType} · ${carFuel} 기준으로 유류비를 계산할게요.`);
   };
   const chooseFlight = (id) => {
     if (flightPickerLeg === "outbound") {
       setFlightId(id);
+      setReturnFlightId("");
       setFlightOpen(false);
       setFlightTransitionOpen(true);
       return;
     }
+    const returnFlight = flights.find((flight) => flight.id === id);
+    const schedule = resolveTripSchedule({ mode: "FLIGHT", ticket: { out: selectedOutboundFlight?.out, back: returnFlight?.back }, startDate, endDate });
+    if (!schedule.ready) return notify(schedule.reason);
     setReturnFlightId(id);
     setFlightOpen(false);
     if (quickEditTarget === "flight") {
@@ -895,13 +1012,13 @@ function useTripPlanner() {
       notify("렌터카 선택이 반영됐어요. 숙소와 여행 취향은 그대로 유지합니다.");
       return;
     }
-    setPreferenceModalOpen(true);
+    setStayOpen(true);
   };
   const estimateTotalWithStay = (stay) => {
     const nextRooms = Math.ceil(party / 3);
     const nextStayTotal = stay ? (stay.price * nights * nextRooms) / party : 0;
     return (
-      (selectedFlight?.fare || 0) +
+      intercityTransportTotal +
       nextStayTotal +
       driveTotal +
       foodTotal +
@@ -915,6 +1032,7 @@ function useTripPlanner() {
     setStayId(id);
     setQuickEditTarget("");
     setPlanEdits({});
+    setPlanOrders({});
     setStayOpen(false);
     if (showPlan && stay) {
       const didChangeStay = Boolean(
@@ -1033,10 +1151,7 @@ function useTripPlanner() {
       return;
     }
     if (target === "flight") {
-      setTransport("FLIGHT");
-      setShowTimeFields(false);
-      setFlightPickerLeg(selectedOutboundFlight ? "return" : "outbound");
-      setFlightOpen(true);
+      chooseTransportMode("FLIGHT");
       return;
     }
     if (target === "rental") {
@@ -1049,7 +1164,9 @@ function useTripPlanner() {
       setStayOpen(true);
     }
   };
-  const changePlanStop = (dayIndex, stopIndex, place) => {
+  const changePlanStop = (dayIndex, eventId, place) => {
+    const stopIndex = baseDayPlans[dayIndex]?.[2]?.findIndex((event) => event[6]?.id === eventId);
+    if (stopIndex == null || stopIndex < 0) return;
     setPlanEdits((current) => ({
       ...current,
       [`${dayIndex}-${stopIndex}`]: place,
@@ -1059,15 +1176,27 @@ function useTripPlanner() {
       `${place.name} 기준으로 이동 동선과 1인 예상 경비를 다시 계산했어요.`,
     );
   };
-  const itineraryEventCost = (name) =>
-    eventPrice(name, {
-      selectedFlight,
-      selectedRental,
-      selectedStay,
-      party,
-      rooms,
-      nights,
-    });
+  const reorderDayPlan = (dayIndex, sourceIndex, destinationIndex) => {
+    const events = dayPlans[dayIndex]?.[2] || [];
+    if (sourceIndex === destinationIndex || !events[sourceIndex] || events[sourceIndex][6]?.isLocked) return;
+    const movableSlots = events.flatMap((event, index) => event[6]?.isLocked ? [] : [index]);
+    const movableIds = movableSlots.map((index) => events[index][6]?.id);
+    const sourceRank = movableSlots.indexOf(sourceIndex);
+    const destinationRank = Math.max(0, Math.min(
+      movableSlots.length - 1,
+      movableSlots.reduce((nearest, slot, rank) =>
+        Math.abs(slot - destinationIndex) < Math.abs(movableSlots[nearest] - destinationIndex) ? rank : nearest, 0),
+    ));
+    if (sourceRank < 0 || sourceRank === destinationRank) return;
+    const [movedId] = movableIds.splice(sourceRank, 1);
+    movableIds.splice(destinationRank, 0, movedId);
+    let movableCursor = 0;
+    const order = events.map((event) => event[6]?.isLocked ? event[6]?.id : movableIds[movableCursor++]);
+    setPlanOrders((current) => ({ ...current, [dayIndex]: order.filter(Boolean) }));
+    setPlanRevision((current) => current + 1);
+    notify("일정 순서와 지도 동선을 다시 계산했어요.");
+  };
+  const itineraryEventCost = costForEvent;
   const generate = async () => {
     if (!departureLocation) {
       setDepartureMenuOpen(true);
@@ -1081,12 +1210,14 @@ function useTripPlanner() {
       return notify("이동수단 선택에서 출발 이동과 현지 이동을 골라주세요.");
     if (transport === "FLIGHT" && !selectedFlight)
       return notify("가는 편과 오는 편 항공편을 모두 선택해 주세요.");
+    if (!tripSchedule.ready) return notify(tripSchedule.reason);
     if (!selectedStay) return notify("숙소를 선택해 주세요.");
     setPlanningMode("create");
     setPlanning(true);
     setPlanningStage("calculating");
-    if (import.meta.env.VITE_USE_MOCK === "false")
-      await requestTripPlan({
+    if (import.meta.env.VITE_USE_MOCK === "false") {
+      try {
+        const nextBackendPlan = await requestTripPlan({
         destination,
         originLocation: toApiLocation(departureLocation),
         destinationLocation: toApiLocation(destinationLocation),
@@ -1106,14 +1237,34 @@ function useTripPlanner() {
         startDate,
         endDate,
         startTime: scheduledStartTime,
+        arrivalTime: scheduledArrivalTime,
         endTime: scheduledEndTime,
+        returnArrivalTime: tripSchedule.returnArrivalTime,
+        timeSource: tripSchedule.source,
+        ticket: selectedTicket,
         travelers,
         total,
         pace,
         themes,
+        diningPreferences: {
+          cuisineCodes: foodPreferences,
+          matchMode: "ANY",
+          noPreference: foodPreferences.length === 0,
+          prioritizeNearby: true,
+        },
         transport,
         localTransport,
-      });
+        });
+        if (!nextBackendPlan.dayPlans.length) throw new Error("일정 데이터가 비어 있습니다.");
+        setBackendPlan(nextBackendPlan);
+        setPlanEdits({});
+        setPlanOrders({});
+      } catch (error) {
+        setPlanning(false);
+        notify(error?.message || "백엔드 일정 데이터를 불러오지 못했어요.");
+        return;
+      }
+    }
     window.setTimeout(() => setPlanningStage("ready"), 1900);
     window.setTimeout(() => {
       setActiveDay(0);
@@ -1150,7 +1301,16 @@ function useTripPlanner() {
     setStartTime,
     endTime,
     setEndTime,
-    showTimeFields,
+    tripSchedule,
+    estimatedCarMinutes,
+    ticketOptions,
+    ticketLeg,
+    selectedOutboundTicket,
+    selectedTicket,
+    scheduledArrivalTime,
+    confirmManualTimes,
+    chooseTicket,
+    confirmTravelDates,
     travelers,
     setTravelers,
     travelerInput,
@@ -1162,6 +1322,8 @@ function useTripPlanner() {
     pace,
     setPace,
     themes,
+    foodPreferences,
+    setFoodPreferences,
     heroSlideIndex,
     setHeroSlideIndex,
     setTransportPromptReady,
@@ -1279,6 +1441,7 @@ function useTripPlanner() {
     chooseStay,
     openIndependentBooking,
     changePlanStop,
+    reorderDayPlan,
     itineraryEventCost,
     generate,
     resetTripDraft,

@@ -50,6 +50,47 @@ export default function RegionDetailMap({ region, selectedDistrictId = null, sel
     event.preventDefault();
     selectDistrict?.(district);
   };
+  const jejuGroups = region?.id === "jeju"
+    ? region.districts.map((district) => ({
+        id: district.id,
+        name: `${district.name} 권역`,
+        districts: district.children || [district],
+      }))
+    : null;
+  const sortedDistricts = [...districtByCode.values()].sort((a, b) => a.name.localeCompare(b.name, "ko"));
+
+  const QuickSelect = () => {
+    if (!jejuGroups) {
+      return (
+        <section className="region-detail-quick-select" aria-label={`${region.name} 빠른 지역 선택`}>
+          <div><b>이름으로 빠르게 선택</b><small>지도가 촘촘한 지역은 아래 큰 버튼을 이용하세요.</small></div>
+          <div className="region-detail-quick-list">
+            {sortedDistricts.map((district) => (
+              <button className={selectedDistrictId === district.id ? "is-selected" : ""} type="button" key={district.id} onClick={() => selectDistrict?.(district)}>{district.name}</button>
+            ))}
+          </div>
+        </section>
+      );
+    }
+
+    return (
+      <section className="region-detail-quick-select is-grouped" aria-label={`${region.name} 읍면동 빠른 선택`}>
+        <div><b>이름으로 빠르게 선택</b><small>읍·면·동 권역을 바로 선택하세요.</small></div>
+        <div className="region-detail-quick-groups">
+          {jejuGroups.map((group) => (
+            <div className="region-detail-quick-group" key={group.id}>
+              <strong>{group.name}</strong>
+              <div>
+                {group.districts.map((district) => (
+                  <button className={selectedDistrictId === district.id ? "is-selected" : ""} type="button" key={district.id} onClick={() => selectDistrict?.(district)}>{district.name}</button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
+    );
+  };
 
   if (loading) return <div className="region-detail-map-shell"><div className="administrative-map-status" role="status"><span className="administrative-map-spinner" /><b>{region?.name} 시·군·구 지도를 불러오고 있어요.</b></div></div>;
 
@@ -57,7 +98,7 @@ export default function RegionDetailMap({ region, selectedDistrictId = null, sel
     return (
       <div className="region-detail-map-shell administrative-map-error">
         <b>세부 지도를 불러오지 못했어요.</b><small>아래 지역 목록에서 선택할 수 있습니다.</small>
-        <div className="district-map-fallback-list">{region?.districts?.map((district) => <button type="button" key={district.id} onClick={() => selectDistrict?.(district)}>{district.detail || district.name}</button>)}</div>
+        <QuickSelect />
       </div>
     );
   }
@@ -94,14 +135,7 @@ export default function RegionDetailMap({ region, selectedDistrictId = null, sel
         </Geographies>
       </ComposableMap>
       <div className="region-detail-map-meta"><b>{region.name} 전체 {features.length}개 시·군·구</b><span>지도에서 지역 이름을 눌러 선택하세요.</span></div>
-      <section className="region-detail-quick-select" aria-label={`${region.name} 빠른 지역 선택`}>
-        <div><b>이름으로 빠르게 선택</b><small>지도가 촘촘한 지역은 아래 큰 버튼을 이용하세요.</small></div>
-        <div>
-          {[...districtByCode.values()].sort((a, b) => a.name.localeCompare(b.name, "ko")).map((district) => (
-            <button type="button" key={district.id} onClick={() => selectDistrict?.(district)}>{district.name}</button>
-          ))}
-        </div>
-      </section>
+      <QuickSelect />
     </div>
   );
 }

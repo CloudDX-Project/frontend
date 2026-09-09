@@ -2,10 +2,10 @@
 // 모든 좌표는 WGS84(latitude/longitude)이며, 백엔드가 그대로 API 검색 조건으로 사용할 수 있습니다.
 // 선택 UI는 이 파일의 이름과 좌표만 사용합니다. 관광지 사진은 가이드/콘텐츠 카드에서 별도로 관리합니다.
 
-const buildDistrict = (region, district) => {
+const buildDistrict = (region, district, parentArea = null) => {
   const airportCodes = district.airportCodes || region.airportCodes || [];
 
-  return {
+  const builtDistrict = {
     id: district.id,
     countryCode: "KR",
     regionCode: region.regionCode,
@@ -17,8 +17,14 @@ const buildDistrict = (region, district) => {
     airportCodes,
     airportCode: airportCodes[0] || null,
     apiSearchKeyword: district.apiSearchKeyword || `${region.name} ${district.name}`,
+    parentArea,
     needsGeocoding: false,
   };
+
+  const children = district.children || [];
+  return children.length
+    ? { ...builtDistrict, children: children.map((child) => buildDistrict(region, child, district.name)) }
+    : builtDistrict;
 };
 
 const buildRegion = ({ id, regionCode, name, latitude, longitude, airportCodes, districts }) => {
@@ -148,14 +154,31 @@ export const koreanRegions = [
     { id: "gyeongnam-namhae", name: "남해군", latitude: 34.8377, longitude: 127.8925, airportCodes: ["HIN", "PUS"] },
   ] }),
   buildRegion({ id: "jeju", regionCode: "KR-49", name: "제주특별자치도", latitude: 33.4996, longitude: 126.5312, airportCodes: ["CJU"], districts: [
-    { id: "jeju-city", name: "제주시·공항", latitude: 33.4996, longitude: 126.5312 },
-    { id: "jeju-aewol", name: "애월", latitude: 33.4639, longitude: 126.3118 },
-    { id: "jeju-hyeopjae-hallim", name: "협재·한림", latitude: 33.3948, longitude: 126.2395 },
-    { id: "jeju-hamdeok-jochen", name: "함덕·조천", latitude: 33.5425, longitude: 126.6683 },
-    { id: "jeju-seongsan-seopjikoji", name: "성산·섭지코지", latitude: 33.4584, longitude: 126.9425 },
-    { id: "jeju-jungmun-seogwipo", name: "중문·서귀포", latitude: 33.252, longitude: 126.4124 },
+    { id: "jeju-city", name: "제주시", latitude: 33.4996, longitude: 126.5312, apiSearchKeyword: "제주특별자치도 제주시", children: [
+      { id: "jeju-aewol", name: "애월읍", latitude: 33.4622, longitude: 126.3295, apiSearchKeyword: "제주특별자치도 제주시 애월읍 애월" },
+      { id: "jeju-jocheon", name: "조천읍", latitude: 33.5343, longitude: 126.6345, apiSearchKeyword: "제주특별자치도 제주시 조천읍 함덕 조천" },
+      { id: "jeju-hallim", name: "한림읍", latitude: 33.4106, longitude: 126.2687, apiSearchKeyword: "제주특별자치도 제주시 한림읍 협재 한림" },
+      { id: "jeju-gujwa", name: "구좌읍", latitude: 33.5225, longitude: 126.8512, apiSearchKeyword: "제주특별자치도 제주시 구좌읍 월정리 세화" },
+      { id: "jeju-hangyeong", name: "한경면", latitude: 33.3501, longitude: 126.1841, apiSearchKeyword: "제주특별자치도 제주시 한경면 신창" },
+      { id: "jeju-chuja", name: "추자면", latitude: 33.9637, longitude: 126.2961, apiSearchKeyword: "제주특별자치도 제주시 추자면 추자도" },
+      { id: "jeju-udo", name: "우도면", latitude: 33.5065, longitude: 126.9534, apiSearchKeyword: "제주특별자치도 제주시 우도면 우도" },
+      { id: "jeju-downtown", name: "제주시내(동 지역)", latitude: 33.4996, longitude: 126.5312, apiSearchKeyword: "제주특별자치도 제주시 동지역 제주시내 제주공항 원도심" },
+    ] },
+    { id: "seogwipo-city", name: "서귀포시", latitude: 33.253, longitude: 126.5596, apiSearchKeyword: "제주특별자치도 서귀포시", children: [
+      { id: "jeju-daejeong", name: "대정읍", latitude: 33.2266, longitude: 126.2525, apiSearchKeyword: "제주특별자치도 서귀포시 대정읍 모슬포" },
+      { id: "jeju-namwon", name: "남원읍", latitude: 33.2799, longitude: 126.7207, apiSearchKeyword: "제주특별자치도 서귀포시 남원읍" },
+      { id: "jeju-seongsan", name: "성산읍", latitude: 33.4421, longitude: 126.9109, apiSearchKeyword: "제주특별자치도 서귀포시 성산읍 성산 섭지코지" },
+      { id: "jeju-andeok", name: "안덕면", latitude: 33.2573, longitude: 126.3307, apiSearchKeyword: "제주특별자치도 서귀포시 안덕면 산방산" },
+      { id: "jeju-pyoseon", name: "표선면", latitude: 33.3267, longitude: 126.8311, apiSearchKeyword: "제주특별자치도 서귀포시 표선면 표선" },
+      { id: "seogwipo-downtown", name: "서귀포시내(동 지역)", latitude: 33.253, longitude: 126.5596, apiSearchKeyword: "제주특별자치도 서귀포시 동지역 서귀포시내 중문" },
+    ] },
   ] }),
 ];
+
+export const flattenDistricts = (districts = []) => districts.flatMap((district) => [
+  district,
+  ...flattenDistricts(district.children || []),
+]);
 
 const locationFromDistrict = (region, district) => ({
   id: district.id,
@@ -169,6 +192,7 @@ const locationFromDistrict = (region, district) => ({
   airportCodes: district.airportCodes,
   airportCode: district.airportCode,
   apiSearchKeyword: district.apiSearchKeyword,
+  parentArea: district.parentArea || null,
   needsGeocoding: false,
 });
 
@@ -182,7 +206,7 @@ export const departureRegions = koreanRegions.map((region) => ({
 
 const domesticLocationIndex = koreanRegions.reduce((index, region) => {
   index[region.name] = locationFromDistrict(region, region.districts[0]);
-  region.districts.forEach((district) => {
+  flattenDistricts(region.districts).forEach((district) => {
     index[district.name] = locationFromDistrict(region, district);
   });
   return index;
@@ -190,7 +214,7 @@ const domesticLocationIndex = koreanRegions.reduce((index, region) => {
 
 const findDomesticLocation = (regionId, districtId) => {
   const region = koreanRegions.find((item) => item.id === regionId);
-  const district = region?.districts.find((item) => item.id === districtId);
+  const district = flattenDistricts(region?.districts).find((item) => item.id === districtId);
   return region && district ? locationFromDistrict(region, district) : null;
 };
 
@@ -204,7 +228,7 @@ const domesticAliases = {
   대전: findDomesticLocation("daejeon", "daejeon-yuseong"),
   울산: findDomesticLocation("ulsan", "ulsan-nam"),
   세종: findDomesticLocation("sejong", "sejong-naseong"),
-  제주도: { ...findDomesticLocation("jeju", "jeju-city"), id: "destination-jeju", detail: "제주시", apiSearchKeyword: "제주특별자치도 제주시" },
+  제주도: { ...findDomesticLocation("jeju", "jeju-downtown"), id: "destination-jeju", detail: "제주시", apiSearchKeyword: "제주특별자치도 제주시" },
   전주: findDomesticLocation("jeonbuk", "jeonbuk-jeonju"),
   경주: findDomesticLocation("gyeongbuk", "gyeongbuk-gyeongju"),
   여수: findDomesticLocation("jeonnam", "jeonnam-yeosu"),
@@ -230,12 +254,12 @@ const jejuLocation = (districtId, override = {}) => ({ ...findDomesticLocation("
 
 // 제주 전용 숙소 권역 선택과 기존 일정 화면의 호환성을 유지합니다.
 export const jejuRegionCoordinates = {
-  "제주공항·시내": jejuLocation("jeju-city", { id: "jeju-airport-city", detail: "제주공항·시내", name: "제주공항·시내", apiSearchKeyword: "제주공항 제주 시내" }),
+  "제주공항·시내": jejuLocation("jeju-downtown", { id: "jeju-airport-city", detail: "제주공항·시내", name: "제주공항·시내", apiSearchKeyword: "제주공항 제주 시내" }),
   애월: jejuLocation("jeju-aewol"),
-  "협재·한림": jejuLocation("jeju-hyeopjae-hallim"),
-  "중문·서귀포": jejuLocation("jeju-jungmun-seogwipo"),
-  "성산·섭지코지": jejuLocation("jeju-seongsan-seopjikoji"),
-  "함덕·조천": jejuLocation("jeju-hamdeok-jochen"),
+  "협재·한림": jejuLocation("jeju-hallim", { name: "협재·한림", detail: "협재·한림" }),
+  "중문·서귀포": jejuLocation("seogwipo-downtown", { name: "중문·서귀포", detail: "중문·서귀포" }),
+  "성산·섭지코지": jejuLocation("jeju-seongsan", { name: "성산·섭지코지", detail: "성산·섭지코지" }),
+  "함덕·조천": jejuLocation("jeju-jocheon", { name: "함덕·조천", detail: "함덕·조천" }),
 };
 
 // 백엔드 요청용 표준 payload입니다. custom 입력은 needsGeocoding=true로 전달합니다.
