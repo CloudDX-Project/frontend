@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isMockModeEnabled } from "../api/apiClient";
 import { requestTripPlan, requestTripPlanRevision } from "../api/tripPlanApi";
 import { makeDemoTicketOptions, recalculateDayTimeline, resolveTripSchedule } from "../data/travelSchedule";
@@ -44,6 +44,16 @@ const applyPlanOrders = (plans, orders, localTransport) => plans.map((day, dayIn
   const known = new Set(order);
   return recalculateDayTimeline([day[0], day[1], [...ordered, ...day[2].filter((event) => !known.has(event[6]?.id))]], localTransport);
 });
+
+const MAX_PREFERENCE_SELECTIONS = 3;
+const AVAILABLE_THEMES = new Set(["맛집", "관광", "휴식", "자연", "액티비티"]);
+const AVAILABLE_FOOD_PREFERENCES = new Set(["KOREAN", "JAPANESE", "CHINESE", "WESTERN", "ASIAN", "CASUAL", "CAFE", "VEGETARIAN"]);
+const normalizeThemes = (value) => Array.isArray(value)
+  ? [...new Set(value)].filter((item) => AVAILABLE_THEMES.has(item)).slice(0, MAX_PREFERENCE_SELECTIONS)
+  : [];
+const normalizeFoodPreferences = (value) => Array.isArray(value)
+  ? [...new Set(value)].filter((item) => AVAILABLE_FOOD_PREFERENCES.has(item)).slice(0, MAX_PREFERENCE_SELECTIONS)
+  : [];
 
 const readInitialDraft = () => {
   try {
@@ -91,8 +101,13 @@ function useTripPlanner() {
   const [travelerPromptOpen, setTravelerPromptOpen] = useState(false);
   const [budget, setBudget] = useState(initialDraft.budget || 900000);
   const [pace, setPace] = useState(initialDraft.pace || "보통");
-  const [themes, setThemes] = useState(initialDraft.themes || ["맛집", "관광"]);
-  const [foodPreferences, setFoodPreferences] = useState(initialDraft.foodPreferences || []);
+  const [themes, setThemes] = useState(() => normalizeThemes(initialDraft.themes || ["맛집", "관광"]));
+  const [foodPreferences, setFoodPreferencesState] = useState(() => normalizeFoodPreferences(initialDraft.foodPreferences));
+  const setFoodPreferences = useCallback((nextValue) => {
+    setFoodPreferencesState((current) => normalizeFoodPreferences(
+      typeof nextValue === "function" ? nextValue(current) : nextValue,
+    ));
+  }, []);
   useEffect(() => {
     try {
       window.localStorage.setItem("tripDraft", JSON.stringify({ destinationType, destinationLocation, departureLocation, prompt, startDate, endDate, startTime, endTime, travelers, budget, pace, themes, foodPreferences }));
@@ -902,12 +917,14 @@ function useTripPlanner() {
       dateInput?.focus();
     }, 180);
   };
-  const toggleTheme = (theme) =>
-    setThemes((current) =>
-      current.includes(theme)
-        ? current.filter((item) => item !== theme)
-        : [...current, theme],
-    );
+  const toggleTheme = (theme) => setThemes((current) => {
+    if (current.includes(theme)) return current.filter((item) => item !== theme);
+    if (current.length >= MAX_PREFERENCE_SELECTIONS) {
+      notify("여행 테마는 최대 3개까지 선택할 수 있어요.");
+      return current;
+    }
+    return [...current, theme];
+  });
   const beginOriginQuestion = () => {
     if (!travelers) {
       setTravelerPromptOpen(true);

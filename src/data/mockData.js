@@ -198,11 +198,6 @@ export const themeOptions = [
     image:
       "https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=500&q=88",
   },
-  {
-    title: "쇼핑",
-    image:
-      "https://images.unsplash.com/photo-1441986300917-64674bd600d8?auto=format&fit=crop&w=500&q=88",
-  },
 ];
 export const jejuRegionOptions = [
   {

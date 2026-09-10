@@ -16,9 +16,11 @@ export default function TravelPreferenceModal({
   onComplete,
 }) {
   const [currentStep, setCurrentStep] = useState(1);
+  const foodSelectionLimitReached = foodPreferences.length >= 3;
 
   const toggleFood = (code) => {
     if (code === "ANY") return onFoodPreferencesChange([]);
+    if (!foodPreferences.includes(code) && foodSelectionLimitReached) return;
     onFoodPreferencesChange(
       foodPreferences.includes(code)
         ? foodPreferences.filter((item) => item !== code)
@@ -47,7 +49,7 @@ export default function TravelPreferenceModal({
           <span>
             {currentStep === 1
               ? "테마와 하루의 속도를 먼저 정하면 AI가 일정의 분위기와 밀도를 조율해요."
-              : "여러 취향을 골라도 좋아요. 실제 식사 일정과 동선 주변 식당 추천에 반영됩니다."}
+              : `최대 3개까지 선택하세요. 실제 식사 일정과 동선 주변 식당 추천에 반영됩니다. (${foodPreferences.length}/3)`}
           </span>
         </header>
 
@@ -55,10 +57,10 @@ export default function TravelPreferenceModal({
           <div className="preference-step-content">
             <section className="preference-modal-group">
               <small>여행 테마</small>
-              <b>마음에 드는 테마를 골라주세요.</b>
+              <b>마음에 드는 테마를 골라주세요. (최대 3개 · {themes.length}/3)</b>
               <div className="preference-modal-themes">
                 {themeOptions.map((theme) => (
-                  <button type="button" className={themes.includes(theme.title) ? "active" : ""} onClick={() => onToggleTheme(theme.title)} key={theme.title}>
+                  <button type="button" className={themes.includes(theme.title) ? "active" : ""} disabled={themes.length >= 3 && !themes.includes(theme.title)} onClick={() => onToggleTheme(theme.title)} key={theme.title}>
                     <img src={theme.image} alt="" />
                     <span>{theme.title}</span>
                     {themes.includes(theme.title) && <i className="theme-modal-check" aria-label={`${theme.title} 선택됨`}><Check size={12} /></i>}
@@ -82,7 +84,7 @@ export default function TravelPreferenceModal({
               {foodPreferenceCardOptions.map((option) => {
                 const active = option.code === "ANY" ? !foodPreferences.length : foodPreferences.includes(option.code);
                 return (
-                  <button type="button" className={active ? "active" : ""} aria-pressed={active} onClick={() => toggleFood(option.code)} key={option.code}>
+                  <button type="button" className={active ? "active" : ""} disabled={option.code !== "ANY" && foodSelectionLimitReached && !active} aria-pressed={active} onClick={() => toggleFood(option.code)} key={option.code}>
                     <img src={option.image} alt="" />
                     <span className="food-card-copy"><b>{option.label}</b><small>{option.description}</small></span>
                     {active && <i className="food-card-check"><Check size={14} /></i>}

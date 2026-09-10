@@ -1007,11 +1007,11 @@ function App() {
               <div className="theme-preference">
                 <div>
                   <small>여행 테마</small>
-                  <b>마음에 드는 테마를 골라주세요.</b>
+                  <b>마음에 드는 테마를 골라주세요. (최대 3개 · {themes.length}/3)</b>
                 </div>
                 <span className="theme-cards">
                   {themeOptions.map((theme) => (
-                    <button type="button" key={theme.title} className={themes.includes(theme.title) ? "active" : ""} onClick={() => toggleTheme(theme.title)}>
+                    <button type="button" key={theme.title} className={themes.includes(theme.title) ? "active" : ""} disabled={themes.length >= 3 && !themes.includes(theme.title)} onClick={() => toggleTheme(theme.title)}>
                       <img src={theme.image} alt="" />
                       <b>{theme.title}</b>
                       {themes.includes(theme.title) && <span className="theme-selected" aria-label={`${theme.title} 선택됨`}>선택</span>}
