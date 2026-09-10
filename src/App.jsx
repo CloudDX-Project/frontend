@@ -1,5 +1,22 @@
 import { useEffect, useState } from "react";
-import { Car, ChevronDown, Home, Plane, RotateCcw, SlidersHorizontal, Smartphone, Sparkles, Ticket } from "lucide-react";
+import {
+  Car,
+  ChevronDown,
+  Home,
+  Plane,
+  RotateCcw,
+  SlidersHorizontal,
+  Smartphone,
+  Sparkles,
+  Ticket,
+} from "lucide-react";
+
+import {
+  login,
+  logout,
+  isLoggedIn,
+} from "./api/authApi";
+
 import { koreanRegions } from "./data/locationCatalog";
 import {
   dateLabel,
@@ -45,9 +62,21 @@ const quickAccessIcons = { sparkles: Sparkles, plane: Plane, home: Home, ticket:
 
 function App() {
   const isMobile = useMediaQuery("(max-width: 760px)");
+
   const [isPlannerOpen, setIsPlannerOpen] = useState(false);
   const [isDisclaimerOpen, setIsDisclaimerOpen] = useState(false);
   const [showScrollTop, setShowScrollTop] = useState(false);
+
+  /*
+   * localStorage에 JWT가 있으면
+   * 새로고침 이후에도 로그인 상태로 표시한다.
+   */
+  const [loggedIn, setLoggedIn] = useState(() => isLoggedIn());
+
+  /*
+   * 로그인 API 호출 중 중복 요청 방지
+   */
+  const [loginLoading, setLoginLoading] = useState(false);
   useEffect(() => {
     const updateScrollTop = () => setShowScrollTop(window.scrollY > 300);
     updateScrollTop();
@@ -235,8 +264,23 @@ function App() {
           <BrandPolygon />
           <strong>TripBuddy</strong>
         </a>
-        <button className="outline-button" onClick={() => setLoginOpen(true)}>
-          로그인
+        <button
+          type="button"
+          className="outline-button"
+          onClick={() => {
+            if (loggedIn) {
+              logout();
+              setLoggedIn(false);
+
+              notify("로그아웃되었습니다.");
+
+              return;
+            }
+
+            setLoginOpen(true);
+          }}
+        >
+          {loggedIn ? "로그아웃" : "로그인"}
         </button>
         <button className="header-reservations" type="button" onClick={() => notify("내 예약 기능은 백엔드 연동 후 제공됩니다.")}>내 예약</button>
         <button
@@ -254,7 +298,10 @@ function App() {
         </button>
       </header>
       {loginOpen && (
-        <div className="ai-modal-backdrop login-backdrop" role="presentation">
+        <div
+          className="ai-modal-backdrop login-backdrop"
+          role="presentation"
+        >
           <section
             className="ai-modal login-modal"
             role="dialog"
@@ -264,43 +311,101 @@ function App() {
             <button
               type="button"
               className="modal-close"
-              onClick={() => setLoginOpen(false)}
+              onClick={() => {
+                if (!loginLoading) {
+                  setLoginOpen(false);
+                }
+              }}
               aria-label="로그인 닫기"
             >
               ×
             </button>
+
             <p>TripBuddy 계정</p>
-            <h3 id="login-modal-title">다시 만나 반가워요.</h3>
-            <span>아이디와 비밀번호를 입력해 로그인하세요.</span>
+
+            <h3 id="login-modal-title">
+              다시 만나 반가워요.
+            </h3>
+
+            <span>
+              이메일과 비밀번호를 입력해 로그인하세요.
+            </span>
+
             <form
-              onSubmit={(event) => {
+              onSubmit={async (event) => {
                 event.preventDefault();
-                setLoginOpen(false);
-                notify(
-                  "발표용 데모 화면입니다. 로그인 기능은 백엔드 연동 후 제공됩니다.",
+
+                const formData = new FormData(
+                  event.currentTarget,
                 );
+
+                const email = formData.get("email");
+                const password = formData.get("password");
+
+                try {
+                  setLoginLoading(true);
+
+                  await login(
+                    email,
+                    password,
+                  );
+
+                  setLoggedIn(true);
+
+                  setLoginOpen(false);
+
+                  notify(
+                    "로그인되었습니다.",
+                  );
+                } catch (error) {
+                  console.error(
+                    "로그인 실패:",
+                    error,
+                  );
+
+                  notify(
+                    error.message ??
+                      "로그인에 실패했습니다.",
+                  );
+                } finally {
+                  setLoginLoading(false);
+                }
               }}
             >
               <label>
-                아이디
+                이메일
+
                 <input
-                  name="id"
-                  autoComplete="username"
-                  placeholder="아이디 또는 이메일"
+                  name="email"
+                  type="email"
+                  autoComplete="email"
+                  placeholder="이메일을 입력하세요"
+                  disabled={loginLoading}
                   required
                 />
               </label>
+
               <label>
                 비밀번호
+
                 <input
                   name="password"
                   type="password"
                   autoComplete="current-password"
                   placeholder="비밀번호를 입력하세요"
+                  disabled={loginLoading}
                   required
                 />
               </label>
-              <button type="submit">로그인</button>
+
+              <button
+                type="submit"
+                disabled={loginLoading}
+              >
+                {loginLoading
+                  ? "로그인 중..."
+                  : "로그인"}
+              </button>
             </form>
           </section>
         </div>
