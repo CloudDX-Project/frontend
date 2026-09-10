@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import { locationLabel } from "../../data/mockData";
 
-function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, routeResults = [], compact = false }) {
+function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, routeResults = [], compact = false, hideHeader = false }) {
   const [expanded, setExpanded] = useState(false);
   const [zoom, setZoom] = useState(11);
   const selectedDay = dayPlans[activeDay] || dayPlans[0];
@@ -38,7 +38,7 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
       className={`full-route-map${compact ? " mobile-route-map" : ""}`}
       aria-label={`DAY ${activeDay + 1} 지도`}
     >
-      <header>
+      {!hideHeader && <header>
         <div>
           <span>DAY {activeDay + 1} · 실제 장소 기반 동선</span>
           <b>{route.label}</b>
@@ -46,7 +46,7 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
         <a href={openMapUrl} target="_blank" rel="noreferrer">
           전체 지도 ↗
         </a>
-      </header>
+      </header>}
       <div className="route-map-frame">
         <iframe
           src={mapUrl}
@@ -69,7 +69,7 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
       </div>
       {compact && expanded && (
         <div className="mobile-map-expanded" role="dialog" aria-modal="true" aria-label={`DAY ${activeDay + 1} 전체 경로 지도`}>
-          <header><span><small>DAY {activeDay + 1} ROUTE</small><b>{route.label}</b></span><button type="button" onClick={() => setExpanded(false)} aria-label="지도 축소"><Minimize2 size={17} /><span>축소</span></button></header>
+          <header><span><small>DAY {activeDay + 1} ROUTE</small><b>{route.label}</b></span><button type="button" onClick={() => setExpanded(false)} aria-label="전체 지도 닫기"><Minimize2 size={16} /><span>지도 닫기</span></button></header>
           <div className="mobile-expanded-map-canvas">
             <iframe src={mapUrl} title={`DAY ${activeDay + 1} 전체 화면 경로 지도`} />
             <div className="map-zoom-controls" aria-label="지도 확대 축소">

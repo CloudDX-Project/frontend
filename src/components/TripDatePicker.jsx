@@ -1199,7 +1199,7 @@ export default function TripDatePicker({
           <b>
             여행 날짜
           </b>
-          출발일과 귀국일을 한 번에 선택해 주세요
+          출발일과 도착일을 한 번에 선택해 주세요
         </small>
 
         {travelers &&
@@ -1213,7 +1213,7 @@ export default function TripDatePicker({
             </span>
 
             <b>
-              출발일과 귀국일을 정해주세요!
+              출발일과 도착일을 정해주세요!
             </b>
           </aside>
         ) : null}
@@ -1249,7 +1249,7 @@ export default function TripDatePicker({
 
           <span>
             <b>
-              귀국
+              도착
             </b>
 
             <small>
@@ -1274,7 +1274,7 @@ export default function TripDatePicker({
 
         {showTimeFields ? (
           <small className="direct-time-note">
-            항공 외 이동을 선택해 직접 출발·귀국 시간을 설정했어요.
+            항공 외 이동을 선택해 직접 출발·도착 시간을 설정했어요.
           </small>
         ) : null}
       </label>
@@ -1317,7 +1317,7 @@ export default function TripDatePicker({
                       </span>
 
                       <h2 id="trip-calendar-title">
-                        출발일과 귀국일을 선택하세요.
+                        출발일과 도착일을 선택하세요.
                       </h2>
 
                       <p>

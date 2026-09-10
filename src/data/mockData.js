@@ -1531,7 +1531,7 @@ export const makeJejuDayPlans = (arrivalTime, endTime, stay, flight, dayCount = 
         scheduleEvent(
           "⌂",
           "체크아웃 · 짐 정리",
-          "귀국 시간이 이른 편이라 짐과 차량을 먼저 정리해요.",
+          "도착 시간이 이른 편이라 짐과 차량을 먼저 정리해요.",
           "35분",
           20,
         ),
@@ -1619,7 +1619,7 @@ export const makeJejuDayPlans = (arrivalTime, endTime, stay, flight, dayCount = 
   );
   const lastDay = makeSequentialPlan(
       "제주를 담아 돌아가는 날",
-      "귀국 시각 90분 전 공항 도착을 기준으로 마지막 동선을 설계했어요.",
+      "도착 시각 90분 전 공항 도착을 기준으로 마지막 동선을 설계했어요.",
       minutesToTime(departureStart),
       departureRows,
     );
@@ -1952,7 +1952,7 @@ export const makeRegionalDayPlans = (
   const earlyReturn = departureMinutes <= 13 * 60;
   const departureRows = earlyReturn
     ? [
-        scheduleEvent("⌂", "체크아웃 · 짐 정리", "귀국·귀가 시간이 이른 편이라 짐과 이동 준비를 먼저 마쳐요.", "35분", 25),
+        scheduleEvent("⌂", "체크아웃 · 짐 정리", "도착·귀가 시간이 이른 편이라 짐과 이동 준비를 먼저 마쳐요.", "35분", 25),
         scheduleEvent("🧭", "마지막 이동 · 출발지 이동", `${destination}에서 출발지로 돌아가기 위한 이동 시간을 반영했어요.`, "65분", 0),
       ]
     : [

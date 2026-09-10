@@ -7,6 +7,7 @@ import {
   normalizeCostEstimate,
   normalizeFuelPrice,
   normalizeLocationItem,
+  normalizeRestaurantDetail,
   normalizeRouteResult,
 } from '../src/api/normalizers.js';
 import { normalizeTripPlanResponse } from '../src/api/tripPlanApi.js';
@@ -69,6 +70,22 @@ test('오피넷 평균 유가와 비용의 쉼표 문자열을 숫자로 변환�
   assert.equal(cost.total, 120000);
   assert.equal(cost.items[0].total, 120000);
   assert.equal(cost.items[0].perPerson, 40000);
+});
+
+test('식당 메뉴판과 후기 요약을 화면 공통 상세 DTO로 변환한다', () => {
+  const restaurant = normalizeRestaurantDetail({
+    placeId: 'restaurant-1', placeName: '제주 식당', x: '126.31', y: '33.46',
+    images: [{ url: 'https://example.com/food.jpg' }],
+    menuItems: [{ menuName: '전복돌솥밥', amount: '18,000', representative: 'true' }],
+    reviewRating: '4.7', reviewsCount: '1,240',
+    reviews: { summary: '대표 메뉴 만족도가 높아요.', keywords: ['전복', '가족 식사'] },
+  });
+  assert.equal(restaurant.id, 'restaurant-1');
+  assert.equal(restaurant.menus[0].price, 18000);
+  assert.equal(restaurant.menus[0].isSignature, true);
+  assert.equal(restaurant.rating, 4.7);
+  assert.equal(restaurant.reviewCount, 1240);
+  assert.deepEqual(restaurant.reviewKeywords, ['전복', '가족 식사']);
 });
 
 test('개발 오류는 mock으로 숨기지 않고 네트워크/서버 오류만 폴백한다', async () => {

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
-import { CalendarDays, MapPin, Monitor, Smartphone } from "lucide-react";
+import { ExternalLink, MapPin, Monitor, Smartphone, Star, X } from "lucide-react";
+import { contentApi } from "../../api/contentApi";
 import { dateLabel, getPlaceAlternatives, locationLabel, timeLabel } from "../../data/mockData";
 import TransitionIcon from "../common/TransitionIcon";
 import BrandPolygon from "../icons/BrandPolygon";
@@ -49,6 +50,9 @@ function PlanFullscreen({
   const [utilityMessage, setUtilityMessage] = useState("");
   const [mobilePreview, setMobilePreview] = useState(false);
   const [orderRecalculating, setOrderRecalculating] = useState(false);
+  const [restaurantDetail, setRestaurantDetail] = useState(null);
+  const [restaurantLoading, setRestaurantLoading] = useState(false);
+  const [restaurantError, setRestaurantError] = useState("");
   const placeOptions = getPlaceAlternatives(destinationLocation, placePicker?.item);
   const destinationName = locationLabel(destinationLocation);
   const originName = locationLabel(originLocation, "출발지");
@@ -154,6 +158,26 @@ function PlanFullscreen({
       window.setTimeout(() => setOrderRecalculating(false), 450);
     }, 750);
   };
+  const openRestaurantDetail = async ({ name, metadata = {} }) => {
+    setRestaurantDetail({ name });
+    setRestaurantLoading(true);
+    setRestaurantError("");
+    try {
+      const detail = await contentApi.getRestaurantDetail({
+        placeId: metadata.placeId || metadata.externalId || metadata.id,
+        name,
+        address: metadata.address,
+        latitude: metadata.latitude,
+        longitude: metadata.longitude,
+        representativeMenu: metadata.representativeMenu,
+      });
+      setRestaurantDetail(detail);
+    } catch {
+      setRestaurantError("식당 상세 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      setRestaurantLoading(false);
+    }
+  };
   return (
     <section
       className={`plan-fullscreen ${stayChange ? "plan-rebuilt" : ""}${mobilePreview ? " mobile-preview" : ""}${scheduleView === "budget" ? " budget-mode" : ""}`}
@@ -203,7 +227,6 @@ function PlanFullscreen({
             <div className="mobile-trip-overview">
               <p><MapPin size={11} /> {(destinationRegion || "여행지").replace("특별자치도", "")} 여행 · {nightCount}박 {dates.length}일</p>
               <h2>{destinationName} 여행</h2>
-              <span><CalendarDays size={11} /> {dateLabel(dates[0])} — {dateLabel(dates[dates.length - 1])}</span>
             </div>
           ) : (
             <>
@@ -233,7 +256,6 @@ function PlanFullscreen({
                 className={activeDay === index ? "active" : ""}
                 onClick={() => {
                   setActiveDay(index);
-                  setScheduleView("timeline");
                 }}
               >
                 <small>DAY {index + 1}</small>
@@ -314,6 +336,7 @@ function PlanFullscreen({
                 originLocation={originLocation}
                 routeResults={routeResults}
                 compact
+                hideHeader
               />
             </div>
           )}
@@ -338,6 +361,17 @@ function PlanFullscreen({
                 const liveBookingUrl = /^https?:\/\//i.test(metadata.bookingUrl || "")
                   ? metadata.bookingUrl
                   : null;
+                const isRestaurant = /🍽|🍜|☕|🍴|🍲|🥘|🍱|🍣|🍖|🍗|🥩|🍛|🍚/.test(icon || "")
+                  || /식당|국수|스시|초밥|고기|카페|김밥|돈가스|쌈밥|흑돼지|전복/.test(name || "");
+                const eventType = isRentalStop
+                  ? "이동 준비"
+                  : isRestaurant
+                    ? "식사"
+                    : /체크인|체크아웃|호텔|숙소|짐 정리/.test(name || "")
+                      ? "숙소"
+                      : /공항|항공|탑승|역·터미널/.test(name || "")
+                        ? "교통"
+                        : "관광";
                 return (
                   <Draggable
                     key={eventId}
@@ -360,11 +394,26 @@ function PlanFullscreen({
                     <time>{time}</time>
                     <span>{icon}</span>
                     <div>
-                      <small>
-                        STOP {String(index + 1).padStart(2, "0")} · {stay}
+                      <small className="stop-meta">
+                        <span>일정 {index + 1}</span>
+                        <em>{eventType} · {stay}</em>
                       </small>
                       <div className="stop-title-row">
-                        <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
+                        {isRestaurant ? (
+                          <button
+                            type="button"
+                            className="restaurant-detail-trigger"
+                            onPointerDown={(event) => event.stopPropagation()}
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              openRestaurantDetail({ name, metadata });
+                            }}
+                            aria-label={`${name} 메뉴와 후기 보기`}
+                          >
+                            <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
+                            <span>메뉴·후기 보기</span>
+                          </button>
+                        ) : <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>}
                         {liveBookingUrl ? (
                           <a
                             className="stop-booking-link"
@@ -398,11 +447,13 @@ function PlanFullscreen({
                     </div>
                     <i>
                       {index === 0
-                        ? "출발"
+                        ? "여행 시작"
                         : index === day[2].length - 1
-                          ? "마무리"
-                          : "이동 포함"}
-                    </i>
+                          ? "일정 마무리"
+                          : Number(travel) > 0
+                            ? `이동 ${travel}분 반영`
+                            : "동선 반영"}
+                                        </i>
                   </article>
                   )}
                   </Draggable>
@@ -500,6 +551,51 @@ function PlanFullscreen({
           </div>
         </aside>
       </div>
+      {restaurantDetail && (
+        <div className="restaurant-detail-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setRestaurantDetail(null);
+        }}>
+          <section className="restaurant-detail-modal" role="dialog" aria-modal="true" aria-label={`${restaurantDetail.name} 식당 상세 정보`}>
+            <button type="button" className="restaurant-detail-close" onClick={() => setRestaurantDetail(null)} aria-label="식당 상세 닫기"><X size={20} /></button>
+            {restaurantLoading ? (
+              <div className="restaurant-detail-loading" role="status"><i /><i /><i /><p>{restaurantDetail.name}의 메뉴와 후기를 불러오고 있어요.</p></div>
+            ) : restaurantError ? (
+              <div className="restaurant-detail-error"><h3>{restaurantDetail.name}</h3><p>{restaurantError}</p><button type="button" onClick={() => setRestaurantDetail(null)}>닫기</button></div>
+            ) : (
+              <>
+                <div className="restaurant-detail-hero">
+                  <img src={restaurantDetail.imageUrls?.[0]} alt={`${restaurantDetail.name} 대표 음식`} />
+                  <span>{restaurantDetail.category || "추천 식당"}</span>
+                </div>
+                <div className="restaurant-detail-content">
+                  <header>
+                    <div><small>TRIPBUDDY DINING GUIDE</small><h2>{restaurantDetail.name}</h2><p>{restaurantDetail.address}</p></div>
+                    {restaurantDetail.rating != null && <strong><Star size={15} fill="currentColor" /> {restaurantDetail.rating.toFixed(1)} <small>후기 {restaurantDetail.reviewCount?.toLocaleString("ko-KR")}개</small></strong>}
+                  </header>
+                  <section className="restaurant-menu-section">
+                    <div className="restaurant-section-title"><span>대표 메뉴</span><small>가격은 매장 사정에 따라 달라질 수 있어요.</small></div>
+                    <div className="restaurant-menu-list">
+                      {restaurantDetail.menus?.map((menu) => <article key={menu.id || menu.name}>
+                        <div><b>{menu.name}{menu.isSignature && <em>대표</em>}</b><p>{menu.description}</p></div>
+                        <strong>{menu.price == null ? "가격 확인" : `${money(menu.price)}원`}</strong>
+                      </article>)}
+                    </div>
+                  </section>
+                  <section className="restaurant-review-section">
+                    <div className="restaurant-section-title"><span>후기 한눈에 보기</span><small>{restaurantDetail.isMock ? "시연용 요약" : restaurantDetail.sourceLabel}</small></div>
+                    <p>{restaurantDetail.reviewSummary}</p>
+                    <div>{restaurantDetail.reviewKeywords?.map((keyword) => <span key={keyword}>#{keyword}</span>)}</div>
+                  </section>
+                  <footer>
+                    <div><b>{restaurantDetail.businessHours}</b><small>{restaurantDetail.sourceLabel} · {restaurantDetail.isMock ? "운영 연동 전 참고 정보" : "백엔드 최신 동기화 정보"}</small></div>
+                    {/^https:\/\//i.test(restaurantDetail.naverMapUrl || "") && <a href={restaurantDetail.naverMapUrl} target="_blank" rel="noreferrer noopener"><MapPin size={15} /> 네이버 지도에서 확인 <ExternalLink size={13} /></a>}
+                  </footer>
+                </div>
+              </>
+            )}
+          </section>
+        </div>
+      )}
       {placePicker && (
         <div className="stop-picker-backdrop" role="presentation">
           <section

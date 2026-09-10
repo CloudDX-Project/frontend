@@ -942,7 +942,7 @@ function useTripPlanner() {
       const dateInput = document.querySelector("#trip-end-date");
       dateInput?.scrollIntoView({ behavior: "smooth", block: "center" });
       dateInput?.focus();
-      return notify("출발일과 귀국일을 먼저 선택해 주세요.");
+      return notify("출발일과 도착일을 먼저 선택해 주세요.");
     }
     setTransportStep("mode");
     setTransportModalOpen(true);
@@ -1122,7 +1122,7 @@ function useTripPlanner() {
     }
     if (target === "flight") {
       if (!startDate || !endDate)
-        return notify("출발일과 귀국일을 먼저 선택해 주세요.");
+        return notify("출발일과 도착일을 먼저 선택해 주세요.");
       setQuickEditTarget("flight");
       setFlightPickerLeg("outbound");
       setFlightOpen(true);
@@ -1178,7 +1178,7 @@ function useTripPlanner() {
       window.setTimeout(() => {
         document.querySelector("#trip-end-date")?.focus();
       }, 180);
-      notify(`${targetName} 비교 전에 출발일과 귀국일을 먼저 선택해 주세요.`);
+      notify(`${targetName} 비교 전에 출발일과 도착일을 먼저 선택해 주세요.`);
       return false;
     }
     return true;
@@ -1285,7 +1285,7 @@ function useTripPlanner() {
     }
     if (!destinationLocation)
       return notify("도착지와 세부지역을 먼저 선택해 주세요.");
-    if (!endDate) return notify("귀국일을 먼저 선택해 주세요.");
+    if (!endDate) return notify("도착일을 먼저 선택해 주세요.");
     if (!travelers) return notify("총인원을 입력해 주세요.");
     if (!transport || !localTransport)
       return notify("이동수단 선택에서 출발 이동과 현지 이동을 골라주세요.");

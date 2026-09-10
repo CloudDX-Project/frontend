@@ -264,24 +264,35 @@ function App() {
           <BrandPolygon />
           <strong>TripBuddy</strong>
         </a>
-        <button
-          type="button"
-          className="outline-button"
-          onClick={() => {
-            if (loggedIn) {
-              logout();
-              setLoggedIn(false);
+        <div className="header-account-actions" aria-label="계정 메뉴">
+          {!loggedIn && (
+            <button
+              type="button"
+              className="header-signup"
+              onClick={() => notify("회원가입 기능은 백엔드 계정 API 연동 후 제공됩니다.")}
+            >
+              회원가입
+            </button>
+          )}
+          <button
+            type="button"
+            className="header-login"
+            onClick={() => {
+              if (loggedIn) {
+                logout();
+                setLoggedIn(false);
 
-              notify("로그아웃되었습니다.");
+                notify("로그아웃되었습니다.");
 
-              return;
-            }
+                return;
+              }
 
-            setLoginOpen(true);
-          }}
-        >
-          {loggedIn ? "로그아웃" : "로그인"}
-        </button>
+              setLoginOpen(true);
+            }}
+          >
+            {loggedIn ? "로그아웃" : "로그인"}
+          </button>
+        </div>
         <button className="header-reservations" type="button" onClick={() => notify("내 예약 기능은 백엔드 연동 후 제공됩니다.")}>내 예약</button>
         <button
           className="header-button"

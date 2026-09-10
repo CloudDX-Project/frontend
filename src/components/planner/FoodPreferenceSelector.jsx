@@ -1,4 +1,4 @@
-import { foodPreferenceOptions } from "../../data/mockData";
+import { foodPreferenceCardOptions } from "../../data/mockData";
 import "./food-preference-selector.css";
 
 function FoodPreferenceSelector({ value = [], onChange, compact = false }) {
@@ -17,14 +17,16 @@ function FoodPreferenceSelector({ value = [], onChange, compact = false }) {
         <span>최대 3개까지 선택하면 식사 일정과 주변 식당 추천에 함께 반영해요. <b>{value.length}/3</b></span>
       </div>
       <div className="food-preference-options">
-        <button type="button" className={!value.length ? "active" : ""} onClick={() => toggle("ANY")} aria-pressed={!value.length}>
-          <b>상관없음</b><small>동선과 평점 우선</small>
-        </button>
-        {foodPreferenceOptions.map((option) => (
-          <button type="button" key={option.code} className={value.includes(option.code) ? "active" : ""} disabled={selectionLimitReached && !value.includes(option.code)} onClick={() => toggle(option.code)} aria-pressed={value.includes(option.code)}>
-            <b>{option.label}</b><small>{option.description}</small>
-          </button>
-        ))}
+        {foodPreferenceCardOptions.map((option) => {
+          const active = option.code === "ANY" ? !value.length : value.includes(option.code);
+          return (
+            <button type="button" key={option.code} className={active ? "active" : ""} disabled={option.code !== "ANY" && selectionLimitReached && !active} onClick={() => toggle(option.code)} aria-pressed={active}>
+              <b>{option.label}</b>
+              <img src={option.image} alt="" loading="lazy" onError={(event) => { event.currentTarget.hidden = true; }} />
+              <small>{option.description}</small>
+            </button>
+          );
+        })}
       </div>
     </section>
   );

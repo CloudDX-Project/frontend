@@ -71,7 +71,7 @@ function seededPrice(seed, base, spread) {
 }
 
 export function mockTransportOffers(request, kind) {
-  const suffix = request.leg === 'return' ? '귀국편' : '가는 편';
+  const suffix = request.leg === 'return' ? '도착편' : '가는 편';
   const base = kind === 'flight' ? 62900 : kind === 'ktx' ? 43800 : kind === 'ferry' ? 31500 : 27500;
   const providers = kind === 'flight'
     ? ['대한항공', '아시아나항공', '제주항공', '진에어']

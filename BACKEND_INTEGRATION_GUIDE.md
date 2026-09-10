@@ -88,7 +88,7 @@ KTX도 초기에는 더미 견적이 맞습니다. 공식 또는 계약된 공�
 
 POST /api/v1/journey-options
 
-입력: 출발지, 도착지, 출발일, 귀국일, 인원
+입력: 출발지, 도착지, 출발일, 도착일, 인원
 
 출력: 자차, KTX, 항공, 고속·시외버스, 배편 중 가능한 수단과 다음 단계를 반환합니다.
 
@@ -162,6 +162,7 @@ POST /api/v1/tourism/spots
 
 POST /api/v1/restaurants/search
 POST /api/v1/restaurants/eligibility
+GET /api/v1/restaurants/{placeId}
 
 식당 자동 추천 규칙:
 
@@ -173,6 +174,8 @@ POST /api/v1/restaurants/eligibility
 6. 매칭이 애매한 업소는 직접 선택만 허용하고 AI 추천 표시는 하지 않습니다.
 
 RestaurantEligibility 응답에는 eligible, businessStatus, licenseNumber, lastVerifiedAt, source, sourceUpdatedAt, matchedBy, reasons를 넣습니다.
+
+식당 카드를 누르면 상세 API를 호출합니다. 상세 응답은 안정적인 `placeId`, `name`, `address`, `point`, HTTPS `imageUrls`, `menus[]`, `rating`, `reviewCount`, `reviewSummary`, `reviewKeywords`, `businessHours`, `naverMapUrl`, `sourceLabel`, `refreshedAt`을 반환합니다. `menus[]`의 가격은 숫자 KRW로 정규화하고 대표 메뉴에는 `isSignature=true`를 지정합니다. 리뷰 원문을 브라우저가 직접 수집하지 않으며, 계약·이용 조건이 허용된 원천을 백엔드가 수집·요약해 제공합니다. 데이터가 없으면 빈 배열 또는 null을 반환하고 가짜 실데이터로 채우지 않습니다.
 
 ## 8. 견적 API
 
@@ -231,7 +234,7 @@ POST /api/v1/trips/plans/{planId}/share
 일정 생성 입력에는 다음이 필요합니다.
 
 - 출발지/도착지의 좌표와 행정구역
-- 여행 날짜와 출발·귀국 제약 시간
+- 여행 날짜와 출발·도착 제약 시간
 - 인원
 - 장거리 이동수단과 선택 견적
 - 현지 이동수단
@@ -264,6 +267,7 @@ VITE_USE_MOCK=true
 - 위치, 경로, 관광·식당, 예약 견적, 비용, 유가 어댑터는 `src/api/index.js`의 `travelApi`로 제공됩니다.
 - 현재 항공·숙박·렌터카 선택 모달의 최초 목록은 시연 카탈로그를 사용합니다. 공급자 계약이 끝나면 각 모달의 조회 시점에 `travelApi.booking`을 호출하고, 반환한 offer `id`를 일정 생성 요청에 전달해야 합니다.
 - 일정 지도는 장소 좌표로 즉시 표시하며, 백엔드 route의 `deepLink`가 있으면 외부 길찾기 링크에 우선 적용합니다. 공급자 polyline을 앱 지도 위에 그리려면 카카오/TMAP 지도 SDK 렌더러를 별도로 연결해야 합니다.
+- 식당 상세는 `contentApi.getRestaurantDetail`이 공통 DTO로 정규화합니다. 기본 `VITE_USE_MOCK=true`에서는 `TripBuddy 시연용 상세 데이터`가 표시되고, 운영에서는 반드시 `false`로 전환해 백엔드 상세 응답과 출처·갱신 시각을 사용합니다.
 
 백엔드 환경변수 예시:
 

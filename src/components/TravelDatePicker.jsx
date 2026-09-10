@@ -135,7 +135,7 @@ function MonthGrid({
               key={value}
               disabled={disabled}
               onClick={() => onDateSelect(value)}
-              aria-label={`${value} ${weather ? `${weather.label}, 최고 ${weather.high}도 최저 ${weather.low}도` : "날씨 정보 없음"}${isStart ? ", 출발일" : ""}${isEnd ? ", 귀국일" : ""}`}
+              aria-label={`${value} ${weather ? `${weather.label}, 최고 ${weather.high}도 최저 ${weather.low}도` : "날씨 정보 없음"}${isStart ? ", 출발일" : ""}${isEnd ? ", 도착일" : ""}`}
             >
               <span className="travel-date-picker__day-number">{day}</span>
               {weather ? (
@@ -170,7 +170,7 @@ export default function TravelDatePicker({
   onEndTimeChange,
   minDate = getToday(),
   title = "여행 날짜와 시간을 선택하세요",
-  description = "출발일과 귀국일을 고르면 여행 기간과 이동 기준 시간을 함께 잡을 수 있어요.",
+  description = "출발일과 도착일을 고르면 여행 기간과 이동 기준 시간을 함께 잡을 수 있어요.",
   className = "",
 }) {
   const safeMinDate = minDate || getToday();
@@ -258,24 +258,24 @@ export default function TravelDatePicker({
             if (selected) setVisibleMonth(new Date(selected.getFullYear(), selected.getMonth(), 1, 12));
           }}
         >
-          <span>귀국</span>
+          <span>도착</span>
           <b>{formatDateLabel(endDate)}</b>
         </button>
         <div className="travel-date-picker__range-caption">
-          {endDate ? <><strong>{tripNights}박 {tripNights + 1}일</strong><span>선택됨</span></> : <><strong>날짜를 이어 선택</strong><span>출발일 → 귀국일</span></>}
+          {endDate ? <><strong>{tripNights}박 {tripNights + 1}일</strong><span>선택됨</span></> : <><strong>날짜를 이어 선택</strong><span>출발일 → 도착일</span></>}
         </div>
       </div>
 
       {!travelers ? (
         <button className="travel-date-picker__traveler-notice" type="button" onClick={onNeedTravelers}>
           <Info size={17} aria-hidden="true" />
-          <span><b>인원을 먼저 선택해 주세요.</b> 인원 선택 후 출발일과 귀국일을 정할 수 있어요.</span>
+          <span><b>인원을 먼저 선택해 주세요.</b> 인원 선택 후 출발일과 도착일을 정할 수 있어요.</span>
         </button>
       ) : null}
 
       <div className="travel-date-picker__calendar-toolbar">
         <div>
-          <b>{selectionTarget === "start" ? "출발일을 선택해 주세요" : startDate && !endDate ? "귀국일을 선택해 주세요" : "달력에서 여행 기간을 선택하세요"}</b>
+          <b>{selectionTarget === "start" ? "출발일을 선택해 주세요" : startDate && !endDate ? "도착일을 선택해 주세요" : "달력에서 여행 기간을 선택하세요"}</b>
           <span>오늘부터 10일 이내 날짜에는 날씨 mock 예보를 표시해요.</span>
         </div>
         <div className="travel-date-picker__month-controls" aria-label="달력 월 이동">

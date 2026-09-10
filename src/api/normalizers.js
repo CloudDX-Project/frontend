@@ -158,6 +158,40 @@ export function normalizeContentEnvelope(payload = {}) {
   };
 }
 
+export function normalizeRestaurantDetail(payload = {}) {
+  const root = payload?.data ?? payload?.restaurant ?? payload;
+  const location = normalizeLocationItem(root);
+  const sourceMenus = root?.menus ?? root?.menuItems ?? root?.menuList ?? [];
+  const imageUrls = [
+    ...(Array.isArray(root?.imageUrls) ? root.imageUrls : []),
+    ...(Array.isArray(root?.images) ? root.images.map((image) => typeof image === 'string' ? image : image?.url) : []),
+    root?.imageUrl,
+  ].filter((url, index, list) => typeof url === 'string' && /^https:\/\//i.test(url) && list.indexOf(url) === index);
+  return {
+    ...location,
+    imageUrls,
+    menus: sourceMenus.map((menu, index) => ({
+      id: String(menu?.id ?? `menu-${index + 1}`),
+      name: menu?.name ?? menu?.menuName ?? menu?.title ?? '',
+      price: finiteNumber(menu?.price ?? menu?.amount),
+      description: menu?.description ?? menu?.summary ?? '',
+      imageUrl: /^https:\/\//i.test(menu?.imageUrl ?? menu?.image ?? '') ? (menu.imageUrl ?? menu.image) : null,
+      isSignature: booleanValue(menu?.isSignature ?? menu?.representative, false),
+    })).filter((menu) => menu.name),
+    rating: finiteNumber(root?.rating ?? root?.reviewRating),
+    reviewCount: Math.max(0, Math.round(finiteNumber(root?.reviewCount ?? root?.reviewsCount, 0))),
+    reviewSummary: root?.reviewSummary ?? root?.reviews?.summary ?? '',
+    reviewKeywords: Array.isArray(root?.reviewKeywords) ? root.reviewKeywords : (root?.reviews?.keywords ?? []),
+    businessHours: root?.businessHours ?? root?.openingHours ?? '',
+    phone: root?.phone ?? root?.telephone ?? '',
+    naverMapUrl: root?.naverMapUrl ?? root?.deepLinks?.naverMap ?? null,
+    provider: root?.provider ?? '',
+    isMock: booleanValue(root?.isMock, false),
+    sourceLabel: root?.sourceLabel ?? root?.source ?? root?.provider ?? '',
+    refreshedAt: root?.refreshedAt ?? root?.updatedAt ?? null,
+  };
+}
+
 export function normalizeCostEstimate(payload = {}, travelers = 1) {
   const root = payload?.data ?? payload?.costEstimate ?? payload;
   if (!root || (

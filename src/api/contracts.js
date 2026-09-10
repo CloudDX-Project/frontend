@@ -126,6 +126,28 @@
  */
 
 /**
+ * @typedef {Object} RestaurantDetail
+ * @property {string} id 백엔드가 관리하는 안정적인 장소 ID
+ * @property {string} name
+ * @property {string=} category
+ * @property {string=} address
+ * @property {GeoPoint=} point
+ * @property {string[]=} imageUrls 권한과 만료 정책을 확인한 이미지 URL
+ * @property {{name:string,price:number|null,description?:string,imageUrl?:string,isSignature?:boolean}[]} menus
+ * @property {number|null=} rating
+ * @property {number=} reviewCount
+ * @property {string=} reviewSummary 원문 전체가 아닌 백엔드가 허용된 출처로 생성한 요약
+ * @property {string[]=} reviewKeywords
+ * @property {string=} businessHours
+ * @property {string=} phone
+ * @property {string=} naverMapUrl 네이버 지도 검색 또는 장소 딥링크
+ * @property {string=} provider
+ * @property {boolean=} isMock
+ * @property {string=} sourceLabel
+ * @property {string=} refreshedAt
+ */
+
+/**
  * @typedef {Object} TransportSearchRequest
  * @property {ApiLocation} origin
  * @property {ApiLocation} destination
@@ -253,6 +275,7 @@ export const API_ENDPOINTS = Object.freeze({
     spots: '/api/v1/tourism/spots',
     restaurantEligibility: '/api/v1/restaurants/eligibility',
     restaurants: '/api/v1/restaurants/search',
+    restaurantDetail: (placeId) => `/api/v1/restaurants/${encodeURIComponent(placeId)}`,
   },
   offers: {
     flights: '/api/v1/offers/flights',

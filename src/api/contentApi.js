@@ -1,7 +1,8 @@
 import { apiClient, withMockFallback } from './apiClient';
 import { API_ENDPOINTS, API_SOURCE_LABELS } from './contracts';
 import { MOCK_PLACES } from './mockData';
-import { normalizeContentEnvelope } from './normalizers';
+import { mockRestaurantDetail } from './mockRestaurantDetails';
+import { normalizeContentEnvelope, normalizeRestaurantDetail } from './normalizers';
 
 /**
  * 관광지와 식당의 "사실성"을 분리한다.
@@ -53,6 +54,19 @@ export function createContentApi({ client = apiClient } = {}) {
           signal,
         })),
         async () => ({ items: [], isMock: true, sourceLabel: API_SOURCE_LABELS.mock }),
+      );
+    },
+
+    /** @returns {Promise<import('./contracts').RestaurantDetail>} */
+    async getRestaurantDetail(request, { signal } = {}) {
+      const placeId = request.placeId || request.id || `lookup-${request.name || 'restaurant'}`;
+      return withMockFallback(
+        async () => normalizeRestaurantDetail(await client.request(API_ENDPOINTS.tourism.restaurantDetail(placeId), {
+          method: 'GET',
+          query: { name: request.name, latitude: request.latitude, longitude: request.longitude },
+          signal,
+        })),
+        async () => normalizeRestaurantDetail(mockRestaurantDetail({ ...request, placeId })),
       );
     },
   };
