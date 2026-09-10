@@ -716,6 +716,7 @@ function App() {
                 startTime={startTime}
                 endTime={endTime}
                 travelers={travelers}
+                destinationLocation={destinationLocation}
                 departureTimeOptions={departureTimeOptions}
                 returnTimeOptions={returnTimeOptions}
                 showTimeFields={false}
