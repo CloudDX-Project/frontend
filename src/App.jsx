@@ -169,6 +169,9 @@ function App() {
     budgetStatus,
     stayOpen,
     setStayOpen,
+    stayLoading,
+    stayError,
+    loadStayOptions,
     stayArea,
     setStayArea,
     priceBand,
@@ -968,7 +971,14 @@ function App() {
                     </div>
                   </div>
                   {selectedStay && (
-                    <strong>1박 {money(selectedStay.price)}원</strong>
+                    <strong>
+                      {selectedStay.priceText ||
+                        (
+                          selectedStay.priceAvg != null
+                            ? `평균 1박 ${money(selectedStay.priceAvg)}원`
+                            : "가격 정보 확인"
+                        )}
+                    </strong>
                   )}
                   <button
                     type="button"
@@ -996,8 +1006,8 @@ function App() {
                           넓은 화면에서 비교해 보세요.
                         </h3>
                         <span>
-                          특가세일 객실을 먼저 보여드리고, 가격·권역·후기 점수를
-                          한 번에 비교해요.
+                            선택한 여행지와 가까운 숙소를 거리·평점·가격 정보와 함께
+                            비교해 보세요.
                         </span>
                       </div>
                       <button
@@ -1022,7 +1032,6 @@ function App() {
                             ? `${destinationLocation.detail || destinationLocation.name}에서 가까운 숙소부터 보여드려요. 가격·지역 필터로 다시 좁힐 수 있어요.`
                             : "특가세일 객실을 먼저 보여드리고, 선택한 동선과 인원에 맞는 숙소를 추천할게요."}
                       </p>
-                      <em>특가세일 객실은 빠르게 마감돼요.</em>
                     </div>
                     <label className="stay-search">
                       <span>⌕</span>
@@ -1077,42 +1086,139 @@ function App() {
                         ),
                       )}
                     </div>
-                    {filteredStays.length ? (
-                      <div className="hotel-catalog">
-                        {filteredStays.map((stay) => (
-                          <button
-                            type="button"
-                            key={stay.id}
-                            className={`${stay.id === stayId ? "selected" : ""} ${stay.deal ? "deal-item" : ""}`}
-                            onClick={() => chooseStay(stay.id)}
-                          >
-                            <img src={stay.image} alt={`${stay.name} 숙소`} />
-                            {stay.deal && (
-                              <em className="stay-deal">특가세일</em>
-                            )}
-                            <div>
-                              <span>{stay.area}</span>
-                              <b>{stay.name}</b>
-                              {Number.isFinite(stay.distanceKm) && (
-                                <small className="stay-distance">⌖ 선택지에서 약 {stay.distanceKm}km</small>
-                              )}
-                              <small className="hotel-rating">
-                                ★ {stay.rating} · 3인 여행 기준 객실
-                              </small>
-                              <strong>1박 {money(stay.price)}원</strong>
-                              {stay.deal && <i>잔여 객실 {stay.left}개</i>}
-                            </div>
-                          </button>
-                        ))}
-                      </div>
-                    ) : (
+                    {stayLoading ? (
                       <div className="empty-catalog">
-                        <b>이 가격대의 시연 숙소는 준비 중이에요.</b>
+                        <b>
+                          숙소를 찾고 있어요.
+                        </b>
+
                         <span>
-                          발표 시나리오용으로 실제 숙소가 포함된 10 ~ 20만원대를
-                          선택해 주세요.
+                          선택한 여행지 주변 숙소를 비교하고 있습니다.
                         </span>
                       </div>
+
+                    ) : stayError ? (
+
+                      <div className="empty-catalog">
+                        <b>
+                          숙소 정보를 불러오지 못했습니다.
+                        </b>
+
+                        <span>
+                          {stayError}
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() =>
+                            void loadStayOptions()
+                          }
+                        >
+                          다시 조회
+                        </button>
+                      </div>
+
+                    ) : filteredStays.length ? (
+
+                      <div className="hotel-catalog">
+
+                        {filteredStays.map(
+                          (stay) => (
+
+                            <button
+                              type="button"
+                              key={stay.id}
+                              className={
+                                stay.id === stayId
+                                  ? "selected"
+                                  : ""
+                              }
+                              onClick={() =>
+                                chooseStay(
+                                  stay.id,
+                                )
+                              }
+                            >
+
+                              <img
+                                src={stay.image}
+                                alt={`${stay.name} 숙소`}
+                              />
+
+                              <div>
+
+                                <span>
+                                  {stay.area}
+                                </span>
+
+                                <b>
+                                  {stay.name}
+                                </b>
+
+
+                                {Number.isFinite(
+                                  stay.distanceKm,
+                                ) && (
+
+                                  <small className="stay-distance">
+                                    ⌖ 선택지에서 약{" "}
+                                    {stay.distanceKm}km
+                                    {" · "}
+                                    차량 약{" "}
+                                    {stay.estimatedDriveMinutes ?? "-"}분
+                                  </small>
+
+                                )}
+
+
+                                <small className="hotel-rating">
+
+                                  ★{" "}
+                                  {stay.rating ?? "-"}
+
+                                  {" · 리뷰 "}
+
+                                  {Number(
+                                    stay.reviewCount ?? 0,
+                                  ).toLocaleString()}
+
+                                  개
+
+                                </small>
+
+
+                                <strong>
+                                  {stay.priceText ||
+                                    (
+                                      stay.priceAvg != null
+                                        ? `평균 ${money(stay.priceAvg)}원`
+                                        : "가격 정보 확인"
+                                    )}
+                                </strong>
+
+                              </div>
+
+                            </button>
+
+                          ),
+                        )}
+
+                      </div>
+
+                    ) : (
+
+                      <div className="empty-catalog">
+
+                        <b>
+                          조건에 맞는 숙소가 없습니다.
+                        </b>
+
+                        <span>
+                          가격대나 지역 필터를 변경해 보세요.
+                        </span>
+
+                      </div>
+
                     )}
                   </div>
                 )}
