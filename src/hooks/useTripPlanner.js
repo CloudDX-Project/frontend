@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isMockModeEnabled } from "../api/apiClient";
 import { recommendAccommodations } from "../api/accommodationApi";
 import { searchFlights } from "../api/flightApi";
+import { createTrip } from "../api/tripApi";
 import {
   requestTripPlan,
   requestTripPlanRevision,
@@ -431,6 +432,213 @@ const readInitialDraft =
     }
   };
 
+const MAIN_TRANSPORT_MAP = {
+  FLIGHT: "AIR",
+  KTX: "KTX",
+  SRT: "SRT",
+  BUS: "EXPRESS_BUS",
+  CAR: "OWN_CAR",
+};
+
+
+const LOCAL_TRANSPORT_MAP = {
+  WALK: "WALK",
+
+  TRANSIT:
+    "PUBLIC_TRANSIT",
+
+  PUBLIC_TRANSIT:
+    "PUBLIC_TRANSIT",
+
+  TAXI:
+    "TAXI",
+
+  CAR:
+    "OWN_CAR",
+
+  RENTAL:
+    "RENTAL_CAR",
+
+  RENTAL_CAR:
+    "RENTAL_CAR",
+};
+
+
+const PACE_MAP = {
+  "여유롭게":
+    "RELAXED",
+
+  "보통":
+    "BALANCED",
+
+  "빡빡하게":
+    "ACTIVE",
+};
+
+
+const THEME_MAP = {
+  "자연":
+    "NATURE",
+
+  "관광":
+    "SIGHTSEEING",
+
+  "맛집":
+    "FOOD",
+
+  "카페":
+    "CAFE",
+
+  "역사":
+    "HISTORY",
+
+  "액티비티":
+    "ACTIVITY",
+
+  "휴식":
+    "HEALING",
+};
+
+
+const FOOD_PREFERENCE_MAP = {
+  KOREAN:
+    "KOREAN",
+
+  JAPANESE:
+    "JAPANESE",
+
+  WESTERN:
+    "WESTERN",
+
+  CHINESE:
+    "CHINESE",
+
+  ASIAN:
+    "ASIAN",
+
+  /*
+   * frontend CASUAL
+   * backend SNACK
+   */
+  CASUAL:
+    "SNACK",
+
+  CAFE:
+    "CAFE",
+
+  /*
+   * 현재 backend FoodPreference에
+   * VEGETARIAN 없음.
+   *
+   * undefined → 요청에서 자동 제외.
+   */
+};
+
+
+const locationRequestName = (
+  location,
+) => {
+  if (!location) {
+    return "";
+  }
+
+  const first =
+    location.region ||
+    "";
+
+  const second =
+    location.detail ||
+    location.name ||
+    "";
+
+  /*
+   * "서울특별시 서울특별시"
+   * 중복 방지
+   */
+  return [
+    ...new Set(
+      [
+        first,
+        second,
+      ].filter(
+        Boolean,
+      ),
+    ),
+  ].join(
+    " ",
+  );
+};
+
+
+const toFlightCandidatePayload = (
+  flight,
+) => {
+  if (!flight) {
+    return null;
+  }
+
+  return {
+    id:
+      flight.id ??
+      null,
+
+    direction:
+      flight.direction ??
+      null,
+
+    airline:
+      flight.airline ??
+      "",
+
+    airlineCode:
+      flight.airlineCode ??
+      "",
+
+    flightNumber:
+      flight.flightNumber ??
+      "",
+
+    departureAirport:
+      flight.departureAirport ??
+      "",
+
+    arrivalAirport:
+      flight.arrivalAirport ??
+      "",
+
+    departureTime:
+      flight.departureTime ??
+      null,
+
+    arrivalTime:
+      flight.arrivalTime ??
+      null,
+
+    estimatedPricePerPerson:
+      Number(
+        flight.estimatedPricePerPerson ??
+        0,
+      ),
+
+    estimatedTotalPrice:
+      Number(
+        flight.estimatedTotalPrice ??
+        0,
+      ),
+
+    priceType:
+      flight.priceType ||
+      "ESTIMATED",
+
+    aircraft:
+      flight.aircraft ??
+      null,
+
+    status:
+      flight.status ??
+      null,
+  };
+};
 
 function useTripPlanner() {
   const [
@@ -5611,12 +5819,12 @@ function useTripPlanner() {
       operation,
     ) => {
       if (
-        isMockModeEnabled() ||
-        !backendPlanRef
-          .current?.id
-      ) {
-        return;
-      }
+          isMockModeEnabled() ||
+          !backendPlanRef.current?.id ||
+          backendPlanRef.current?.source === "trip-plan-v1"
+        ) {
+          return;
+        }
 
       const requestId =
         ++revisionRequestRef.current;
@@ -5955,266 +6163,608 @@ function useTripPlanner() {
     costForEvent;
 
 
-  const generate =
-    async () => {
-      if (
-        !departureLocation
-      ) {
-        setDepartureMenuOpen(
-          true,
-        );
+  const generate = async () => {
 
-        return notify(
-          "출발지를 먼저 선택해 주세요.",
-        );
-      }
+  /*
+   * ==========================================
+   * 1. 입력 검증
+   * ==========================================
+   */
 
-      if (
-        !destinationLocation
-      ) {
-        return notify(
-          "도착지와 세부지역을 먼저 선택해 주세요.",
-        );
-      }
+  if (!departureLocation) {
+    setDepartureMenuOpen(
+      true,
+    );
 
-      if (
-        !endDate
-      ) {
-        return notify(
-          "귀국일을 먼저 선택해 주세요.",
-        );
-      }
+    return notify(
+      "출발지를 먼저 선택해 주세요.",
+    );
+  }
 
-      if (
-        !travelers
-      ) {
-        return notify(
-          "총인원을 입력해 주세요.",
-        );
-      }
 
-      if (
-        !transport ||
-        !localTransport
-      ) {
-        return notify(
-          "이동수단 선택에서 출발 이동과 현지 이동을 골라주세요.",
-        );
-      }
+  if (!destinationLocation) {
+    return notify(
+      "도착지와 세부지역을 먼저 선택해 주세요.",
+    );
+  }
 
-      if (
-        transport ===
-          "FLIGHT" &&
-        !selectedFlight
-      ) {
-        return notify(
-          "가는 편과 오는 편 항공편을 모두 선택해 주세요.",
-        );
-      }
 
-      if (
-        !tripSchedule.ready
-      ) {
-        return notify(
-          tripSchedule.reason,
-        );
-      }
+  const departureLatitude =
+    Number(
+      departureLocation.latitude,
+    );
 
-      if (
-        !selectedStay
-      ) {
-        return notify(
-          "숙소를 선택해 주세요.",
-        );
-      }
 
-      setPlanningMode(
-        "create",
+  const departureLongitude =
+    Number(
+      departureLocation.longitude,
+    );
+
+
+  const destinationLatitude =
+    Number(
+      destinationLocation.latitude,
+    );
+
+
+  const destinationLongitude =
+    Number(
+      destinationLocation.longitude,
+    );
+
+
+  if (
+    !Number.isFinite(
+      departureLatitude,
+    ) ||
+    !Number.isFinite(
+      departureLongitude,
+    )
+  ) {
+    return notify(
+      "출발지 좌표를 확인할 수 없습니다.",
+    );
+  }
+
+
+  if (
+    !Number.isFinite(
+      destinationLatitude,
+    ) ||
+    !Number.isFinite(
+      destinationLongitude,
+    )
+  ) {
+    return notify(
+      "도착지 좌표를 확인할 수 없습니다.",
+    );
+  }
+
+
+  if (
+    !startDate ||
+    !endDate
+  ) {
+    return notify(
+      "출발일과 귀국일을 선택해 주세요.",
+    );
+  }
+
+
+  if (!travelers) {
+    return notify(
+      "총인원을 입력해 주세요.",
+    );
+  }
+
+
+  if (
+    !transport ||
+    !localTransport
+  ) {
+    return notify(
+      "출발 교통수단과 현지 교통수단을 선택해 주세요.",
+    );
+  }
+
+
+  if (
+    transport ===
+      "FLIGHT" &&
+    (
+      !selectedOutboundFlight ||
+      !selectedReturnFlight
+    )
+  ) {
+    return notify(
+      "가는 편과 오는 편 항공편을 모두 선택해 주세요.",
+    );
+  }
+
+
+  if (
+    !tripSchedule.ready
+  ) {
+    return notify(
+      tripSchedule.reason,
+    );
+  }
+
+
+  if (!selectedStay) {
+    return notify(
+      "숙소를 선택해 주세요.",
+    );
+  }
+
+
+  /*
+   * ==========================================
+   * 2. frontend 값 → backend enum 변환
+   * ==========================================
+   */
+
+  const mainTransportMode =
+    MAIN_TRANSPORT_MAP[
+      transport
+    ];
+
+
+  const localTransportMode =
+    LOCAL_TRANSPORT_MAP[
+      localTransport
+    ];
+
+
+  const backendPace =
+    PACE_MAP[
+      pace
+    ];
+
+
+  if (!mainTransportMode) {
+    return notify(
+      "지원하지 않는 출발 교통수단입니다.",
+    );
+  }
+
+
+  if (!localTransportMode) {
+    return notify(
+      "지원하지 않는 현지 교통수단입니다.",
+    );
+  }
+
+
+  if (!backendPace) {
+    return notify(
+      "여행 일정 속도를 확인해 주세요.",
+    );
+  }
+
+
+  const preferences =
+    themes
+      .map(
+        (theme) =>
+          THEME_MAP[
+            theme
+          ],
+      )
+      .filter(
+        Boolean,
+      )
+      .slice(
+        0,
+        3,
       );
 
-      setPlanning(
-        true,
+
+  if (
+    preferences.length ===
+    0
+  ) {
+    return notify(
+      "여행 테마를 1개 이상 선택해 주세요.",
+    );
+  }
+
+
+  /*
+   * VEGETARIAN은 현재 backend enum에 없으므로
+   * 자동으로 제외된다.
+   */
+  const backendFoodPreferences =
+    foodPreferences
+      .map(
+        (food) =>
+          FOOD_PREFERENCE_MAP[
+            food
+          ],
+      )
+      .filter(
+        Boolean,
+      )
+      .slice(
+        0,
+        3,
       );
 
-      setPlanningStage(
-        "calculating",
-      );
 
-      if (
-        !isMockModeEnabled()
-      ) {
-        try {
-          const nextBackendPlan =
-            await requestTripPlan({
-              destination,
+  /*
+   * ==========================================
+   * 3. 지역명
+   * ==========================================
+   */
 
-              originLocation:
-                toApiLocation(
-                  departureLocation,
-                ),
+  const departureName =
+    locationRequestName(
+      departureLocation,
+    );
 
-              destinationLocation:
-                toApiLocation(
-                  destinationLocation,
-                ),
 
-              mapSearch: {
-                origin:
-                  toApiLocation(
-                    departureLocation,
-                  ),
+  const destinationName =
+    locationRequestName(
+      destinationLocation,
+    );
 
-                destination:
-                  toApiLocation(
-                    destinationLocation,
-                  ),
-              },
 
-              flightSearch: {
-                departureAirportCode:
-                  departureLocation.airportCode ||
-                  origin,
+  /*
+   * ==========================================
+   * 4. 시간
+   * ==========================================
+   *
+   * backend Flight validation:
+   *
+   * outbound.departure >= trip.startTime
+   * return.arrival <= trip.endTime
+   */
 
-                arrivalAirportCode:
-                  destinationAirport,
-              },
+  const tripStartTime =
+    scheduledStartTime ||
+    startTime ||
+    "09:00";
 
-              staySearch: {
-                near:
-                  toApiLocation(
-                    destinationLocation,
-                  ),
 
-                nights,
+  const tripEndTime =
+    tripSchedule.returnArrivalTime ||
+    endTime ||
+    "18:00";
 
-                guests:
-                  travelers,
-              },
 
-              startDate,
-              endDate,
+  /*
+   * ==========================================
+   * 5. 식비 추정
+   * ==========================================
+   *
+   * 현재 별도 "하루 식비" 입력 UI가 없으므로
+   * 기존 프론트 식비 추정값을 활용.
+   *
+   * 그것도 없으면 30,000원 fallback.
+   */
 
-              startTime:
-                scheduledStartTime,
+  const tripDayCount =
+    Math.max(
+      1,
+      dates.length,
+    );
 
-              arrivalTime:
-                scheduledArrivalTime,
 
-              endTime:
-                scheduledEndTime,
+  const estimatedMealBudget =
+    foodTotal >
+    0
+      ? Math.round(
+          foodTotal /
+          tripDayCount,
+        )
+      : 30000;
 
-              returnArrivalTime:
-                tripSchedule.returnArrivalTime,
 
-              timeSource:
-                tripSchedule.source,
+  /*
+   * ==========================================
+   * 6. loading 시작
+   * ==========================================
+   */
 
-              ticket:
-                selectedTicket,
+  setPlanningMode(
+    "create",
+  );
 
-              travelers,
-              total,
-              pace,
-              themes,
+  setPlanning(
+    true,
+  );
 
-              diningPreferences: {
-                cuisineCodes:
-                  foodPreferences,
+  setPlanningStage(
+    "calculating",
+  );
 
-                matchMode:
-                  "ANY",
 
-                noPreference:
-                  foodPreferences.length ===
-                  0,
+  try {
 
-                prioritizeNearby:
-                  true,
-              },
+    /*
+     * ========================================
+     * STEP 1
+     *
+     * POST /api/trips
+     * ========================================
+     */
 
-              transport,
-              localTransport,
-            });
+    const createdTrip =
+      await createTrip({
 
-          if (
-            !nextBackendPlan
-              .dayPlans
-              .length
-          ) {
-            throw new Error(
-              "일정 데이터가 비어 있습니다.",
-            );
-          }
+        departure:
+          departureName,
 
-          backendPlanRef.current =
-            nextBackendPlan;
+        departureLatitude,
 
-          setBackendPlan(
-            nextBackendPlan,
-          );
+        departureLongitude,
 
-          setPlanEdits(
-            {},
-          );
 
-          setPlanOrders(
-            {},
-          );
-        } catch (
-          error
-        ) {
-          setPlanning(
-            false,
-          );
+        destination:
+          destinationName,
 
-          notify(
-            error?.message ||
-              "백엔드 일정 데이터를 불러오지 못했어요.",
-          );
+        destinationLatitude,
 
-          return;
-        }
-      }
+        destinationLongitude,
 
-      window.setTimeout(
-        () =>
-          setPlanningStage(
-            "ready",
+
+        startDate,
+
+        startTime:
+          tripStartTime,
+
+
+        endDate,
+
+        endTime:
+          tripEndTime,
+
+
+        peopleCount:
+          travelers,
+
+
+        mainTransportMode,
+
+        localTransportMode,
+
+
+        budget:
+          Math.max(
+            0,
+
+            Math.round(
+              Number(
+                budget,
+              ) ||
+              0,
+            ),
           ),
 
-        1900,
-      );
 
-      window.setTimeout(
-        () => {
-          setActiveDay(
+        mealBudgetPerPersonPerDay:
+          Math.max(
             0,
-          );
+            estimatedMealBudget,
+          ),
 
-          setPlanRevision(
-            (
-              current,
-            ) =>
-              current +
-              1,
-          );
 
-          setShowPlan(
-            true,
-          );
+        pace:
+          backendPace,
 
-          setPlanning(
-            false,
-          );
 
-          setPlanViewOpen(
-            true,
-          );
-        },
+        preferences,
 
-        3100,
+
+        foodPreferences:
+          backendFoodPreferences,
+      });
+
+
+    const tripId =
+      createdTrip?.id;
+
+
+    if (!tripId) {
+      throw new Error(
+        "여행 생성 응답에 tripId가 없습니다.",
       );
-    };
+    }
+
+
+    if (
+      import.meta.env.DEV
+    ) {
+      console.log(
+        "[TRIP CREATE]",
+
+        {
+          tripId,
+          createdTrip,
+        },
+      );
+    }
+
+
+    /*
+     * ========================================
+     * STEP 2
+     *
+     * 항공편 backend DTO 변환
+     * ========================================
+     */
+
+    const outboundFlight =
+      mainTransportMode ===
+      "AIR"
+        ? toFlightCandidatePayload(
+            selectedOutboundFlight,
+          )
+        : null;
+
+
+    const returnFlight =
+      mainTransportMode ===
+      "AIR"
+        ? toFlightCandidatePayload(
+            selectedReturnFlight,
+          )
+        : null;
+
+
+    /*
+     * ========================================
+     * STEP 3
+     *
+     * POST /api/trips/{tripId}/plan
+     * ========================================
+     */
+
+    const nextBackendPlan =
+      await requestTripPlan(
+        tripId,
+
+        {
+          accommodationId:
+            Number(
+              selectedStay.id,
+            ),
+
+          outboundFlight,
+
+          returnFlight,
+        },
+      );
+
+
+    /*
+     * ========================================
+     * STEP 4
+     *
+     * 일정 검증
+     * ========================================
+     */
+
+    if (
+      !Array.isArray(
+        nextBackendPlan
+          ?.dayPlans,
+      ) ||
+      nextBackendPlan
+        .dayPlans
+        .length ===
+        0
+    ) {
+      throw new Error(
+        "백엔드에서 생성된 여행 일정이 비어 있습니다.",
+      );
+    }
+
+
+    /*
+     * ========================================
+     * STEP 5
+     *
+     * 기존 UI state에 backend 일정 주입
+     *
+     * UI 구조 변경 없음.
+     * ========================================
+     */
+
+    backendPlanRef.current =
+      nextBackendPlan;
+
+
+    setBackendPlan(
+      nextBackendPlan,
+    );
+
+
+    setPlanEdits(
+      {},
+    );
+
+
+    setPlanOrders(
+      {},
+    );
+
+
+    if (
+      import.meta.env.DEV
+    ) {
+      console.log(
+        "[TRIP PLAN]",
+
+        nextBackendPlan,
+      );
+    }
+
+
+    /*
+     * ========================================
+     * STEP 6
+     *
+     * 기존 일정 UI 열기
+     * ========================================
+     */
+
+    setPlanningStage(
+      "ready",
+    );
+
+
+    setActiveDay(
+      0,
+    );
+
+
+    setPlanRevision(
+      (current) =>
+        current +
+        1,
+    );
+
+
+    setShowPlan(
+      true,
+    );
+
+
+    setPlanning(
+      false,
+    );
+
+
+    setPlanViewOpen(
+      true,
+    );
+
+
+    notify(
+      "AI 여행 일정이 생성되었습니다.",
+    );
+
+  } catch (error) {
+
+    console.error(
+      "[TRIP PLAN] 생성 실패:",
+
+      error,
+    );
+
+
+    setPlanning(
+      false,
+    );
+
+
+    notify(
+      error?.message ||
+        "여행 일정을 생성하지 못했습니다.",
+    );
+  }
+};
 
 
   return {
