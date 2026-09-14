@@ -175,28 +175,25 @@ function normalizePlanEvent(
    * 혹시 나중에 backend가 이미
    * 프론트 tuple 형태를 반환할 경우도 호환.
    */
-  if (
-    Array.isArray(event)
-  ) {
-    const metadata =
-      event[6] ||
-      {};
+  if (Array.isArray(event)) {
+  const metadata =
+    event[6] || {};
 
-    return [
-      ...event.slice(
-        0,
-        6,
-      ),
+  const baseId =
+    metadata.id ||
+    "api-stop";
 
-      {
-        ...metadata,
+  return [
+    ...event.slice(0, 6),
 
-        id:
-          metadata.id ||
-          `api-day-${dayIndex + 1}-stop-${eventIndex + 1}`,
-      },
-    ];
-  }
+    {
+      ...metadata,
+
+      id:
+        `${baseId}-day-${dayIndex + 1}-stop-${eventIndex + 1}`,
+    },
+  ];
+}
 
 
   const type =
@@ -339,13 +336,17 @@ function normalizePlanEvent(
    * ==============================
    */
 
-  const eventId =
-    event?.placeId !=
-    null
-      ? `${type}-${event.placeId}`
-      : event?.referenceId
-        ? `${type}-${event.referenceId}`
-        : `api-day-${dayIndex + 1}-stop-${eventIndex + 1}`;
+  const eventIdentity =
+  event?.placeId ??
+  event?.referenceId ??
+  "unknown";
+
+const eventOrder =
+  event?.order ??
+  eventIndex + 1;
+
+const eventId =
+  `${type}-${eventIdentity}-day-${dayIndex + 1}-stop-${eventOrder}`;
 
 
   /*
