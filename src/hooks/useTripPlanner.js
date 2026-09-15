@@ -6336,6 +6336,55 @@ function useTripPlanner() {
   }
 
 
+  /*
+   * RENTAL_CAR 이용 시 선택한 렌터카의
+   * 위치/셔틀 정보가 반드시 필요하다.
+   */
+  if (
+    localTransportMode ===
+    "RENTAL_CAR"
+  ) {
+    if (!selectedRental) {
+      return notify(
+        "렌터카를 선택해 주세요.",
+      );
+    }
+
+    const rentalLatitude =
+      Number(
+        selectedRental.latitude,
+      );
+
+    const rentalLongitude =
+      Number(
+        selectedRental.longitude,
+      );
+
+    const shuttleMinutes =
+      Number(
+        selectedRental
+          .estimatedShuttleMinutes,
+      );
+
+    if (
+      !Number.isFinite(
+        rentalLatitude,
+      ) ||
+      !Number.isFinite(
+        rentalLongitude,
+      ) ||
+      !Number.isFinite(
+        shuttleMinutes,
+      ) ||
+      shuttleMinutes <= 0
+    ) {
+      return notify(
+        "선택한 렌터카의 위치 또는 셔틀 정보를 확인해 주세요.",
+      );
+    }
+  }
+
+
   if (!backendPace) {
     return notify(
       "여행 일정 속도를 확인해 주세요.",
@@ -6462,11 +6511,11 @@ function useTripPlanner() {
 
   /*
    * ==========================================
-   * 6. 사용자가 선택한 항공편 DTO 변환
+   * 6. 선택 항공편 / 렌터카 DTO 변환
    * ==========================================
    *
-   * 이제 항공편은 TripPlan 요청이 아니라
-   * POST /api/trips에서 Trip과 함께 저장한다.
+   * 숙소, 항공편, 렌터카는 이제
+   * POST /api/trips 단계에서 함께 저장한다.
    */
 
   const outboundFlight =
@@ -6484,6 +6533,44 @@ function useTripPlanner() {
       ? toFlightCandidatePayload(
           selectedReturnFlight,
         )
+      : null;
+
+
+  const rental =
+    localTransportMode ===
+      "RENTAL_CAR" &&
+    selectedRental
+      ? {
+          id:
+            selectedRental.id,
+
+          company:
+            selectedRental.company,
+
+          car:
+            selectedRental.car ??
+            null,
+
+          pickup:
+            selectedRental.pickup ??
+            null,
+
+          latitude:
+            Number(
+              selectedRental.latitude,
+            ),
+
+          longitude:
+            Number(
+              selectedRental.longitude,
+            ),
+
+          estimatedShuttleMinutes:
+            Number(
+              selectedRental
+                .estimatedShuttleMinutes,
+            ),
+        }
       : null;
 
 
@@ -6587,15 +6674,19 @@ function useTripPlanner() {
           backendFoodPreferences,
 
 
+        /*
+         * Trip 생성 시 선택값을 함께 저장.
+         */
         accommodationId:
           Number(
             selectedStay.id,
           ),
 
-
         outboundFlight,
 
         returnFlight,
+
+        rental,
       });
 
 
@@ -6635,6 +6726,17 @@ function useTripPlanner() {
     const nextBackendPlan =
       await requestTripPlan(
         tripId,
+
+        {
+          accommodationId:
+            Number(
+              selectedStay.id,
+            ),
+
+          outboundFlight,
+
+          returnFlight,
+        },
       );
 
 
@@ -6704,7 +6806,7 @@ function useTripPlanner() {
 
     /*
      * ========================================
-     * STEP 5
+     * STEP 6
      *
      * 기존 일정 UI 열기
      * ========================================

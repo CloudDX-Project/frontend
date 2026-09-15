@@ -1,12 +1,9 @@
 import { apiClient } from "./apiClient";
 
 /**
- * 여행 생성
+ * 여행 기본 정보 생성
  *
  * POST /api/trips
- *
- * 메인 화면에서 사용자가 확정한
- * 숙소 + 왕복 항공편까지 Trip과 함께 저장한다.
  */
 export async function createTrip({
   departure,
@@ -35,9 +32,31 @@ export async function createTrip({
   preferences,
   foodPreferences,
 
+  /*
+   * ========================================
+   * 선택 숙소
+   * ========================================
+   */
   accommodationId,
+
+  /*
+   * ========================================
+   * 선택 항공편
+   *
+   * AIR가 아니면 null
+   * ========================================
+   */
   outboundFlight = null,
   returnFlight = null,
+
+  /*
+   * ========================================
+   * 선택 렌터카
+   *
+   * RENTAL_CAR가 아니면 null
+   * ========================================
+   */
+  rental = null,
 
   signal,
 }) {
@@ -71,9 +90,17 @@ export async function createTrip({
       preferences,
       foodPreferences,
 
+      /*
+       * ========================================
+       * 백엔드 TripCreateRequest 추가 필드
+       * ========================================
+       */
       accommodationId,
+
       outboundFlight,
       returnFlight,
+
+      rental,
     },
 
     signal,
