@@ -4,23 +4,39 @@
  */
 
 const DEFAULT_BASE_URL =
-  import.meta.env?.VITE_API_BASE_URL ??
-  (import.meta.env?.DEV ? "http://localhost:8080" : "");
+  import.meta.env.VITE_API_BASE_URL ??
+  (import.meta.env.DEV ? "http://localhost:8080" : "");
 
 const ACCESS_TOKEN_KEY = "tripbuddy.accessToken";
+const LEGACY_ACCESS_TOKEN_KEY = "accessToken";
 
 /**
  * JWT Access Token 조회
+ *
+ * 기존 코드에서 "accessToken" 키로 저장했던 경우도
+ * 임시 호환한다.
  */
 export function getAccessToken() {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  const token =
+    localStorage.getItem(ACCESS_TOKEN_KEY) ??
+    localStorage.getItem(LEGACY_ACCESS_TOKEN_KEY);
+
+  return token || null;
 }
 
 /**
  * JWT Access Token 저장
  */
 export function saveAccessToken(token) {
+  if (!token) {
+    removeAccessToken();
+    return;
+  }
+
   localStorage.setItem(ACCESS_TOKEN_KEY, token);
+
+  // 기존 키가 남아 있으면 제거해서 하나로 통일
+  localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
 }
 
 /**
@@ -28,6 +44,7 @@ export function saveAccessToken(token) {
  */
 export function removeAccessToken() {
   localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(LEGACY_ACCESS_TOKEN_KEY);
 }
 
 export class ApiClientError extends Error {
@@ -51,12 +68,19 @@ export class ApiClientError extends Error {
 
 function toQueryString(query = {}) {
   const pairs = Object.entries(query).flatMap(([key, value]) => {
-    if (value === undefined || value === null || value === "") {
+    if (
+      value === undefined ||
+      value === null ||
+      value === ""
+    ) {
       return [];
     }
 
     if (Array.isArray(value)) {
-      return value.map((item) => [key, String(item)]);
+      return value.map((item) => [
+        key,
+        String(item),
+      ]);
     }
 
     return [[key, String(value)]];
@@ -66,7 +90,8 @@ function toQueryString(query = {}) {
 }
 
 async function parseBody(response) {
-  const contentType = response.headers.get("content-type") ?? "";
+  const contentType =
+    response.headers.get("content-type") ?? "";
 
   if (contentType.includes("application/json")) {
     try {
@@ -95,7 +120,7 @@ async function parseBody(response) {
 /**
  * @param {{
  *   baseUrl?: string,
- *   getToken?: () => string|undefined,
+ *   getToken?: () => string|null|undefined,
  *   fetchImpl?: typeof fetch
  * }} options
  */
@@ -117,8 +142,14 @@ export function createApiClient({
   ) {
     const queryString = toQueryString(query);
 
+    const normalizedBaseUrl =
+      baseUrl.replace(/\/$/, "");
+
+    const normalizedPath =
+      path.startsWith("/") ? path : `/${path}`;
+
     const url =
-      `${baseUrl.replace(/\/$/, "")}${path}` +
+      `${normalizedBaseUrl}${normalizedPath}` +
       `${queryString ? `?${queryString}` : ""}`;
 
     const token = getToken?.();
@@ -132,9 +163,13 @@ export function createApiClient({
     if (signal?.aborted) {
       relayAbort();
     } else {
-      signal?.addEventListener("abort", relayAbort, {
-        once: true,
-      });
+      signal?.addEventListener(
+        "abort",
+        relayAbort,
+        {
+          once: true,
+        },
+      );
     }
 
     const timeoutId = setTimeout(
@@ -145,59 +180,72 @@ export function createApiClient({
     try {
       const response = await fetchImpl(url, {
         method,
-
         signal: controller.signal,
 
         headers: {
           Accept: "application/json",
 
-          ...(body
+          ...(body !== undefined &&
+          body !== null
             ? {
-                "Content-Type": "application/json",
+                "Content-Type":
+                  "application/json",
               }
             : {}),
 
           ...(token
             ? {
-                Authorization: `Bearer ${token}`,
+                Authorization:
+                  `Bearer ${token}`,
               }
             : {}),
 
           ...headers,
         },
 
-        ...(body
+        ...(body !== undefined &&
+        body !== null
           ? {
               body: JSON.stringify(body),
             }
           : {}),
       });
 
-      const payload = await parseBody(response);
+      const payload =
+        await parseBody(response);
 
       if (!response.ok) {
+        /**
+         * Access Token이 만료됐거나 유효하지 않은 경우
+         * 저장된 토큰 제거
+         */
+       // if (response.status === 401) {
+     //     removeAccessToken();
+      //  }
+
         throw new ApiClientError(
-          payload?.message ?? "API 요청에 실패했습니다.",
+          payload?.message ??
+            "API 요청에 실패했습니다.",
           {
             status: response.status,
-            code: payload?.code ?? "HTTP_ERROR",
+            code:
+              payload?.code ??
+              "HTTP_ERROR",
             payload,
           },
         );
       }
 
-      /*
-       * 백엔드 응답이
+      /**
+       * 백엔드 응답:
        *
        * {
-       *   "success": true,
-       *   "message": "...",
-       *   "data": {...}
+       *   success: true,
+       *   message: "...",
+       *   data: {...}
        * }
        *
-       * 형식이면 data만 반환한다.
-       *
-       * data wrapper가 없는 API도 대응한다.
+       * 형태라면 data만 반환한다.
        */
       return payload?.data ?? payload;
     } catch (cause) {
@@ -234,34 +282,36 @@ export function createApiClient({
   };
 }
 
-/*
- * 모든 API 요청에서 localStorage의 JWT를 읽는다.
+/**
+ * 모든 API 요청에서 localStorage JWT를 읽는다.
  *
- * 로그인 후 저장된 토큰이 있으면:
+ * 로그인 후 토큰이 존재하면:
  *
  * Authorization: Bearer {token}
  *
- * 이 자동으로 붙는다.
+ * 헤더가 자동으로 추가된다.
  */
 export const apiClient = createApiClient({
   getToken: getAccessToken,
 });
 
 export function isMockModeEnabled() {
-  /*
-   * 로컬 화면 시연은 서버가 없어도 동작하도록 기본 true.
-   * 실제 서버 연결 시 false로 설정한다.
+  /**
+   * 명시적으로 VITE_USE_MOCK=true인 경우에만 mock 사용.
+   *
+   * 운영 배포에서는 기본적으로 실제 API를 사용한다.
    */
   return (
     String(
-      import.meta.env.VITE_USE_MOCK ?? "true",
-    ).toLowerCase() !== "false"
+      import.meta.env.VITE_USE_MOCK ??
+        "false",
+    ).toLowerCase() === "true"
   );
 }
 
 /**
- * 실제 API 우선, 연결 실패/시연 모드일 때만 mock으로 폴백한다.
- * 응답에는 source와 isMock을 명시해 화면이 실제 가격처럼 오해하지 않게 한다.
+ * 실제 API 우선,
+ * 서버 장애 또는 mock 모드에서 mock으로 폴백한다.
  */
 export async function withMockFallback(
   liveRequest,

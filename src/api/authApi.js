@@ -21,7 +21,6 @@ export async function login(email, password) {
     "/api/users/login",
     {
       method: "POST",
-
       body: {
         email,
         password,
@@ -29,27 +28,25 @@ export async function login(email, password) {
     },
   );
 
+  console.log("[LOGIN RESPONSE]", response);
+
   if (!response?.accessToken) {
+    console.error(
+      "[LOGIN] Access Token 없음",
+      response,
+    );
+
     throw new Error(
       "로그인 응답에 Access Token이 없습니다.",
     );
   }
 
-  // Access Token 저장
   saveAccessToken(response.accessToken);
 
-  // 개발 환경에서만 Access Token 출력
-  if (import.meta.env.DEV) {
-    console.log(
-      "[LOGIN] Access Token:",
-      response.accessToken,
-    );
-
-    console.log(
-      "[LOGIN] Token Type:",
-      response.tokenType,
-    );
-  }
+  console.log(
+    "[TOKEN SAVED]",
+    localStorage.getItem("tripbuddy.accessToken"),
+  );
 
   return response;
 }

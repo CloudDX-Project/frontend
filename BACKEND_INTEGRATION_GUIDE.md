@@ -256,7 +256,7 @@ POST /api/v1/trips/plans/{planId}/share
 
 프런트 .env:
 
-VITE_API_BASE_URL=https://api.example.com
+VITE_API_BASE_URL=
 VITE_USE_MOCK=true
 
 운영에서는 `VITE_USE_MOCK=false`와 HTTPS API 주소를 함께 설정합니다. `VITE_API_BASE_URL`이 없으면 운영 빌드는 같은 출처의 `/api` 리버스 프록시를 사용하므로 사용자 브라우저의 localhost를 호출하지 않습니다.
