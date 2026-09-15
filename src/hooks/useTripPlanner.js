@@ -6462,7 +6462,34 @@ function useTripPlanner() {
 
   /*
    * ==========================================
-   * 6. loading 시작
+   * 6. 사용자가 선택한 항공편 DTO 변환
+   * ==========================================
+   *
+   * 이제 항공편은 TripPlan 요청이 아니라
+   * POST /api/trips에서 Trip과 함께 저장한다.
+   */
+
+  const outboundFlight =
+    mainTransportMode ===
+    "AIR"
+      ? toFlightCandidatePayload(
+          selectedOutboundFlight,
+        )
+      : null;
+
+
+  const returnFlight =
+    mainTransportMode ===
+    "AIR"
+      ? toFlightCandidatePayload(
+          selectedReturnFlight,
+        )
+      : null;
+
+
+  /*
+   * ==========================================
+   * 7. loading 시작
    * ==========================================
    */
 
@@ -6558,6 +6585,17 @@ function useTripPlanner() {
 
         foodPreferences:
           backendFoodPreferences,
+
+
+        accommodationId:
+          Number(
+            selectedStay.id,
+          ),
+
+
+        outboundFlight,
+
+        returnFlight,
       });
 
 
@@ -6590,32 +6628,6 @@ function useTripPlanner() {
      * ========================================
      * STEP 2
      *
-     * 항공편 backend DTO 변환
-     * ========================================
-     */
-
-    const outboundFlight =
-      mainTransportMode ===
-      "AIR"
-        ? toFlightCandidatePayload(
-            selectedOutboundFlight,
-          )
-        : null;
-
-
-    const returnFlight =
-      mainTransportMode ===
-      "AIR"
-        ? toFlightCandidatePayload(
-            selectedReturnFlight,
-          )
-        : null;
-
-
-    /*
-     * ========================================
-     * STEP 3
-     *
      * POST /api/trips/{tripId}/plan
      * ========================================
      */
@@ -6623,23 +6635,12 @@ function useTripPlanner() {
     const nextBackendPlan =
       await requestTripPlan(
         tripId,
-
-        {
-          accommodationId:
-            Number(
-              selectedStay.id,
-            ),
-
-          outboundFlight,
-
-          returnFlight,
-        },
       );
 
 
     /*
      * ========================================
-     * STEP 4
+     * STEP 3
      *
      * 일정 검증
      * ========================================
@@ -6663,7 +6664,7 @@ function useTripPlanner() {
 
     /*
      * ========================================
-     * STEP 5
+     * STEP 4
      *
      * 기존 UI state에 backend 일정 주입
      *
@@ -6703,7 +6704,7 @@ function useTripPlanner() {
 
     /*
      * ========================================
-     * STEP 6
+     * STEP 5
      *
      * 기존 일정 UI 열기
      * ========================================

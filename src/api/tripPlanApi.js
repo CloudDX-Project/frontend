@@ -762,11 +762,6 @@ export function normalizeTripPlanResponse(
 export async function requestTripPlan(
   tripId,
   {
-    accommodationId,
-    outboundFlight = null,
-    returnFlight = null,
-  },
-  {
     signal,
   } = {},
 ) {
@@ -775,14 +770,6 @@ export async function requestTripPlan(
       "여행 일정 생성을 위한 tripId가 없습니다.",
     );
   }
-
-
-  if (!accommodationId) {
-    throw new TypeError(
-      "선택한 숙소 ID가 없습니다.",
-    );
-  }
-
 
   const response =
     await apiClient.request(
@@ -793,24 +780,17 @@ export async function requestTripPlan(
         method:
           "POST",
 
-        body: {
-          accommodationId,
-          outboundFlight,
-          returnFlight,
-        },
-
+        /*
+         * 숙소/항공은 POST /api/trips 시점에
+         * 이미 Trip에 저장되어 있으므로
+         * 별도 request body가 필요 없다.
+         */
         signal,
 
-        /*
-         * Bedrock 일정 생성은
-         * 시간이 조금 더 걸릴 수 있으므로
-         * 넉넉하게 설정.
-         */
         timeoutMs:
           120000,
       },
     );
-
 
   return normalizeTripPlanResponse(
     response,
