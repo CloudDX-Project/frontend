@@ -108,3 +108,24 @@ export async function createTrip({
     timeoutMs: 15000,
   });
 }
+
+export async function getMyTrips({ signal } = {}) {
+  return apiClient.request("/api/trips", {
+    method: "GET",
+    signal,
+  });
+}
+
+export async function getTrip(tripId, { signal } = {}) {
+  if (!tripId) {
+    throw new TypeError("불러올 여행 ID가 없습니다.");
+  }
+
+  return apiClient.request(
+    `/api/trips/${encodeURIComponent(tripId)}`,
+    {
+      method: "GET",
+      signal,
+    },
+  );
+}

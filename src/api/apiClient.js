@@ -3,9 +3,11 @@
  * 외부 지도/관광/사업자 API 키는 절대 여기서 직접 호출하지 않고 백엔드 BFF를 통한다.
  */
 
+const VITE_ENV = import.meta.env ?? {};
+
 const DEFAULT_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL ??
-  (import.meta.env.DEV ? "http://localhost:8080" : "");
+  VITE_ENV.VITE_API_BASE_URL ??
+  (VITE_ENV.DEV ? "http://localhost:8080" : "");
 
 const ACCESS_TOKEN_KEY = "tripbuddy.accessToken";
 const LEGACY_ACCESS_TOKEN_KEY = "accessToken";
@@ -128,7 +130,63 @@ export function createApiClient({
   baseUrl = DEFAULT_BASE_URL,
   getToken,
   fetchImpl = fetch,
+  enableAuthRefresh = false,
 } = {}) {
+  let refreshPromise = null;
+
+  const emitAuthExpired = () => {
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(
+        new CustomEvent("tripbuddy:auth-expired"),
+      );
+    }
+  };
+
+  async function refreshSession() {
+    if (refreshPromise) {
+      return refreshPromise;
+    }
+
+    const normalizedBaseUrl = baseUrl.replace(/\/$/, "");
+
+    refreshPromise = (async () => {
+      const response = await fetchImpl(
+        `${normalizedBaseUrl}/api/users/refresh`,
+        {
+          method: "POST",
+          credentials: "include",
+          headers: {
+            Accept: "application/json",
+          },
+        },
+      );
+
+      const payload = await parseBody(response);
+      const data = payload?.data ?? payload;
+
+      if (!response.ok || !data?.accessToken) {
+        removeAccessToken();
+        emitAuthExpired();
+
+        throw new ApiClientError(
+          payload?.message ?? "로그인이 만료되었습니다.",
+          {
+            status: response.status,
+            code: "AUTH_EXPIRED",
+            payload,
+          },
+        );
+      }
+
+      saveAccessToken(data.accessToken);
+      return data;
+    })().finally(() => {
+      refreshPromise = null;
+    });
+
+    return refreshPromise;
+  }
+
   async function request(
     path,
     {
@@ -138,6 +196,7 @@ export function createApiClient({
       headers,
       signal,
       timeoutMs = 15000,
+      skipAuthRefresh = false,
     } = {},
   ) {
     const queryString = toQueryString(query);
@@ -181,6 +240,7 @@ export function createApiClient({
       const response = await fetchImpl(url, {
         method,
         signal: controller.signal,
+        credentials: "include",
 
         headers: {
           Accept: "application/json",
@@ -214,14 +274,34 @@ export function createApiClient({
       const payload =
         await parseBody(response);
 
+      if (
+        response.status === 401 &&
+        enableAuthRefresh &&
+        !skipAuthRefresh &&
+        !normalizedPath.startsWith("/api/users/")
+      ) {
+        await refreshSession();
+
+        return request(path, {
+          method,
+          query,
+          body,
+          headers,
+          signal,
+          timeoutMs,
+          skipAuthRefresh: true,
+        });
+      }
+
       if (!response.ok) {
         /**
          * Access Token이 만료됐거나 유효하지 않은 경우
          * 저장된 토큰 제거
          */
-       // if (response.status === 401) {
-     //     removeAccessToken();
-      //  }
+        if (response.status === 401) {
+          removeAccessToken();
+          emitAuthExpired();
+        }
 
         throw new ApiClientError(
           payload?.message ??
@@ -278,6 +358,7 @@ export function createApiClient({
 
   return {
     request,
+    refreshSession,
     baseUrl,
   };
 }
@@ -293,6 +374,7 @@ export function createApiClient({
  */
 export const apiClient = createApiClient({
   getToken: getAccessToken,
+  enableAuthRefresh: true,
 });
 
 export function isMockModeEnabled() {
@@ -303,7 +385,7 @@ export function isMockModeEnabled() {
    */
   return (
     String(
-      import.meta.env.VITE_USE_MOCK ??
+      VITE_ENV.VITE_USE_MOCK ??
         "false",
     ).toLowerCase() === "true"
   );

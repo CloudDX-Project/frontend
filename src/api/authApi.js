@@ -28,14 +28,7 @@ export async function login(email, password) {
     },
   );
 
-  console.log("[LOGIN RESPONSE]", response);
-
   if (!response?.accessToken) {
-    console.error(
-      "[LOGIN] Access Token 없음",
-      response,
-    );
-
     throw new Error(
       "로그인 응답에 Access Token이 없습니다.",
     );
@@ -43,22 +36,35 @@ export async function login(email, password) {
 
   saveAccessToken(response.accessToken);
 
-  console.log(
-    "[TOKEN SAVED]",
-    localStorage.getItem("tripbuddy.accessToken"),
-  );
-
   return response;
 }
 
 /**
  * 로그아웃
  */
-export function logout() {
+export async function logout() {
   removeAccessToken();
 
-  if (import.meta.env.DEV) {
-    console.log("[LOGOUT] Access Token 삭제");
+  try {
+    await apiClient.request("/api/users/logout", {
+      method: "POST",
+      timeoutMs: 5000,
+    });
+  } catch {
+    // 로컬 토큰은 이미 삭제했다. 서버 쿠키 만료는 다음 요청에서 재시도한다.
+  }
+}
+
+export async function restoreSession() {
+  if (getAccessToken()) {
+    return true;
+  }
+
+  try {
+    await apiClient.refreshSession();
+    return true;
+  } catch {
+    return false;
   }
 }
 

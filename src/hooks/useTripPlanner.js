@@ -4,6 +4,7 @@ import { recommendAccommodations } from "../api/accommodationApi";
 import { searchFlights } from "../api/flightApi";
 import { createTrip } from "../api/tripApi";
 import {
+  normalizeTripPlanResponse,
   requestTripPlan,
   requestTripPlanRevision,
 } from "../api/tripPlanApi";
@@ -533,6 +534,38 @@ const FOOD_PREFERENCE_MAP = {
    * undefined → 요청에서 자동 제외.
    */
 };
+
+const MAIN_TRANSPORT_FROM_BACKEND = {
+  AIR: "FLIGHT",
+  KTX: "KTX",
+  SRT: "SRT",
+  EXPRESS_BUS: "BUS",
+  OWN_CAR: "CAR",
+};
+
+const LOCAL_TRANSPORT_FROM_BACKEND = {
+  WALK: "WALK",
+  PUBLIC_TRANSIT: "TRANSIT",
+  TAXI: "TAXI",
+  OWN_CAR: "CAR",
+  RENTAL_CAR: "RENTAL",
+};
+
+const PACE_FROM_BACKEND = {
+  RELAXED: "여유롭게",
+  BALANCED: "보통",
+  ACTIVE: "빡빡하게",
+};
+
+const THEME_FROM_BACKEND = Object.fromEntries(
+  Object.entries(THEME_MAP).map(([label, code]) => [code, label]),
+);
+
+const FOOD_FROM_BACKEND = Object.fromEntries(
+  Object.entries(FOOD_PREFERENCE_MAP)
+    .filter(([, code]) => Boolean(code))
+    .map(([label, code]) => [code, label]),
+);
 
 
 const locationRequestName = (
@@ -1285,6 +1318,12 @@ function useTripPlanner() {
   ] =
     useState("");
 
+  const [
+    restoredRental,
+    setRestoredRental,
+  ] =
+    useState(null);
+
 
   const [
     preferenceModalOpen,
@@ -1967,7 +2006,7 @@ function useTripPlanner() {
       ) =>
         rental.id ===
         rentalId,
-    );
+    ) || restoredRental;
 
 
   /*
@@ -3995,6 +4034,10 @@ function useTripPlanner() {
         "",
       );
 
+      setRestoredRental(
+        null,
+      );
+
       setStayId(
         "",
       );
@@ -5363,6 +5406,10 @@ function useTripPlanner() {
     ) => {
       setRentalId(
         id,
+      );
+
+      setRestoredRental(
+        null,
       );
 
       setRentalOpen(
@@ -6869,6 +6916,128 @@ function useTripPlanner() {
   }
 };
 
+  const openSavedTrip = useCallback((savedTrip) => {
+    if (!savedTrip?.id) {
+      notify("불러올 여행 정보가 없습니다.");
+      return false;
+    }
+
+    const nextDestination = {
+      id: `saved-destination-${savedTrip.id}`,
+      countryCode: "KR",
+      region: savedTrip.destination || "도착지",
+      name: savedTrip.destination || "도착지",
+      detail: savedTrip.destination || "도착지",
+      latitude: Number(savedTrip.destinationLatitude),
+      longitude: Number(savedTrip.destinationLongitude),
+      needsGeocoding: false,
+    };
+
+    const nextDeparture = {
+      id: `saved-departure-${savedTrip.id}`,
+      countryCode: "KR",
+      region: savedTrip.departure || "출발지",
+      name: savedTrip.departure || "출발지",
+      detail: savedTrip.departure || "출발지",
+      latitude: Number(savedTrip.departureLatitude),
+      longitude: Number(savedTrip.departureLongitude),
+      needsGeocoding: false,
+    };
+
+    setDestination(savedTrip.destination || "");
+    setDestinationType("국내");
+    setDestinationLocation(nextDestination);
+    setDepartureLocation(nextDeparture);
+    setStartDate(savedTrip.startDate || "");
+    setEndDate(savedTrip.endDate || "");
+    setStartTime(savedTrip.startTime?.slice?.(0, 5) || "09:00");
+    setEndTime(savedTrip.endTime?.slice?.(0, 5) || "18:00");
+    setTravelers(Math.max(1, Number(savedTrip.peopleCount) || 1));
+    setTravelerInput(String(Math.max(1, Number(savedTrip.peopleCount) || 1)));
+    setBudget(Math.max(0, Number(savedTrip.budget) || 0));
+    setPace(PACE_FROM_BACKEND[savedTrip.pace] || "보통");
+    setThemes(
+      (savedTrip.preferences || [])
+        .map((code) => THEME_FROM_BACKEND[code])
+        .filter(Boolean),
+    );
+    setFoodPreferencesState(
+      (savedTrip.foodPreferences || [])
+        .map((code) => FOOD_FROM_BACKEND[code])
+        .filter(Boolean),
+    );
+    setTransport(
+      MAIN_TRANSPORT_FROM_BACKEND[savedTrip.mainTransportMode] || "CAR",
+    );
+    setLocalTransport(
+      LOCAL_TRANSPORT_FROM_BACKEND[savedTrip.localTransportMode] || "TRANSIT",
+    );
+    setRestoredRental(savedTrip.selectedRental || null);
+
+    const accommodation = savedTrip.selectedAccommodation;
+    if (accommodation?.accommodationId != null) {
+      const restoredStay = {
+        id: accommodation.accommodationId,
+        providerId: accommodation.providerId,
+        name: accommodation.name,
+        area: savedTrip.destination || "숙소",
+        address: accommodation.address,
+        latitude: accommodation.latitude,
+        longitude: accommodation.longitude,
+        checkInTime: accommodation.checkInTime,
+        checkOutTime: accommodation.checkOutTime,
+        priceAvg: null,
+        priceText: "저장된 예약",
+        image: jejuCoastPhoto,
+        isMock: false,
+      };
+
+      setStayCatalog([restoredStay]);
+      setStayId(restoredStay.id);
+    }
+
+    const outbound = savedTrip.outboundFlight
+      ? normalizeFlightCandidate(savedTrip.outboundFlight)
+      : null;
+    const returning = savedTrip.returnFlight
+      ? normalizeFlightCandidate(savedTrip.returnFlight)
+      : null;
+
+    setFlightSearchResult({
+      departureAirport: outbound?.departureAirport || "",
+      arrivalAirport: outbound?.arrivalAirport || "",
+      outboundFlights: outbound ? [outbound] : [],
+      returnFlights: returning ? [returning] : [],
+    });
+    setFlightId(outbound?.id || "");
+    setReturnFlightId(returning?.id || "");
+
+    const restoredPlan = normalizeTripPlanResponse({
+      tripId: savedTrip.id,
+      planner: "SAVED_TRIP",
+      timeBasis: "PERSISTED_SCHEDULE",
+      mainTransportMode: savedTrip.mainTransportMode,
+      localTransportMode: savedTrip.localTransportMode,
+      selectedAccommodation: savedTrip.selectedAccommodation,
+      selectedRental: savedTrip.selectedRental,
+      outboundFlight: savedTrip.outboundFlight,
+      returnFlight: savedTrip.returnFlight,
+      days: savedTrip.days || [],
+    });
+
+    backendPlanRef.current = restoredPlan;
+    setBackendPlan(restoredPlan);
+    setPlanEdits({});
+    setPlanOrders({});
+    setActiveDay(0);
+    setPlanningStage("ready");
+    setShowPlan(true);
+    setPlanViewOpen(true);
+    setPlanRevision((current) => current + 1);
+    notify("저장된 여행 일정을 불러왔습니다.");
+    return true;
+  }, []);
+
 
   return {
     setDestinationType,
@@ -7189,6 +7358,8 @@ function useTripPlanner() {
     itineraryEventCost,
 
     generate,
+
+    openSavedTrip,
 
     resetTripDraft,
   };

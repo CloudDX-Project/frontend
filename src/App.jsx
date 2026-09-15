@@ -16,6 +16,7 @@ import {
   logout,
   isLoggedIn,
 } from "./api/authApi";
+import { getMyTrips, getTrip } from "./api/tripApi";
 
 import { koreanRegions } from "./data/locationCatalog";
 import {
@@ -72,6 +73,10 @@ function App() {
    * 로그인 API 호출 중 중복 요청 방지
    */
   const [loginLoading, setLoginLoading] = useState(false);
+  const [myTripsOpen, setMyTripsOpen] = useState(false);
+  const [myTripsLoading, setMyTripsLoading] = useState(false);
+  const [myTripsError, setMyTripsError] = useState("");
+  const [myTrips, setMyTrips] = useState([]);
   useEffect(() => {
     const updateScrollTop = () => setShowScrollTop(window.scrollY > 300);
     updateScrollTop();
@@ -251,8 +256,58 @@ function App() {
     reorderDayPlan,
     itineraryEventCost,
     generate,
+    openSavedTrip,
     resetTripDraft,
   } = useTripPlanner();
+
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      setLoggedIn(false);
+      setMyTripsOpen(false);
+      setLoginOpen(true);
+      notify("로그인이 만료되었습니다. 다시 로그인해 주세요.");
+    };
+
+    window.addEventListener("tripbuddy:auth-expired", handleAuthExpired);
+    return () => window.removeEventListener("tripbuddy:auth-expired", handleAuthExpired);
+  }, [notify, setLoginOpen]);
+
+  const openMyTrips = async () => {
+    if (!loggedIn) {
+      setLoginOpen(true);
+      notify("내 일정을 보려면 먼저 로그인해 주세요.");
+      return;
+    }
+
+    setMyTripsOpen(true);
+    setMyTripsLoading(true);
+    setMyTripsError("");
+
+    try {
+      const trips = await getMyTrips();
+      setMyTrips(Array.isArray(trips) ? trips : []);
+    } catch (error) {
+      setMyTripsError(error?.message || "저장된 여행을 불러오지 못했습니다.");
+    } finally {
+      setMyTripsLoading(false);
+    }
+  };
+
+  const openMyTrip = async (tripId) => {
+    setMyTripsLoading(true);
+    setMyTripsError("");
+
+    try {
+      const trip = await getTrip(tripId);
+      openSavedTrip(trip);
+      setMyTripsOpen(false);
+      if (isMobile) setIsPlannerOpen(true);
+    } catch (error) {
+      setMyTripsError(error?.message || "여행 일정을 열지 못했습니다.");
+    } finally {
+      setMyTripsLoading(false);
+    }
+  };
   const selectedFoodLabels = foodPreferenceOptions
     .filter((option) => foodPreferences.includes(option.code))
     .map((option) => option.label);
@@ -294,7 +349,7 @@ function App() {
             {loggedIn ? "로그아웃" : "로그인"}
           </button>
         </div>
-        <button className="header-reservations" type="button" onClick={() => notify("내 예약 기능은 백엔드 연동 후 제공됩니다.")}>내 예약</button>
+        <button className="header-reservations" type="button" onClick={openMyTrips}>내 예약</button>
         <button
           className="header-button"
           onClick={() => {
@@ -419,6 +474,55 @@ function App() {
                   : "로그인"}
               </button>
             </form>
+          </section>
+        </div>
+      )}
+      {myTripsOpen && (
+        <div className="ai-modal-backdrop my-trips-backdrop" role="presentation">
+          <section
+            className="ai-modal my-trips-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="my-trips-title"
+          >
+            <button
+              type="button"
+              className="modal-close"
+              onClick={() => !myTripsLoading && setMyTripsOpen(false)}
+              aria-label="내 예약 닫기"
+            >
+              ×
+            </button>
+            <p>TripBuddy · MY TRIPS</p>
+            <h3 id="my-trips-title">저장된 여행 일정</h3>
+            <span>이전에 만든 일정을 불러와 날짜별 동선과 예약 정보를 확인하세요.</span>
+
+            {myTripsLoading && myTrips.length === 0 ? (
+              <div className="my-trips-status">여행 일정을 불러오고 있어요.</div>
+            ) : myTripsError ? (
+              <div className="my-trips-status is-error">{myTripsError}</div>
+            ) : myTrips.length === 0 ? (
+              <div className="my-trips-status">아직 저장된 여행이 없습니다.</div>
+            ) : (
+              <div className="my-trips-list">
+                {myTrips.map((trip) => (
+                  <article key={trip.id} className="my-trip-card">
+                    <div>
+                      <small>{trip.startDate} – {trip.endDate}</small>
+                      <h4>{trip.destination} 여행</h4>
+                      <p>{trip.departure} 출발 · {trip.peopleCount}명 · {(trip.days || []).length}일 일정</p>
+                    </div>
+                    <button
+                      type="button"
+                      disabled={myTripsLoading}
+                      onClick={() => openMyTrip(trip.id)}
+                    >
+                      일정 보기 →
+                    </button>
+                  </article>
+                ))}
+              </div>
+            )}
           </section>
         </div>
       )}

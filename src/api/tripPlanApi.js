@@ -1,4 +1,4 @@
-import { apiClient } from "./apiClient";
+import { apiClient } from "./apiClient.js";
 
 
 const ITEM_ICON = {
@@ -209,7 +209,8 @@ function normalizePlanEvent(
 
   const backendStartTime =
     dateTimeToTime(
-      event?.startAt,
+      event?.startAt ??
+      event?.startTime,
     );
 
   const time =
@@ -225,15 +226,19 @@ function normalizePlanEvent(
    * ==============================
    */
 
+  const rawStayMinutes =
+    event?.stayMinutes ??
+    event?.durationMinutes ??
+    (
+      event?.durationSeconds == null
+        ? null
+        : Number(event.durationSeconds) / 60
+    );
+
   const backendStayMinutes =
-    Number.isFinite(
-      Number(
-        event?.stayMinutes,
-      ),
-    )
-      ? Number(
-          event.stayMinutes,
-        )
+    rawStayMinutes != null &&
+    Number.isFinite(Number(rawStayMinutes))
+      ? Number(rawStayMinutes)
       : null;
 
 
@@ -278,17 +283,19 @@ function normalizePlanEvent(
    * ==============================
    */
 
+  const rawTravelMinutes =
+    event?.travelMinutes ??
+    event?.moveMinutes ??
+    (
+      event?.travelSeconds == null
+        ? null
+        : Number(event.travelSeconds) / 60
+    );
+
   const backendTravelMinutes =
-    Number.isFinite(
-      Number(
-        event?.travelMinutes ??
-        event?.moveMinutes,
-      ),
-    )
-      ? Number(
-          event?.travelMinutes ??
-          event?.moveMinutes,
-        )
+    rawTravelMinutes != null &&
+    Number.isFinite(Number(rawTravelMinutes))
+      ? Math.ceil(Number(rawTravelMinutes))
       : null;
 
 
@@ -304,20 +311,20 @@ function normalizePlanEvent(
    */
 
   const latitude =
-    event?.latitude ==
+    (event?.latitude ?? event?.y) ==
     null
       ? null
       : Number(
-          event.latitude,
+          event.latitude ?? event.y,
         );
 
 
   const longitude =
-    event?.longitude ==
+    (event?.longitude ?? event?.x) ==
     null
       ? null
       : Number(
-          event.longitude,
+          event.longitude ?? event.x,
         );
 
 
@@ -505,9 +512,9 @@ const eventId =
 
 
       isLocked:
-        LOCKED_TYPES.has(
-          type,
-        ),
+        event?.isLocked == null
+          ? LOCKED_TYPES.has(type)
+          : !/^(false|0|no)$/i.test(String(event.isLocked)),
 
       isGeographical:
         hasCoordinates,
