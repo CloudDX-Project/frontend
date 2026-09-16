@@ -69,6 +69,23 @@ export function createContentApi({ client = apiClient } = {}) {
         async () => normalizeRestaurantDetail(mockRestaurantDetail({ ...request, placeId })),
       );
     },
+
+    /** 식당 상세와 동일한 UI 모델을 사용하는 카페 상세 조회. */
+    async getCafeDetail(request, { signal } = {}) {
+      const placeId = request.placeId || request.id || `lookup-${request.name || 'cafe'}`;
+      return withMockFallback(
+        async () => normalizeRestaurantDetail(await client.request(API_ENDPOINTS.tourism.cafeDetail(placeId), {
+          method: 'GET',
+          query: { name: request.name, latitude: request.latitude, longitude: request.longitude },
+          signal,
+        })),
+        async () => normalizeRestaurantDetail({
+          ...mockRestaurantDetail({ ...request, placeId }),
+          category: '카페·디저트',
+          sourceLabel: 'TripBuddy 시연용 카페 상세 데이터',
+        }),
+      );
+    },
   };
 }
 

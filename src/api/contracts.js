@@ -262,41 +262,42 @@
 
 export const API_ENDPOINTS = Object.freeze({
   locations: {
-    regions: '/api/v1/locations/regions',
-    districts: (regionCode) => `/api/v1/locations/regions/${encodeURIComponent(regionCode)}/districts`,
-    search: '/api/v1/locations/search',
-    geocode: '/api/v1/locations/geocode',
+    regions: '/api/locations/regions',
+    districts: (regionCode) => `/api/locations/regions/${encodeURIComponent(regionCode)}/districts`,
+    search: '/api/locations/search',
+    geocode: '/api/locations/geocode',
   },
   journey: {
-    options: '/api/v1/journey-options',
+    options: '/api/journey-options',
   },
   routing: {
-    route: '/api/v1/routing/route',
+    route: '/api/routing/route',
   },
   tourism: {
-    spots: '/api/v1/tourism/spots',
-    restaurantEligibility: '/api/v1/restaurants/eligibility',
-    restaurants: '/api/v1/restaurants/search',
-    restaurantDetail: (placeId) => `/api/v1/restaurants/${encodeURIComponent(placeId)}`,
+    spots: '/api/tourism/spots',
+    restaurantEligibility: '/api/restaurants/eligibility',
+    restaurants: '/api/restaurants/search',
+    restaurantDetail: (placeId) => `/api/restaurants/${encodeURIComponent(placeId)}`,
+    cafeDetail: (placeId) => `/api/cafes/${encodeURIComponent(placeId)}`,
   },
   offers: {
-    flights: '/api/v1/offers/flights',
-    ktx: '/api/v1/offers/ktx',
-    ferries: '/api/v1/offers/ferries',
-    lodging: '/api/v1/offers/lodging',
-    rentalCars: '/api/v1/offers/rental-cars',
+    flights: '/api/offers/flights',
+    ktx: '/api/offers/ktx',
+    ferries: '/api/offers/ferries',
+    lodging: '/api/offers/lodging',
+    rentalCars: '/api/offers/rental-cars',
   },
   costs: {
-    estimate: '/api/v1/costs/estimate',
+    estimate: '/api/costs/estimate',
   },
   fuel: {
-    average: '/api/v1/fuel-prices/average',
+    average: '/api/fuel-prices/average',
   },
   plans: {
-    generate: '/api/v1/trips/plans',
-    status: (planId) => `/api/v1/trips/plans/${encodeURIComponent(planId)}`,
-    recalculate: (planId) => `/api/v1/trips/plans/${encodeURIComponent(planId)}/recalculate`,
-    share: (planId) => `/api/v1/trips/plans/${encodeURIComponent(planId)}/share`,
+    generate: '/api/trips/plans',
+    status: (planId) => `/api/trips/plans/${encodeURIComponent(planId)}`,
+    recalculate: (planId) => `/api/trips/plans/${encodeURIComponent(planId)}/recalculate`,
+    share: (planId) => `/api/trips/plans/${encodeURIComponent(planId)}/share`,
   },
 });
 

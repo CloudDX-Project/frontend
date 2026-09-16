@@ -2342,3 +2342,27 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
     width: 100%;
   }
 }
+
+
+/* Restaurant/Cafe detail modal usability fixes */
+.restaurant-detail-modal{height:min(760px,calc(100dvh - 48px));min-height:0}
+.restaurant-detail-hero{min-height:0;height:100%}
+.restaurant-detail-content{align-content:start;min-height:0;max-height:100%;overscroll-behavior:contain;scrollbar-gutter:stable}
+.restaurant-detail-heading{min-width:0}
+.restaurant-detail-place-links{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.restaurant-detail-place-links a{display:inline-flex;min-height:32px;align-items:center;justify-content:center;gap:5px;padding:0 10px;border:1px solid #b9dcd4;border-radius:9px;background:#eef8f4;color:#0b756c;font-size:9px;font-weight:850;text-decoration:none;white-space:nowrap}
+.restaurant-detail-place-links a:hover{border-color:#68b8aa;background:#e2f4ee}
+.restaurant-menu-section{min-height:0}
+.restaurant-menu-list{max-height:min(310px,38dvh);overflow-y:auto;overscroll-behavior:contain;padding-right:6px;scrollbar-gutter:stable}
+.restaurant-menu-list article{align-items:flex-start}
+.restaurant-menu-list article>div{flex:1;min-width:0}
+.restaurant-menu-list article b{flex-wrap:wrap;min-width:0;overflow-wrap:anywhere;word-break:keep-all;line-height:1.45}
+.restaurant-menu-list article p{overflow-wrap:anywhere;word-break:keep-all;line-height:1.5}
+.restaurant-menu-list article>strong{padding-top:1px}
+.restaurant-menu-list::-webkit-scrollbar,.restaurant-detail-content::-webkit-scrollbar{width:7px}
+.restaurant-menu-list::-webkit-scrollbar-thumb,.restaurant-detail-content::-webkit-scrollbar-thumb{border-radius:999px;background:#c7dcd6}
+.restaurant-menu-list::-webkit-scrollbar-track,.restaurant-detail-content::-webkit-scrollbar-track{background:transparent}
+.plan-fullscreen.mobile-preview .restaurant-detail-modal{height:100%;max-height:100%}
+.plan-fullscreen.mobile-preview .restaurant-detail-hero{height:190px;min-height:190px}
+.plan-fullscreen.mobile-preview .restaurant-menu-list{max-height:280px}
+@media(max-width:700px){.restaurant-detail-modal{height:min(760px,calc(100dvh - 24px));max-height:calc(100dvh - 24px)}.restaurant-detail-hero{height:210px;min-height:210px}.restaurant-menu-list{max-height:300px}.restaurant-detail-place-links a{min-height:34px;font-size:9px}}

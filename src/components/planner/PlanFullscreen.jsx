@@ -51,6 +51,7 @@ function PlanFullscreen({
   const [mobilePreview, setMobilePreview] = useState(false);
   const [orderRecalculating, setOrderRecalculating] = useState(false);
   const [restaurantDetail, setRestaurantDetail] = useState(null);
+  const [restaurantDetailType, setRestaurantDetailType] = useState("RESTAURANT");
   const [restaurantLoading, setRestaurantLoading] = useState(false);
   const [restaurantError, setRestaurantError] = useState("");
   const placeOptions = getPlaceAlternatives(destinationLocation, placePicker?.item);
@@ -158,22 +159,33 @@ function PlanFullscreen({
       window.setTimeout(() => setOrderRecalculating(false), 450);
     }, 750);
   };
-  const openRestaurantDetail = async ({ name, metadata = {} }) => {
+  const openRestaurantDetail = async ({ name, metadata = {}, placeType = "RESTAURANT" }) => {
+    const normalizedPlaceType = placeType === "CAFE" ? "CAFE" : "RESTAURANT";
+    setRestaurantDetailType(normalizedPlaceType);
     setRestaurantDetail({ name });
     setRestaurantLoading(true);
     setRestaurantError("");
+
+    const request = {
+      placeId: metadata.placeId || metadata.externalId || metadata.referenceId || metadata.id,
+      name,
+      address: metadata.address,
+      latitude: metadata.latitude,
+      longitude: metadata.longitude,
+      representativeMenu: metadata.representativeMenu,
+    };
+
     try {
-      const detail = await contentApi.getRestaurantDetail({
-        placeId: metadata.placeId || metadata.externalId || metadata.id,
-        name,
-        address: metadata.address,
-        latitude: metadata.latitude,
-        longitude: metadata.longitude,
-        representativeMenu: metadata.representativeMenu,
-      });
+      const detail = normalizedPlaceType === "CAFE"
+        ? await contentApi.getCafeDetail(request)
+        : await contentApi.getRestaurantDetail(request);
       setRestaurantDetail(detail);
     } catch {
-      setRestaurantError("식당 상세 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.");
+      setRestaurantError(
+        normalizedPlaceType === "CAFE"
+          ? "카페 상세 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요."
+          : "식당 상세 정보를 불러오지 못했어요. 잠시 후 다시 시도해 주세요.",
+      );
     } finally {
       setRestaurantLoading(false);
     }
@@ -361,17 +373,24 @@ function PlanFullscreen({
                 const liveBookingUrl = /^https?:\/\//i.test(metadata.bookingUrl || "")
                   ? metadata.bookingUrl
                   : null;
-                const isRestaurant = /🍽|🍜|☕|🍴|🍲|🥘|🍱|🍣|🍖|🍗|🥩|🍛|🍚/.test(icon || "")
-                  || /식당|국수|스시|초밥|고기|카페|김밥|돈가스|쌈밥|흑돼지|전복/.test(name || "");
+                const backendPlaceType = String(metadata.type || "").toUpperCase();
+                const isCafe = backendPlaceType === "CAFE"
+                  || (!backendPlaceType && (/☕/.test(icon || "") || /카페|커피|디저트|베이커리/.test(name || "")));
+                const isRestaurant = backendPlaceType === "RESTAURANT"
+                  || (!backendPlaceType && /🍽|🍜|🍴|🍲|🥘|🍱|🍣|🍖|🍗|🥩|🍛|🍚/.test(icon || ""))
+                  || (!backendPlaceType && /식당|국수|스시|초밥|고기|김밥|돈가스|쌈밥|흑돼지|전복/.test(name || ""));
+                const isDiningPlace = isRestaurant || isCafe;
                 const eventType = isRentalStop
                   ? "이동 준비"
-                  : isRestaurant
-                    ? "식사"
-                    : /체크인|체크아웃|호텔|숙소|짐 정리/.test(name || "")
-                      ? "숙소"
-                      : /공항|항공|탑승|역·터미널/.test(name || "")
-                        ? "교통"
-                        : "관광";
+                  : isCafe
+                    ? "카페"
+                    : isRestaurant
+                      ? "식사"
+                      : /체크인|체크아웃|호텔|숙소|짐 정리/.test(name || "")
+                        ? "숙소"
+                        : /공항|항공|탑승|역·터미널/.test(name || "")
+                          ? "교통"
+                          : "관광";
                 return (
                   <Draggable
                     key={eventId}
@@ -399,14 +418,14 @@ function PlanFullscreen({
                         <em>{eventType} · {stay}</em>
                       </small>
                       <div className="stop-title-row">
-                        {isRestaurant ? (
+                        {isDiningPlace ? (
                           <button
                             type="button"
                             className="restaurant-detail-trigger"
                             onPointerDown={(event) => event.stopPropagation()}
                             onClick={(event) => {
                               event.stopPropagation();
-                              openRestaurantDetail({ name, metadata });
+                              openRestaurantDetail({ name, metadata, placeType: isCafe ? "CAFE" : "RESTAURANT" });
                             }}
                             aria-label={`${name} 메뉴와 후기 보기`}
                           >
@@ -555,8 +574,8 @@ function PlanFullscreen({
         <div className="restaurant-detail-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setRestaurantDetail(null);
         }}>
-          <section className="restaurant-detail-modal" role="dialog" aria-modal="true" aria-label={`${restaurantDetail.name} 식당 상세 정보`}>
-            <button type="button" className="restaurant-detail-close" onClick={() => setRestaurantDetail(null)} aria-label="식당 상세 닫기"><X size={20} /></button>
+          <section className="restaurant-detail-modal" role="dialog" aria-modal="true" aria-label={`${restaurantDetail.name} ${restaurantDetailType === "CAFE" ? "카페" : "식당"} 상세 정보`}>
+            <button type="button" className="restaurant-detail-close" onClick={() => setRestaurantDetail(null)} aria-label={`${restaurantDetailType === "CAFE" ? "카페" : "식당"} 상세 닫기`}><X size={20} /></button>
             {restaurantLoading ? (
               <div className="restaurant-detail-loading" role="status"><i /><i /><i /><p>{restaurantDetail.name}의 메뉴와 후기를 불러오고 있어요.</p></div>
             ) : restaurantError ? (
@@ -568,11 +587,28 @@ function PlanFullscreen({
                     src={restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]}
                     alt={`${restaurantDetail.name} 대표 이미지`}
                   />
-                  <span>{restaurantDetail.category || "추천 식당"}</span>
+                  <span>{restaurantDetail.category || (restaurantDetailType === "CAFE" ? "추천 카페" : "추천 식당")}</span>
                 </div>
                 <div className="restaurant-detail-content">
                   <header>
-                    <div><small>TRIPBUDDY DINING GUIDE</small><h2>{restaurantDetail.name}</h2><p>{restaurantDetail.address}</p></div>
+                    <div className="restaurant-detail-heading">
+                      <small>TRIPBUDDY DINING GUIDE</small>
+                      <h2>{restaurantDetail.name}</h2>
+                      <p>{restaurantDetail.address}</p>
+                      <div className="restaurant-detail-place-links">
+                        {/^https?:\/\//i.test(restaurantDetail.placeUrl || "") && (
+                          <a href={restaurantDetail.placeUrl} target="_blank" rel="noreferrer noopener">
+                            <MapPin size={14} /> 카카오플레이스 <ExternalLink size={12} />
+                          </a>
+                        )}
+                        {!/^https?:\/\//i.test(restaurantDetail.placeUrl || "") &&
+                          /^https?:\/\//i.test(restaurantDetail.naverMapUrl || "") && (
+                            <a href={restaurantDetail.naverMapUrl} target="_blank" rel="noreferrer noopener">
+                              <MapPin size={14} /> 네이버 지도 <ExternalLink size={12} />
+                            </a>
+                          )}
+                      </div>
+                    </div>
                     {restaurantDetail.rating != null && <strong><Star size={15} fill="currentColor" /> {restaurantDetail.rating.toFixed(1)} <small>후기 {restaurantDetail.reviewCount?.toLocaleString("ko-KR")}개</small></strong>}
                   </header>
                   <section className="restaurant-menu-section">
@@ -590,18 +626,10 @@ function PlanFullscreen({
                     <div>{restaurantDetail.reviewKeywords?.map((keyword) => <span key={keyword}>#{keyword}</span>)}</div>
                   </section>
                   <footer>
-                    <div><b>{restaurantDetail.businessHours}</b><small>{restaurantDetail.sourceLabel} · {restaurantDetail.isMock ? "운영 연동 전 참고 정보" : "백엔드 최신 동기화 정보"}</small></div>
-                    {/^https:\/\//i.test(restaurantDetail.placeUrl || "") && (
-                      <a href={restaurantDetail.placeUrl} target="_blank" rel="noreferrer noopener">
-                        <MapPin size={15} /> 카카오플레이스에서 확인 <ExternalLink size={13} />
-                      </a>
-                    )}
-                    {!/^https:\/\//i.test(restaurantDetail.placeUrl || "") &&
-                      /^https:\/\//i.test(restaurantDetail.naverMapUrl || "") && (
-                        <a href={restaurantDetail.naverMapUrl} target="_blank" rel="noreferrer noopener">
-                          <MapPin size={15} /> 네이버 지도에서 확인 <ExternalLink size={13} />
-                        </a>
-                      )}
+                    <div>
+                      <b>{restaurantDetail.businessHours || "영업시간은 카카오플레이스에서 확인해 주세요."}</b>
+                      <small>{restaurantDetail.sourceLabel || (restaurantDetail.isMock ? "시연용 상세 정보" : "백엔드 상세 정보")}</small>
+                    </div>
                   </footer>
                 </div>
               </>
