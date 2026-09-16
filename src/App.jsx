@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Car,
   ChevronDown,
@@ -55,34 +55,67 @@ import CarDetailsStep from "./components/planner/CarDetailsStep";
 import RentalComparisonModal from "./components/planner/RentalComparisonModal";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
+import { flightClockMinutes, orderFlights } from "./utils/flightRanking";
 import "./components/planner/flight-booking-modal.css";
 
 const quickAccessIcons = { sparkles: Sparkles, plane: Plane, home: Home, ticket: Ticket, car: Car, smartphone: Smartphone };
 
-const flightClockMinutes = (value) => {
-  const [hour, minute] = String(value || "")
-    .slice(11, 16)
-    .split(":")
-    .map(Number);
-
-  return Number.isFinite(hour) && Number.isFinite(minute)
-    ? hour * 60 + minute
-    : null;
-};
-
-const flightOfferFor = (flight, flights) => {
+const flightOfferFor = (flight, flights, leg) => {
   const price = Number(flight?.estimatedPricePerPerson) || 0;
   if (!price) return null;
 
-  const departureMinutes = flightClockMinutes(flight.departureTime);
-  const isPreferredTimeDeal = departureMinutes >= 9 * 60 + 30 && departureMinutes <= 10 * 60 + 59;
-  const priceRank = [...flights]
-    .sort((a, b) => (Number(a.estimatedPricePerPerson) || 0) - (Number(b.estimatedPricePerPerson) || 0))
-    .findIndex((item) => item.id === flight.id);
+  const pricedFlights = flights.filter(
+    (item) => Number(item?.estimatedPricePerPerson) > 0,
+  );
+  const preferredMinutes = leg === "return" ? 17 * 60 : 10 * 60;
+  const preferredWindow = leg === "return" ? 2 * 60 : 90;
+  const preferredFlight = pricedFlights
+    .filter((item) => {
+      const minutes = flightClockMinutes(item.departureTime);
+      return (
+        Number.isFinite(minutes) &&
+        Math.abs(minutes - preferredMinutes) <= preferredWindow
+      );
+    })
+    .sort((a, b) => {
+      const timeGap =
+        Math.abs(flightClockMinutes(a.departureTime) - preferredMinutes) -
+        Math.abs(flightClockMinutes(b.departureTime) - preferredMinutes);
+      return (
+        timeGap ||
+        (Number(a.estimatedPricePerPerson) || 0) -
+          (Number(b.estimatedPricePerPerson) || 0)
+      );
+    })[0];
+  const dealFlights = [];
 
-  if (!isPreferredTimeDeal && (priceRank < 0 || priceRank > 2)) return null;
+  if (preferredFlight) dealFlights.push(preferredFlight);
 
-  const discount = isPreferredTimeDeal ? 22 : [17, 14, 11][priceRank] || 11;
+  [...pricedFlights]
+    .sort(
+      (a, b) =>
+        (Number(a.estimatedPricePerPerson) || 0) -
+        (Number(b.estimatedPricePerPerson) || 0),
+    )
+    .forEach((item) => {
+      if (
+        dealFlights.length < 4 &&
+        !dealFlights.some((dealFlight) => dealFlight.id === item.id)
+      ) {
+        dealFlights.push(item);
+      }
+    });
+
+  const dealIndex = dealFlights.findIndex((item) => item.id === flight.id);
+  if (dealIndex < 0) return null;
+
+  const isPreferredTimeDeal = preferredFlight?.id === flight.id;
+  const priceDealIndex = isPreferredTimeDeal
+    ? 0
+    : Math.max(0, dealIndex - (preferredFlight ? 1 : 0));
+  const discount = isPreferredTimeDeal
+    ? 22
+    : [17, 14, 11, 9][priceDealIndex] || 9;
   const originalPrice = Math.ceil(price / (1 - discount / 100) / 100) * 100;
 
   return {
@@ -246,7 +279,6 @@ function App() {
     selectedReturnFlight,
     selectedFlight,
     selectedRental,
-    saleFirstFlights,
     rentalCatalog,
     selectedStay,
     dates,
@@ -302,9 +334,29 @@ function App() {
     flightOriginAirports.find((airport) => airport.code === origin) ||
     flightOriginAirports[0];
 
-  const flightDealCount = saleFirstFlights.filter(
-    (flight) => flightOfferFor(flight, saleFirstFlights),
-  ).length;
+  const flightOffers = useMemo(
+    () =>
+      new Map(
+        displayFlights
+          .map((flight) => [
+            flight.id,
+            flightOfferFor(flight, displayFlights, flightPickerLeg),
+          ])
+          .filter(([, offer]) => Boolean(offer)),
+      ),
+    [displayFlights, flightPickerLeg],
+  );
+
+  const orderedDisplayFlights = useMemo(() => {
+    return orderFlights({
+      flights: displayFlights,
+      sort: flightSort,
+      leg: flightPickerLeg,
+      dealIds: new Set(flightOffers.keys()),
+    });
+  }, [displayFlights, flightOffers, flightPickerLeg, flightSort]);
+
+  const flightDealCount = flightOffers.size;
 
   useEffect(() => {
     const handleAuthExpired = () => {
@@ -954,77 +1006,113 @@ function App() {
                   />
                 ) : null}
                 {transport === "FLIGHT" && (
-                  <>
-                    <section className="booking-section">
+                    <section className="booking-section flight-selection-section">
                       <div className="booking-heading">
                         <div>
-                          <p>왕복 항공편 선택</p>
+                          <p>{selectedFlight ? "선택한 항공편" : "왕복 항공편 선택"}</p>
                           <small>
-                            {dateLabel(startDate)} 가는 편 · {dateLabel(endDate)}{" "}
-                            오는 편을 각각 고르면 실제 비행시간에 맞춰 일정이
-                            조율돼요.
+                            {selectedFlight
+                              ? `${dateLabel(startDate)} 출발 · ${dateLabel(endDate)} 도착`
+                              : `${dateLabel(startDate)} 가는 편 · ${dateLabel(endDate)} 오는 편을 선택해 주세요.`}
                           </small>
                         </div>
                         <em>
                           {selectedFlight
-                            ? `${selectedFlight.origin} → ${destinationAirport} 왕복 선택됨`
+                            ? "왕복 · 1인 기준"
                             : `${selectedOutboundFlight ? "오는 편 선택 필요" : "가는 편 미선택"}`}
                         </em>
                       </div>
-                      <div className="booking-summary flight-summary">
-                        <div>
-                          <span>✈</span>
-                          <div>
-                            <small>
-                              {selectedFlight
-                                ? `${departureLocation?.detail || selectedFlight.origin} ↔ ${destinationLocation.detail} · 왕복`
-                                : "가는 편과 오는 편을 각각 선택"}
-                            </small>
-                            <b>
-                              {selectedFlight
-                                ? `${selectedOutboundFlight.airline} ${selectedFlight.out} · ${selectedReturnFlight.airline} ${selectedFlight.back}`
-                                : selectedOutboundFlight
-                                  ? `${selectedOutboundFlight.airline} 가는 편 선택 완료 · 오는 편을 골라주세요`
-                                  : "AI가 두 편의 항공권을 따로 비교해 드릴게요"}
-                            </b>
+                      {selectedFlight ? (
+                        <div className="flight-confirmation-card">
+                          <div className="flight-confirmation-legs">
+                            <article>
+                              <header>
+                                <span>가는 편</span>
+                                <small>{dateLabel(startDate)}</small>
+                              </header>
+                              <div className="flight-confirmation-time">
+                                <strong>{selectedFlight.out.split(" → ")[0]}</strong>
+                                <i aria-hidden="true">→</i>
+                                <strong>{selectedFlight.out.split(" → ")[1]}</strong>
+                              </div>
+                              <div className="flight-confirmation-airports">
+                                <span>{selectedFlight.origin}</span>
+                                <b>
+                                  {selectedOutboundFlight.airline}
+                                  {selectedOutboundFlight.flightNumber || selectedOutboundFlight.code
+                                    ? ` · ${selectedOutboundFlight.flightNumber || selectedOutboundFlight.code}`
+                                    : ""}
+                                </b>
+                                <span>{destinationAirport}</span>
+                              </div>
+                            </article>
+                            <article>
+                              <header>
+                                <span>오는 편</span>
+                                <small>{dateLabel(endDate)}</small>
+                              </header>
+                              <div className="flight-confirmation-time">
+                                <strong>{selectedFlight.back.split(" → ")[0]}</strong>
+                                <i aria-hidden="true">→</i>
+                                <strong>{selectedFlight.back.split(" → ")[1]}</strong>
+                              </div>
+                              <div className="flight-confirmation-airports">
+                                <span>{destinationAirport}</span>
+                                <b>
+                                  {selectedReturnFlight.airline}
+                                  {selectedReturnFlight.flightNumber || selectedReturnFlight.code
+                                    ? ` · ${selectedReturnFlight.flightNumber || selectedReturnFlight.code}`
+                                    : ""}
+                                </b>
+                                <span>{selectedFlight.origin}</span>
+                              </div>
+                            </article>
                           </div>
+                          <footer>
+                            <div>
+                              <small>예상 왕복 총액</small>
+                              <strong>{money(selectedFlight.fare)}원</strong>
+                              <span>1인 기준</span>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (showPlan) setQuickEditTarget("flight");
+                                setFlightPickerLeg("outbound");
+                                setFlightOpen(true);
+                              }}
+                            >
+                              항공편 변경 <span aria-hidden="true">→</span>
+                            </button>
+                          </footer>
                         </div>
-                        {selectedFlight && (
-                          <strong>
-                            {money(selectedFlight.fare)}원<small>1인 왕복</small>
-                          </strong>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (showPlan) setQuickEditTarget("flight");
-                            setFlightPickerLeg(
-                              selectedOutboundFlight ? "return" : "outbound",
-                            );
-                            setFlightOpen(true);
-                          }}
-                        >
-                          {selectedFlight
-                            ? "왕복편 변경"
-                            : selectedOutboundFlight
-                              ? "오는 편 고르기"
-                              : "가는 편 고르기"}{" "}
-                          →
-                        </button>
-                      </div>
+                      ) : (
+                        <div className="booking-summary flight-summary">
+                          <div>
+                            <span>✈</span>
+                            <div>
+                              <small>가는 편과 오는 편을 각각 선택</small>
+                              <b>
+                                {selectedOutboundFlight
+                                  ? `${selectedOutboundFlight.airline} 가는 편 선택 완료 · 오는 편을 골라주세요`
+                                  : "여행 일정에 맞는 항공편을 비교해 보세요"}
+                              </b>
+                            </div>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFlightPickerLeg(
+                                selectedOutboundFlight ? "return" : "outbound",
+                              );
+                              setFlightOpen(true);
+                            }}
+                          >
+                            {selectedOutboundFlight ? "오는 편 고르기" : "가는 편 고르기"} →
+                          </button>
+                        </div>
+                      )}
                     </section>
-                    <TripTimeSummary
-                      transportLabel={transportName(transport, outboundOptions)}
-                      schedule={tripSchedule}
-                      startTime={scheduledStartTime}
-                      arrivalTime={scheduledArrivalTime}
-                      endTime={scheduledEndTime}
-                      onEdit={() => {
-                        chooseTransportMode(transport);
-                        setTransportModalOpen(false);
-                      }}
-                    />
-                  </>
                 )}
                 {localTransport === "RENTAL" && (
                   <section className="rental-section">
@@ -1743,9 +1831,14 @@ function App() {
                     <button
                       type="button"
                       key={option.id}
-                      className={option.id === "FLIGHT" ? "option-highlight" : ""}
+                      className={`travel-mode-card mode-${option.id.toLowerCase()} ${
+                        option.id === "FLIGHT" ? "option-highlight" : ""
+                      }`}
                       onClick={() => chooseTransportMode(option.id)}
                     >
+                      {option.id === "FLIGHT" && (
+                        <em className="travel-mode-badge">추천</em>
+                      )}
                       <i>{option.icon}</i>
                       <b>{option.title}</b>
                       <small>{option.text}</small>
@@ -1941,13 +2034,6 @@ function App() {
                 </select>
               </label>
             </div>
-            <p className="flight-route-note">
-              <b>{selectedOriginAirport.name} ({origin})</b>
-              {" · "}
-              {flightPickerLeg === "outbound"
-                ? `${selectedOriginAirport.city}에서 제주로 향하는 실제 직항편이에요.`
-                : `제주에서 ${selectedOriginAirport.city}(으)로 돌아오는 실제 직항편이에요.`}
-            </p>
             <p className="picker-date">
               {dateLabel(
                 flightPickerLeg === "outbound"
@@ -1985,23 +2071,19 @@ function App() {
                     다시 조회
                   </button>
                 </div>
-              ) : displayFlights.length === 0 ? (
+              ) : orderedDisplayFlights.length === 0 ? (
                 <div className="flight-loading">
                   조회 가능한 항공편이 없습니다.
                 </div>
               ) : (
-                displayFlights.map((flight) => {
+                orderedDisplayFlights.map((flight) => {
                   const isSelected =
                     flightPickerLeg === "outbound"
                       ? flight.id === flightId
                       : flight.id ===
                         returnFlightId;
 
-                  const deal =
-                    flightOfferFor(
-                      flight,
-                      displayFlights,
-                    );
+                  const deal = flightOffers.get(flight.id) || null;
 
                   const departureTime =
                     flight.departureTime?.slice(

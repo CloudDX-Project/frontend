@@ -501,6 +501,47 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .flight-catalog .flight-time i { flex: 0 0 auto; color: #86a29a; font: 700 9px 'Noto Sans KR', sans-serif; }
 .flight-summary .booking-summary > div { min-width: 0; }
 
+/* 선택을 마친 왕복 항공편은 시간·노선·가격을 하나의 여정 카드로 정리합니다. */
+.flight-selection-section .booking-heading { margin-bottom: 13px; }
+.flight-selection-section .booking-heading p { color: #173f3d; font-size: 16px; font-weight: 850; letter-spacing: -.45px; }
+.flight-selection-section .booking-heading small { margin-top: 5px; color: #718b85; font-size: 10px; font-weight: 600; }
+.flight-selection-section .booking-heading em { padding: 6px 9px; border: 1px solid #d8e8e2; border-radius: 999px; background: #f7fbf9; color: #4b736c; font-size: 9px; }
+.flight-confirmation-card { overflow: hidden; border: 1px solid #c7dfd7; border-radius: 14px; background: #fff; box-shadow: 0 10px 24px rgba(24, 80, 72, .06); }
+.flight-confirmation-legs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.flight-confirmation-legs article { min-width: 0; padding: 18px 20px 17px; }
+.flight-confirmation-legs article + article { border-left: 1px solid #e1ece8; }
+.flight-confirmation-legs header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 11px; }
+.flight-confirmation-legs header span { display: inline-flex; align-items: center; gap: 5px; color: #0c7d73; font-size: 10px; font-weight: 900; }
+.flight-confirmation-legs header span::before { width: 6px; height: 6px; border-radius: 50%; background: #10a092; content: ''; }
+.flight-confirmation-legs header small { color: #829a94; font-size: 9px; font-weight: 700; }
+.flight-confirmation-time { display: grid; grid-template-columns: auto minmax(34px, 1fr) auto; align-items: center; gap: 11px; }
+.flight-confirmation-time strong { color: #173f3d; font: 850 22px/1 'Inter', 'Pretendard', 'Noto Sans KR', sans-serif; letter-spacing: -.8px; }
+.flight-confirmation-time i { position: relative; color: #2b8e84; font-size: 11px; font-style: normal; text-align: center; }
+.flight-confirmation-time i::before { position: absolute; z-index: 0; top: 50%; right: 0; left: 0; border-top: 1px solid #bcd8d0; content: ''; }
+.flight-confirmation-time i { z-index: 1; }
+.flight-confirmation-time i::after { position: absolute; z-index: -1; inset: -2px -5px; background: #fff; content: ''; }
+.flight-confirmation-airports { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; margin-top: 9px; }
+.flight-confirmation-airports span { color: #4d726c; font: 800 9px 'DM Mono', monospace; }
+.flight-confirmation-airports b { overflow: hidden; color: #78918b; font-size: 9px; font-weight: 700; text-align: center; text-overflow: ellipsis; white-space: nowrap; }
+.flight-confirmation-card > footer { display: flex; align-items: center; justify-content: space-between; gap: 18px; padding: 13px 15px 13px 20px; border-top: 1px solid #deebe7; background: #f5faf7; }
+.flight-confirmation-card > footer > div { display: flex; align-items: baseline; gap: 7px; }
+.flight-confirmation-card > footer small { color: #66847e; font-size: 9px; font-weight: 750; }
+.flight-confirmation-card > footer strong { color: #086e67; font: 900 17px 'Inter', 'Pretendard', 'Noto Sans KR', sans-serif; letter-spacing: -.55px; }
+.flight-confirmation-card > footer span { color: #8ca19c; font-size: 8px; font-weight: 700; }
+.flight-confirmation-card > footer button { min-height: 37px; padding: 0 13px; border: 1px solid #0b776f; border-radius: 8px; background: #0b776f; color: #fff; font-size: 10px; font-weight: 850; transition: background .18s ease, box-shadow .18s ease, transform .18s ease; }
+.flight-confirmation-card > footer button span { margin-left: 4px; color: inherit; font-size: 11px; }
+.flight-confirmation-card > footer button:hover { background: #075f59; box-shadow: 0 6px 14px rgba(8, 103, 95, .17); transform: translateY(-1px); }
+
+@media (max-width: 760px) {
+  .flight-confirmation-legs { grid-template-columns: 1fr; }
+  .flight-confirmation-legs article { padding: 15px 16px; }
+  .flight-confirmation-legs article + article { border-top: 1px solid #e1ece8; border-left: 0; }
+  .flight-confirmation-time strong { font-size: 19px; }
+  .flight-confirmation-card > footer { align-items: stretch; flex-direction: column; gap: 10px; padding: 13px 16px 15px; }
+  .flight-confirmation-card > footer > div { justify-content: space-between; }
+  .flight-confirmation-card > footer button { width: 100%; }
+}
+
 /* 일정·숙소 변경의 전후 차이와 사용자가 직접 추가하는 장소 입력창 */
 .stay-question { display: grid; gap: 7px; margin-left: auto; padding: 9px 10px; border: 1px solid #c8e1d8; border-radius: 9px; background: #f3fbf7; }
 .stay-question b { color: #1a736a; font-size: 10px; }
@@ -718,6 +759,56 @@ main:has(.plan-fullscreen) .booking-picker.stay-picker { z-index: 70; }
 .destination-trigger.has-basecamp .destination-split-item:nth-of-type(2) { border: 1px solid #c3e5d9; background: #f8fdf9; }
 
 @media (max-width: 760px) { .transport-question-modal { padding: 30px 22px; }.transport-question-modal > h3, .jeju-region-guide > h3 { font-size: 27px; }.jeju-region-guide { width: calc(100vw - 22px); padding: 28px 18px; }.jeju-region-guide .jeju-area-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }.jeju-region-guide .jeju-area-options button { min-height: 175px; grid-template-rows: 96px minmax(0, 1fr); }.jeju-region-guide .jeju-area-options button img { height: 96px; }.jeju-region-guide .jeju-area-options .jeju-other-option { grid-column: 1 / -1; min-height: 78px; }.jeju-custom-field > div { display: grid; }.jeju-custom-field button { min-height: 42px; } }
+
+/* 교통수단 선택은 첫눈에 비교되도록 넓은 무대와 큰 심볼을 사용합니다. */
+.ai-modal-backdrop:has(.travel-mode-options) { padding: 26px; background: radial-gradient(circle at 50% 38%, rgba(38, 130, 121, .18), transparent 40%), rgba(4, 43, 42, .65); backdrop-filter: blur(8px); }
+.transport-question-modal:has(.travel-mode-options) { width: min(920px, calc(100vw - 52px)); padding: 46px 52px 40px; overflow: hidden; border-radius: 24px; box-shadow: 0 34px 90px rgba(0, 38, 36, .42); }
+.transport-question-modal:has(.travel-mode-options)::before { position: absolute; top: 0; right: 0; left: 0; height: 4px; background: linear-gradient(90deg, #0d8b80, #70c7af 58%, #ef8a58); content: ''; }
+.transport-question-modal:has(.travel-mode-options) > p { font-size: 11px; letter-spacing: 1px; }
+.transport-question-modal:has(.travel-mode-options) > h3 { max-width: 650px; margin-top: 16px; font-size: 39px; line-height: 1.17; letter-spacing: -2.7px; }
+.transport-question-modal:has(.travel-mode-options) > span { max-width: 720px; margin-top: 13px; color: #5e7d76; font-size: 13px; line-height: 1.72; }
+.transport-question-modal:has(.travel-mode-options) .modal-close { top: 20px; right: 22px; width: 36px; height: 36px; border-color: #cde1da; color: #426f68; font-size: 22px; transition: .18s ease; }
+.transport-question-modal:has(.travel-mode-options) .modal-close:hover { border-color: #0d8479; background: #eef9f5; color: #096e66; transform: rotate(5deg); }
+.transport-question-modal .travel-mode-options { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 14px; margin-top: 28px; }
+.transport-question-modal .travel-mode-options .travel-mode-card { position: relative; min-height: 184px; align-content: center; gap: 9px; overflow: hidden; padding: 25px 14px 20px; border-color: #cfe2dc; border-radius: 18px; background: linear-gradient(155deg, #fff 30%, #f7fbf9); box-shadow: 0 8px 20px rgba(21, 78, 70, .04); isolation: isolate; transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease; animation: travelModeCardIn .38s ease both; }
+.transport-question-modal .travel-mode-options .travel-mode-card:nth-child(2) { animation-delay: .05s; }
+.transport-question-modal .travel-mode-options .travel-mode-card:nth-child(3) { animation-delay: .1s; }
+.transport-question-modal .travel-mode-options .travel-mode-card:nth-child(4) { animation-delay: .15s; }
+.transport-question-modal .travel-mode-options .travel-mode-card::after { position: absolute; z-index: -1; right: -42px; bottom: -55px; width: 120px; height: 120px; border-radius: 50%; background: rgba(36, 155, 141, .06); content: ''; transition: transform .25s ease; }
+.transport-question-modal .travel-mode-options .travel-mode-card:hover { border-color: #178f84; background: linear-gradient(155deg, #f8fffc, #edf9f4); box-shadow: 0 16px 30px rgba(10, 102, 93, .14); transform: translateY(-5px); }
+.transport-question-modal .travel-mode-options .travel-mode-card:hover::after { transform: scale(1.35); }
+.transport-question-modal .travel-mode-options .travel-mode-card:focus-visible { outline: 3px solid rgba(12, 139, 127, .24); outline-offset: 3px; }
+.transport-question-modal .travel-mode-options .travel-mode-card > i { width: 66px; height: 66px; margin-bottom: 3px; border: 1px solid rgba(16, 131, 120, .10); border-radius: 21px; background: linear-gradient(145deg, #dff5ed, #f5fbf8); box-shadow: 0 8px 18px rgba(15, 114, 103, .10); font-size: 31px; transition: transform .2s ease; }
+.transport-question-modal .travel-mode-options .travel-mode-card:hover > i { transform: scale(1.07) rotate(-2deg); }
+.transport-question-modal .travel-mode-options .travel-mode-card > b { color: #194c48; font-size: 16px; font-weight: 900; letter-spacing: -.45px; }
+.transport-question-modal .travel-mode-options .travel-mode-card > small { max-width: 135px; color: #698881; font-size: 10px; font-weight: 650; line-height: 1.5; }
+.transport-question-modal .travel-mode-options .mode-car > i { background: linear-gradient(145deg, #e2f5ee, #f8fcfa); }
+.transport-question-modal .travel-mode-options .mode-ktx > i { background: linear-gradient(145deg, #e9f0fa, #f8fbff); }
+.transport-question-modal .travel-mode-options .mode-flight > i { background: linear-gradient(145deg, #daf5ee, #f3fffb); color: #087d72; }
+.transport-question-modal .travel-mode-options .mode-bus > i { background: linear-gradient(145deg, #fff0df, #fffbf5); }
+.transport-question-modal .travel-mode-options .option-highlight { border-color: #7ec9ba; background: linear-gradient(155deg, #f7fffb, #eaf8f3); box-shadow: 0 12px 28px rgba(9, 118, 106, .11); }
+.travel-mode-badge { position: absolute; top: 11px; right: 11px; padding: 5px 8px; border-radius: 999px; background: #0b8277; color: #fff; font-size: 8px; font-style: normal; font-weight: 900; letter-spacing: .2px; box-shadow: 0 5px 12px rgba(8, 111, 102, .2); }
+.transport-question-modal:has(.travel-mode-options) .modal-back { margin-top: 21px; padding: 8px 2px; font-size: 10px; }
+@keyframes travelModeCardIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+@media (max-width: 760px) {
+  .ai-modal-backdrop:has(.travel-mode-options) { padding: 12px; }
+  .transport-question-modal:has(.travel-mode-options) { width: min(620px, calc(100vw - 24px)); padding: 31px 20px 24px; border-radius: 20px; }
+  .transport-question-modal:has(.travel-mode-options) > p { padding-right: 36px; font-size: 9px; }
+  .transport-question-modal:has(.travel-mode-options) > h3 { max-width: 500px; margin-top: 12px; font-size: 28px; letter-spacing: -1.8px; }
+  .transport-question-modal:has(.travel-mode-options) > span { margin-top: 9px; font-size: 10px; line-height: 1.6; }
+  .transport-question-modal:has(.travel-mode-options) .modal-close { top: 14px; right: 14px; width: 32px; height: 32px; }
+  .transport-question-modal .travel-mode-options { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 9px; margin-top: 19px; }
+  .transport-question-modal .travel-mode-options .travel-mode-card { min-height: 142px; gap: 6px; padding: 18px 8px 13px; border-radius: 14px; }
+  .transport-question-modal .travel-mode-options .travel-mode-card > i { width: 52px; height: 52px; border-radius: 17px; font-size: 25px; }
+  .transport-question-modal .travel-mode-options .travel-mode-card > b { font-size: 13px; }
+  .transport-question-modal .travel-mode-options .travel-mode-card > small { font-size: 8px; }
+  .travel-mode-badge { top: 7px; right: 7px; padding: 4px 6px; font-size: 7px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .transport-question-modal .travel-mode-options .travel-mode-card { animation: none; transition: none; }
+}
 
 @media (max-width: 760px) { .brand-mark.brand-arch-pin, .brand-mark.brand-arch-pin svg { width: 36px; height: 33px; } }
 

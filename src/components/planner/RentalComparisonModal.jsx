@@ -8,6 +8,7 @@ import {
   ShieldCheck,
   Sparkles,
   UsersRound,
+  X,
 } from "lucide-react";
 import "./rental-comparison-modal.css";
 
@@ -53,7 +54,15 @@ export default function RentalComparisonModal({
   return (
     <div className="ai-modal-backdrop" role="presentation">
       <section className="ai-modal rental-modal rental-premium-modal" role="dialog" aria-modal="true" aria-labelledby="rental-modal-title">
-        <button type="button" className="modal-close" onClick={onClose} aria-label="렌터카 닫기">×</button>
+        <button
+          type="button"
+          className="modal-close rental-modal-close"
+          onClick={onClose}
+          aria-label="렌터카 비교 닫기"
+          title="닫기"
+        >
+          <X size={19} strokeWidth={1.8} aria-hidden="true" />
+        </button>
 
         <header className="rental-premium-head">
           <p>✦ TripBuddy AI · JEJU CAR MATCH</p>
