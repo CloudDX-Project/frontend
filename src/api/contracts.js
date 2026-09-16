@@ -132,6 +132,7 @@
  * @property {string=} category
  * @property {string=} address
  * @property {GeoPoint=} point
+ * @property {string=} representativeImageUrl DB representative_image_url 대표 이미지
  * @property {string[]=} imageUrls 권한과 만료 정책을 확인한 이미지 URL
  * @property {{name:string,price:number|null,description?:string,imageUrl?:string,isSignature?:boolean}[]} menus
  * @property {number|null=} rating
@@ -140,6 +141,7 @@
  * @property {string[]=} reviewKeywords
  * @property {string=} businessHours
  * @property {string=} phone
+ * @property {string=} placeUrl 카카오플레이스 장소 URL
  * @property {string=} naverMapUrl 네이버 지도 검색 또는 장소 딥링크
  * @property {string=} provider
  * @property {boolean=} isMock

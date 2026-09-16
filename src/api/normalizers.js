@@ -162,13 +162,18 @@ export function normalizeRestaurantDetail(payload = {}) {
   const root = payload?.data ?? payload?.restaurant ?? payload;
   const location = normalizeLocationItem(root);
   const sourceMenus = root?.menus ?? root?.menuItems ?? root?.menuList ?? [];
+  const representativeImageUrl =
+    root?.representativeImageUrl ?? root?.representative_image_url ?? null;
   const imageUrls = [
+    representativeImageUrl,
     ...(Array.isArray(root?.imageUrls) ? root.imageUrls : []),
     ...(Array.isArray(root?.images) ? root.images.map((image) => typeof image === 'string' ? image : image?.url) : []),
     root?.imageUrl,
   ].filter((url, index, list) => typeof url === 'string' && /^https:\/\//i.test(url) && list.indexOf(url) === index);
   return {
     ...location,
+    representativeImageUrl:
+      /^https:\/\//i.test(representativeImageUrl || '') ? representativeImageUrl : null,
     imageUrls,
     menus: sourceMenus.map((menu, index) => ({
       id: String(menu?.id ?? `menu-${index + 1}`),
@@ -184,6 +189,7 @@ export function normalizeRestaurantDetail(payload = {}) {
     reviewKeywords: Array.isArray(root?.reviewKeywords) ? root.reviewKeywords : (root?.reviews?.keywords ?? []),
     businessHours: root?.businessHours ?? root?.openingHours ?? '',
     phone: root?.phone ?? root?.telephone ?? '',
+    placeUrl: root?.placeUrl ?? root?.place_url ?? location.deepLink ?? null,
     naverMapUrl: root?.naverMapUrl ?? root?.deepLinks?.naverMap ?? null,
     provider: root?.provider ?? '',
     isMock: booleanValue(root?.isMock, false),

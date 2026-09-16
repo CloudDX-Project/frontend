@@ -564,7 +564,10 @@ function PlanFullscreen({
             ) : (
               <>
                 <div className="restaurant-detail-hero">
-                  <img src={restaurantDetail.imageUrls?.[0]} alt={`${restaurantDetail.name} 대표 음식`} />
+                  <img
+                    src={restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]}
+                    alt={`${restaurantDetail.name} 대표 이미지`}
+                  />
                   <span>{restaurantDetail.category || "추천 식당"}</span>
                 </div>
                 <div className="restaurant-detail-content">
@@ -588,7 +591,17 @@ function PlanFullscreen({
                   </section>
                   <footer>
                     <div><b>{restaurantDetail.businessHours}</b><small>{restaurantDetail.sourceLabel} · {restaurantDetail.isMock ? "운영 연동 전 참고 정보" : "백엔드 최신 동기화 정보"}</small></div>
-                    {/^https:\/\//i.test(restaurantDetail.naverMapUrl || "") && <a href={restaurantDetail.naverMapUrl} target="_blank" rel="noreferrer noopener"><MapPin size={15} /> 네이버 지도에서 확인 <ExternalLink size={13} /></a>}
+                    {/^https:\/\//i.test(restaurantDetail.placeUrl || "") && (
+                      <a href={restaurantDetail.placeUrl} target="_blank" rel="noreferrer noopener">
+                        <MapPin size={15} /> 카카오플레이스에서 확인 <ExternalLink size={13} />
+                      </a>
+                    )}
+                    {!/^https:\/\//i.test(restaurantDetail.placeUrl || "") &&
+                      /^https:\/\//i.test(restaurantDetail.naverMapUrl || "") && (
+                        <a href={restaurantDetail.naverMapUrl} target="_blank" rel="noreferrer noopener">
+                          <MapPin size={15} /> 네이버 지도에서 확인 <ExternalLink size={13} />
+                        </a>
+                      )}
                   </footer>
                 </div>
               </>
