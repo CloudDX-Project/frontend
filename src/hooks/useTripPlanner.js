@@ -27,6 +27,7 @@ import {
   distanceBetween,
   estimateIntercityFare,
   eventPrice,
+  flightOriginAirports,
   getDates,
   heroSlides,
   jejuRegionOptions,
@@ -533,6 +534,33 @@ const FOOD_PREFERENCE_MAP = {
    *
    * undefined → 요청에서 자동 제외.
    */
+};
+
+
+const flightDepartureClockMinutes = (
+  flight,
+) => {
+  const time = String(
+    flight?.departureTime ||
+      "",
+  ).slice(
+    11,
+    16,
+  );
+
+  const [hour, minute] =
+    time
+      .split(":")
+      .map(Number);
+
+  if (
+    !Number.isFinite(hour) ||
+    !Number.isFinite(minute)
+  ) {
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return hour * 60 + minute;
 };
 
 const MAIN_TRANSPORT_FROM_BACKEND = {
@@ -2353,13 +2381,20 @@ function useTripPlanner() {
           );
         }
 
+        const tenAm =
+          10 * 60;
+
         return (
-          flightDurationMinutes(
-            a,
+          Math.abs(
+            flightDepartureClockMinutes(a) -
+              tenAm,
           ) -
-            flightDurationMinutes(
-              b,
+            Math.abs(
+              flightDepartureClockMinutes(b) -
+                tenAm,
             ) ||
+          flightDurationMinutes(a) -
+            flightDurationMinutes(b) ||
           (
             Number(
               a.estimatedPricePerPerson,
@@ -3737,11 +3772,23 @@ function useTripPlanner() {
    * 실제 항공 API 조회
    */
   const loadFlightOptions =
-    async () => {
-      const departure =
-        flightLocationName(
-          departureLocation,
+    async (
+      requestedAirportCode =
+        origin,
+    ) => {
+      const requestedAirport =
+        flightOriginAirports.find(
+          (airport) =>
+            airport.code ===
+            requestedAirportCode,
         );
+
+      const departure =
+        requestedAirport
+          ? `${requestedAirport.city} ${requestedAirport.name}`
+          : flightLocationName(
+              departureLocation,
+            );
 
       const arrival =
         flightLocationName(

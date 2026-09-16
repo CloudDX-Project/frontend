@@ -10,6 +10,10 @@ const JEJU_AIRPORT = {
   shortName: "제주",
   region: "제주권",
 };
+const API_PENDING_AIRPORTS = new Set(["ICN", "MWX"]);
+
+const pendingAirportLabel = (airportCode) =>
+  airportCode === "ICN" ? "국제선 연결 준비 중" : "노선 연결 준비 중";
 
 function AirportCard({ airport, label, onClick, expanded }) {
   return (
@@ -94,7 +98,7 @@ export default function AirportRoutePicker({ airports, originAirport, leg, onOri
               <b>{openSide === selectableSide ? `${isReturn ? "도착" : "출발"} 공항을 선택하세요` : "여행지 공항"}</b>
               <small>
                 {openSide === selectableSide
-                  ? "지역별 공항을 비교해 가장 편한 출발지를 선택할 수 있어요."
+                  ? `국내 ${airports.length + 1}개 공항을 권역별로 비교할 수 있어요. 공항을 선택하면 해당 출발편을 바로 조회합니다.`
                   : "선택한 제주 여행지에 맞춰 제주국제공항으로 연결돼요."}
               </small>
             </div>
@@ -121,12 +125,17 @@ export default function AirportRoutePicker({ airports, originAirport, leg, onOri
                     {group.airports.map((airport) => (
                       <button
                         type="button"
-                        className={`airport-option ${airport.code === originAirport.code ? "selected" : ""}`}
+                        className={`airport-option ${airport.code === originAirport.code ? "selected" : ""} ${API_PENDING_AIRPORTS.has(airport.code) ? "is-pending" : ""}`}
                         onClick={() => chooseAirport(airport)}
                         key={airport.code}
+                        disabled={API_PENDING_AIRPORTS.has(airport.code)}
+                        title={API_PENDING_AIRPORTS.has(airport.code) ? pendingAirportLabel(airport.code) : `${airport.name} 출발편 조회`}
                       >
                         <strong>{airport.code}</strong>
-                        <span><b>{airport.shortName}</b><small>{airport.name}</small></span>
+                        <span>
+                          <b>{airport.shortName}</b>
+                          <small>{API_PENDING_AIRPORTS.has(airport.code) ? pendingAirportLabel(airport.code) : airport.name}</small>
+                        </span>
                         {airport.code === originAirport.code && <Check size={16} aria-hidden="true" />}
                       </button>
                     ))}

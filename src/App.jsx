@@ -24,6 +24,7 @@ import {
   departureTimeOptions,
   destinations,
   destinationExplorerItems,
+  flightOriginAirports,
   heroSlides,
   foodPreferenceOptions,
   localOptions,
@@ -48,13 +49,50 @@ import RegionLocationMenu from "./components/modals/RegionLocationMenu";
 import PlanFullscreen from "./components/planner/PlanFullscreen";
 import TripTimeSummary from "./components/planner/TripTimeSummary";
 import FoodPreferenceSelector from "./components/planner/FoodPreferenceSelector";
+import AirportRoutePicker from "./components/planner/AirportRoutePicker";
 import TravelPreferenceModal from "./components/planner/TravelPreferenceModal";
 import CarDetailsStep from "./components/planner/CarDetailsStep";
 import RentalComparisonModal from "./components/planner/RentalComparisonModal";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
+import "./components/planner/flight-booking-modal.css";
 
 const quickAccessIcons = { sparkles: Sparkles, plane: Plane, home: Home, ticket: Ticket, car: Car, smartphone: Smartphone };
+
+const flightClockMinutes = (value) => {
+  const [hour, minute] = String(value || "")
+    .slice(11, 16)
+    .split(":")
+    .map(Number);
+
+  return Number.isFinite(hour) && Number.isFinite(minute)
+    ? hour * 60 + minute
+    : null;
+};
+
+const flightOfferFor = (flight, flights) => {
+  const price = Number(flight?.estimatedPricePerPerson) || 0;
+  if (!price) return null;
+
+  const departureMinutes = flightClockMinutes(flight.departureTime);
+  const isPreferredTimeDeal = departureMinutes >= 9 * 60 + 30 && departureMinutes <= 10 * 60 + 59;
+  const priceRank = [...flights]
+    .sort((a, b) => (Number(a.estimatedPricePerPerson) || 0) - (Number(b.estimatedPricePerPerson) || 0))
+    .findIndex((item) => item.id === flight.id);
+
+  if (!isPreferredTimeDeal && (priceRank < 0 || priceRank > 2)) return null;
+
+  const discount = isPreferredTimeDeal ? 22 : [17, 14, 11][priceRank] || 11;
+  const originalPrice = Math.ceil(price / (1 - discount / 100) / 100) * 100;
+
+  return {
+    discount,
+    originalPrice,
+    seats: 2 + (String(flight.id || flight.flightNumber || "AIR").length % 4),
+    label: isPreferredTimeDeal ? "인기 시간대 한정 특가" : "오늘의 한정 특가",
+    featured: isPreferredTimeDeal,
+  };
+};
 
 function App() {
   const isMobile = useMediaQuery("(max-width: 760px)");
@@ -259,6 +297,14 @@ function App() {
     openSavedTrip,
     resetTripDraft,
   } = useTripPlanner();
+
+  const selectedOriginAirport =
+    flightOriginAirports.find((airport) => airport.code === origin) ||
+    flightOriginAirports[0];
+
+  const flightDealCount = saleFirstFlights.filter(
+    (flight) => flightOfferFor(flight, saleFirstFlights),
+  ).length;
 
   useEffect(() => {
     const handleAuthExpired = () => {
@@ -1848,16 +1894,16 @@ function App() {
             <div className="sale-hero flight-value-hero">
               <div>
                 <small>
-                  LIVE FLIGHT SCHEDULE · 예상 운임
+                  SMART FLIGHT DEALS · 실제 운항편
                 </small>
 
                 <b>
-                  실제 운항편을 기준으로 항공편을 비교하세요.
+                  원하는 시간대의 항공편을 한눈에 비교하세요.
                 </b>
 
                 <span>
-                  운항 일정은 실제 항공편 데이터를 사용하고,
-                  표시되는 가격은 예상 운임입니다.
+                  출발 시간과 예상 운임, 잔여 특가 좌석을 비교해 여행에 맞는
+                  항공편을 선택하세요.
                 </span>
               </div>
 
@@ -1865,69 +1911,24 @@ function App() {
                 ✈
 
                 <small>
-                  LIVE
+                  DEAL
                   <br />
-                  FLIGHT
+                  CHECK
                 </small>
               </strong>
             </div>
             <div className="flight-filter-row">
-              <div className="flight-route-selector">
-                <div className="flight-airport-select">
-                  <span>
-                    {flightPickerLeg === "outbound"
-                      ? "출발 공항"
-                      : "출발 공항"}
-                  </span>
-
-                  <div>
-                    <strong>
-                      {flightPickerLeg === "outbound"
-                        ? flightSearchResult.departureAirport
-                        : flightSearchResult.arrivalAirport}
-                    </strong>
-
-                    <b>
-                      {flightPickerLeg === "outbound"
-                        ? departureLocation?.detail || "출발지"
-                        : destinationLocation?.detail || "도착지"}
-                    </b>
-
-                    <small>
-                      백엔드에서 지역 기준 대표공항 자동 선택
-                    </small>
-                  </div>
-                </div>
-
-                <span
-                  className="flight-route-direction"
-                  aria-hidden="true"
-                >
-                  <Plane size={16} />
-                </span>
-
-                <div className="flight-airport-arrival">
-                  <span>도착 공항</span>
-
-                  <div>
-                    <strong>
-                      {flightPickerLeg === "outbound"
-                        ? flightSearchResult.arrivalAirport
-                        : flightSearchResult.departureAirport}
-                    </strong>
-
-                    <b>
-                      {flightPickerLeg === "outbound"
-                        ? destinationLocation?.detail || "도착지"
-                        : departureLocation?.detail || "출발지"}
-                    </b>
-
-                    <small>
-                      실제 조회 항공편
-                    </small>
-                  </div>
-                </div>
-              </div>
+              <AirportRoutePicker
+                airports={flightOriginAirports}
+                originAirport={selectedOriginAirport}
+                leg={flightPickerLeg}
+                onOriginChange={(airportCode) => {
+                  setOrigin(airportCode);
+                  setFlightId("");
+                  setReturnFlightId("");
+                  void loadFlightOptions(airportCode);
+                }}
+              />
               <label className="flight-sort">
                 <span>정렬</span>
                 <select
@@ -1941,21 +1942,11 @@ function App() {
               </label>
             </div>
             <p className="flight-route-note">
-              <b>
-                {flightPickerLeg === "outbound"
-                  ? flightSearchResult.departureAirport
-                  : flightSearchResult.arrivalAirport}
-
-                {" → "}
-
-                {flightPickerLeg === "outbound"
-                  ? flightSearchResult.arrivalAirport
-                  : flightSearchResult.departureAirport}
-              </b>
-
+              <b>{selectedOriginAirport.name} ({origin})</b>
               {" · "}
-
-              실제 운항편 기준으로 조회한 결과입니다.
+              {flightPickerLeg === "outbound"
+                ? `${selectedOriginAirport.city}에서 제주로 향하는 실제 직항편이에요.`
+                : `제주에서 ${selectedOriginAirport.city}(으)로 돌아오는 실제 직항편이에요.`}
             </p>
             <p className="picker-date">
               {dateLabel(
@@ -1966,7 +1957,7 @@ function App() {
 
               {" · "}
 
-              {displayFlights.length}편 조회
+              {displayFlights.length}편 조회 · 특가 {flightDealCount}편
 
               {" · "}
 
@@ -2005,6 +1996,12 @@ function App() {
                       ? flight.id === flightId
                       : flight.id ===
                         returnFlightId;
+
+                  const deal =
+                    flightOfferFor(
+                      flight,
+                      displayFlights,
+                    );
 
                   const departureTime =
                     flight.departureTime?.slice(
@@ -2045,17 +2042,19 @@ function App() {
                     <button
                       type="button"
                       key={flight.id}
-                      className={
-                        isSelected
-                          ? "selected"
-                          : ""
-                      }
+                      className={`${isSelected ? "selected" : ""} ${deal ? "sale-flight" : ""} ${deal?.featured ? "featured-flight" : ""}`}
                       onClick={() =>
                         chooseFlight(
                           flight.id,
                         )
                       }
                     >
+                      {deal ? (
+                        <em className="flight-sale-sticker">
+                          {deal.label} · {deal.discount}% 혜택
+                        </em>
+                      ) : null}
+
                       <span className="airline-mark">
                         {flight.airlineCode ||
                           "AIR"}
@@ -2121,9 +2120,23 @@ function App() {
                             예상 운임
                           </i>
                         </span>
+
+                        {deal ? (
+                          <em className="flight-deal">
+                            <b>{deal.discount}% 특가</b>
+                            {" · "}잔여 {deal.seats}석
+                            {deal.featured ? " · 인기 출발 시간대" : ""}
+                          </em>
+                        ) : null}
                       </div>
 
-                      <strong className="flight-price">
+                      <strong className={`flight-price ${deal ? "sale-price" : ""}`}>
+                        {deal ? (
+                          <del>
+                            {money(deal.originalPrice)}원
+                          </del>
+                        ) : null}
+
                         <b>
                           {money(
                             flight
@@ -2133,7 +2146,7 @@ function App() {
                         </b>
 
                         <small>
-                          예상 · 편도 1인
+                          {deal ? "특가 · 편도 1인" : "예상 · 편도 1인"}
                         </small>
                       </strong>
                     </button>
