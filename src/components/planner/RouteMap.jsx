@@ -1,37 +1,552 @@
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
 import { locationLabel } from "../../data/mockData";
+import { loadKakaoMapsSdk } from "../../lib/kakaoMap";
 
-function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, routeResults = [], compact = false, hideHeader = false }) {
-  const [expanded, setExpanded] = useState(false);
-  const [zoom, setZoom] = useState(11);
-  const selectedDay = dayPlans[activeDay] || dayPlans[0];
-  const destinationContext = locationLabel(destinationLocation, "대한민국");
-  const originContext = locationLabel(originLocation, "출발지");
-  const providerRoute = routeResults.find((item) => item.dayIndex === activeDay) ?? routeResults[activeDay];
-  const route = {
-    label: selectedDay?.[0] || `${destinationContext} 여행 동선`,
-    stops: (selectedDay?.[2] || [])
-      .filter((event) => event[6]?.isGeographical !== false && !/체크인|체크아웃|준비|수령|반납|짐 정리|탑승|귀가|오는 편|이동/.test(event[2] || ""))
+const ROUTE_SEGMENT_COLORS = [
+  "#0b766d",
+  "#e9713e",
+  "#4b73c5",
+  "#8b5fbf",
+  "#d85f78",
+  "#6f8f3d",
+  "#c48b2d",
+  "#2f91a5",
+  "#b85f45",
+  "#5f6fc4",
+];
+
+function finiteCoordinate(value) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function pointFrom(value = {}) {
+  const latitude = finiteCoordinate(value.latitude ?? value.lat ?? value.y);
+  const longitude = finiteCoordinate(value.longitude ?? value.lng ?? value.lon ?? value.x);
+
+  if (latitude == null || longitude == null) {
+    return null;
+  }
+
+  return { latitude, longitude };
+}
+
+function segmentPoint(segment, prefix) {
+  return pointFrom({
+    latitude: segment?.[`${prefix}Latitude`],
+    longitude: segment?.[`${prefix}Longitude`],
+  });
+}
+
+function uniqueStops(stops = []) {
+  const seen = new Set();
+
+  return stops.filter((stop) => {
+    const point = pointFrom(stop);
+    if (!point) return false;
+
+    const key = `${point.latitude.toFixed(6)}:${point.longitude.toFixed(6)}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
+}
+
+function stopsFromSegments(segments = []) {
+  const localSegments = segments.filter((segment) => segment?.mode !== "AIR");
+  if (!localSegments.length) return [];
+
+  const stops = [];
+
+  localSegments.forEach((segment, segmentIndex) => {
+    const departure = segmentPoint(segment, "departure");
+    const arrival = segmentPoint(segment, "arrival");
+
+    if (segmentIndex === 0 && departure) {
+      stops.push({
+        name: segment?.departureName || "출발",
+        ...departure,
+      });
+    }
+
+    if (arrival) {
+      stops.push({
+        name: segment?.arrivalName || `경유지 ${segmentIndex + 1}`,
+        ...arrival,
+      });
+    }
+  });
+
+  return uniqueStops(stops);
+}
+
+function stopsFromDayPlan(selectedDay) {
+  return uniqueStops(
+    (selectedDay?.[2] || [])
+      .filter((event) => event?.[6]?.isGeographical !== false)
+      .filter((event) => !/체크인|체크아웃|준비|짐 정리|탑승|귀가|오는 편/.test(event?.[2] || ""))
       .map(([, , name, , , , metadata = {}]) => ({
         name: name?.trim(),
         latitude: metadata.latitude ?? metadata.point?.latitude,
         longitude: metadata.longitude ?? metadata.point?.longitude,
       }))
-      .filter((stop) => Boolean(stop.name))
-      .slice(0, 6),
-  };
-  const searchStops = (route.stops.length ? route.stops : [{ name: destinationContext }]).map(
-    (stop) =>
-      encodeURIComponent(
-        Number.isFinite(stop.latitude) && Number.isFinite(stop.longitude)
-          ? `${stop.latitude},${stop.longitude}`
-          : `${stop.name}, ${destinationLocation?.apiSearchKeyword || destinationContext}`,
-      ),
+      .filter((stop) => Boolean(stop.name)),
   );
-  const mapDestinations = searchStops.length > 1 ? searchStops.slice(1) : searchStops;
-  const mapUrl = `https://www.google.com/maps?output=embed&f=d&z=${zoom}&saddr=${searchStops[0]}&daddr=${mapDestinations.join("+to:")}`;
-  const openMapUrl = providerRoute?.deepLink || `https://www.google.com/maps/dir/${searchStops.join("/")}`;
+}
+
+function buildKakaoMapLink(stop) {
+  const point = pointFrom(stop);
+  const name = String(stop?.name || "여행지").trim();
+
+  if (!point) {
+    return `https://map.kakao.com/?q=${encodeURIComponent(name)}`;
+  }
+
+  return `https://map.kakao.com/link/map/${encodeURIComponent(name)},${point.latitude},${point.longitude}`;
+}
+
+function createMarkerElement(stop, index, color, onSelect) {
+  const marker = document.createElement("button");
+  marker.type = "button";
+  marker.className = "kakao-route-marker";
+  marker.title = stop.name || `일정 ${index + 1}`;
+  marker.setAttribute("aria-label", `${index + 1}번 ${stop.name || "여행지"} 경로 선택`);
+  marker.style.setProperty("--route-marker-color", color || ROUTE_SEGMENT_COLORS[0]);
+
+  const number = document.createElement("span");
+  number.className = "kakao-route-marker-number";
+  number.textContent = String(index + 1);
+
+  const label = document.createElement("span");
+  label.className = "kakao-route-marker-label";
+  label.textContent = stop.name || `일정 ${index + 1}`;
+
+  marker.append(number, label);
+  if (typeof onSelect === "function") {
+    marker.addEventListener("click", onSelect);
+  }
+
+  return marker;
+}
+
+function applyPolylineSelection(polylineEntries, selectedSegmentIndex) {
+  polylineEntries.forEach(({ polyline, segmentIndex, baseWeight, estimated }) => {
+    const hasSelection = selectedSegmentIndex != null;
+    const selected = segmentIndex === selectedSegmentIndex;
+
+    polyline.setOptions({
+      strokeWeight: selected ? baseWeight + 3 : baseWeight,
+      strokeOpacity: hasSelection
+        ? (selected ? 1 : 0.28)
+        : (estimated ? 0.42 : 0.86),
+    });
+  });
+}
+
+function KakaoRouteCanvas({
+  stops,
+  segments,
+  fallbackPoint,
+  selectedSegmentIndex = null,
+  onSegmentSelect,
+  visible = true,
+  showControls = false,
+  className = "",
+}) {
+  const containerRef = useRef(null);
+  const mapRef = useRef(null);
+  const boundsRef = useRef(null);
+  const boundsCountRef = useRef(0);
+  const wasHiddenRef = useRef(false);
+  const overlaysRef = useRef([]);
+  const polylinesRef = useRef([]);
+  const polylineEntriesRef = useRef([]);
+  const selectedSegmentIndexRef = useRef(selectedSegmentIndex);
+  const [status, setStatus] = useState("loading");
+  const [errorMessage, setErrorMessage] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    const overlays = [];
+    const polylines = [];
+    const polylineListeners = [];
+
+    const initialize = async () => {
+      try {
+        setStatus("loading");
+        setErrorMessage("");
+
+        const maps = await loadKakaoMapsSdk();
+        if (cancelled || !containerRef.current) return;
+
+        const firstStop = stops.find((stop) => pointFrom(stop));
+        const fallback = pointFrom(fallbackPoint);
+        const initial = pointFrom(firstStop) || fallback || { latitude: 33.4996, longitude: 126.5312 };
+
+        const map = new maps.Map(containerRef.current, {
+          center: new maps.LatLng(initial.latitude, initial.longitude),
+          level: 6,
+        });
+        mapRef.current = map;
+
+        const bounds = new maps.LatLngBounds();
+        let boundsCount = 0;
+        const nextPolylineEntries = [];
+
+        segments.forEach((segment, segmentIndex) => {
+          const routePath = Array.isArray(segment?.path)
+            ? segment.path.map(pointFrom).filter(Boolean)
+            : [];
+
+          if (routePath.length < 2) return;
+
+          const path = routePath.map((point) => {
+            const latLng = new maps.LatLng(point.latitude, point.longitude);
+            bounds.extend(latLng);
+            boundsCount += 1;
+            return latLng;
+          });
+
+          const baseWeight = segment?.mode === "SHUTTLE" ? 5 : 6;
+          const estimated = segment?.routeProvider === "ESTIMATED";
+          const polyline = new maps.Polyline({
+            map,
+            path,
+            clickable: true,
+            strokeWeight: baseWeight,
+            strokeColor: segment?._routeColor || ROUTE_SEGMENT_COLORS[0],
+            strokeOpacity: estimated ? 0.42 : 0.86,
+            strokeStyle: estimated ? "shortdash" : "solid",
+          });
+
+          const clickHandler = () => onSegmentSelect?.(segmentIndex);
+          const overHandler = () => {
+            const currentSelectedIndex = selectedSegmentIndexRef.current;
+            if (currentSelectedIndex == null || currentSelectedIndex === segmentIndex) {
+              polyline.setOptions({ strokeWeight: baseWeight + 2 });
+            }
+          };
+          const outHandler = () => {
+            applyPolylineSelection(nextPolylineEntries, selectedSegmentIndexRef.current);
+          };
+
+          maps.event.addListener(polyline, "click", clickHandler);
+          maps.event.addListener(polyline, "mouseover", overHandler);
+          maps.event.addListener(polyline, "mouseout", outHandler);
+
+          polylineListeners.push({ polyline, clickHandler, overHandler, outHandler });
+          polylines.push(polyline);
+          nextPolylineEntries.push({
+            polyline,
+            segmentIndex,
+            baseWeight,
+            estimated,
+          });
+        });
+
+        polylineEntriesRef.current = nextPolylineEntries;
+        applyPolylineSelection(nextPolylineEntries, selectedSegmentIndexRef.current);
+
+        const localSegments = segments.filter((segment) => segment?.mode !== "AIR");
+
+        stops.forEach((stop, index) => {
+          const point = pointFrom(stop);
+          if (!point) return;
+
+          const position = new maps.LatLng(point.latitude, point.longitude);
+          bounds.extend(position);
+          boundsCount += 1;
+
+          const routeForStop = index < localSegments.length
+            ? localSegments[index]
+            : localSegments[index - 1] ?? localSegments[localSegments.length - 1];
+          const routeSegmentIndex = routeForStop?._segmentIndex;
+          const markerColor = routeForStop?._routeColor || ROUTE_SEGMENT_COLORS[0];
+
+          const overlay = new maps.CustomOverlay({
+            map,
+            position,
+            content: createMarkerElement(
+              stop,
+              index,
+              markerColor,
+              routeSegmentIndex == null ? undefined : () => onSegmentSelect?.(routeSegmentIndex),
+            ),
+            xAnchor: 0.5,
+            yAnchor: 1.08,
+            zIndex: 5,
+          });
+          overlays.push(overlay);
+        });
+
+        // 경비 탭처럼 지도 컨테이너가 잠시 숨겨졌다 다시 나타날 때
+        // Kakao CustomOverlay/Polyline을 같은 map 인스턴스에 재부착할 수 있도록 보관한다.
+        overlaysRef.current = overlays;
+        polylinesRef.current = polylines;
+
+        boundsRef.current = bounds;
+        boundsCountRef.current = boundsCount;
+
+        if (boundsCount >= 2) {
+          map.setBounds(bounds);
+        } else {
+          map.setCenter(new maps.LatLng(initial.latitude, initial.longitude));
+          map.setLevel(5);
+        }
+
+        requestAnimationFrame(() => {
+          map.relayout();
+          if (boundsCount >= 2) map.setBounds(bounds);
+        });
+
+        setStatus("ready");
+      } catch (error) {
+        if (cancelled) return;
+        setStatus("error");
+        setErrorMessage(error?.message || "카카오 지도를 불러오지 못했습니다.");
+      }
+    };
+
+    initialize();
+
+    return () => {
+      cancelled = true;
+      overlays.forEach((overlay) => overlay.setMap(null));
+      polylines.forEach((polyline) => polyline.setMap(null));
+      polylineListeners.forEach(({ polyline, clickHandler, overHandler, outHandler }) => {
+        mapsSafeRemoveListener(polyline, "click", clickHandler);
+        mapsSafeRemoveListener(polyline, "mouseover", overHandler);
+        mapsSafeRemoveListener(polyline, "mouseout", outHandler);
+      });
+      overlaysRef.current = [];
+      polylinesRef.current = [];
+      polylineEntriesRef.current = [];
+      boundsRef.current = null;
+      boundsCountRef.current = 0;
+      mapRef.current = null;
+    };
+  }, [fallbackPoint, onSegmentSelect, segments, stops]);
+
+  useEffect(() => {
+    if (!visible) return;
+
+    window.requestAnimationFrame(() => {
+      const map = mapRef.current;
+      if (!map) return;
+
+      // display:none 상태를 거치면 overlay가 보이지 않는 경우가 있어
+      // 기존 객체를 새로 만들지 않고 현재 map에 다시 부착한다.
+      overlaysRef.current.forEach((overlay) => overlay.setMap(map));
+      polylinesRef.current.forEach((polyline) => polyline.setMap(map));
+      map.relayout();
+
+      window.requestAnimationFrame(() => {
+        const bounds = boundsRef.current;
+        if (bounds && boundsCountRef.current >= 2) {
+          map.setBounds(bounds);
+        }
+        applyPolylineSelection(
+          polylineEntriesRef.current,
+          selectedSegmentIndexRef.current,
+        );
+      });
+    });
+  }, [visible]);
+
+  // 경비 탭에서 지도 aside가 display:none 이 되었다가 다시 보이면
+  // Kakao Map 내부 projection 크기가 0으로 남아 마커/오버레이가 사라진 것처럼 보일 수 있다.
+  // 컨테이너가 다시 보이는 순간 relayout + 기존 bounds를 복원해 마커와 경로를 유지한다.
+  useEffect(() => {
+    const container = containerRef.current;
+
+    if (!container || typeof ResizeObserver === "undefined") {
+      return undefined;
+    }
+
+    const observer = new ResizeObserver((entries) => {
+      const entry = entries[0];
+      const width = entry?.contentRect?.width ?? container.clientWidth;
+      const height = entry?.contentRect?.height ?? container.clientHeight;
+      const visible = width > 0 && height > 0;
+
+      if (!visible) {
+        wasHiddenRef.current = true;
+        return;
+      }
+
+      if (!wasHiddenRef.current) {
+        return;
+      }
+
+      wasHiddenRef.current = false;
+
+      window.requestAnimationFrame(() => {
+        const map = mapRef.current;
+        if (!map) return;
+
+        overlaysRef.current.forEach((overlay) => overlay.setMap(map));
+        polylinesRef.current.forEach((polyline) => polyline.setMap(map));
+        map.relayout();
+
+        window.requestAnimationFrame(() => {
+          const bounds = boundsRef.current;
+          if (bounds && boundsCountRef.current >= 2) {
+            map.setBounds(bounds);
+          }
+          applyPolylineSelection(
+            polylineEntriesRef.current,
+            selectedSegmentIndexRef.current,
+          );
+        });
+      });
+    });
+
+    observer.observe(container);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    selectedSegmentIndexRef.current = selectedSegmentIndex;
+    applyPolylineSelection(polylineEntriesRef.current, selectedSegmentIndex);
+  }, [selectedSegmentIndex]);
+
+  const zoomIn = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.setLevel(Math.max(1, map.getLevel() - 1), { animate: true });
+  };
+
+  const zoomOut = () => {
+    const map = mapRef.current;
+    if (!map) return;
+    map.setLevel(Math.min(14, map.getLevel() + 1), { animate: true });
+  };
+
+  return (
+    <div className={`kakao-route-canvas-wrap ${className}`.trim()}>
+      <div ref={containerRef} className="kakao-route-canvas" aria-label="카카오 지도 여행 동선" />
+      {status === "loading" && <div className="kakao-map-state">카카오 지도를 불러오는 중...</div>}
+      {status === "error" && (
+        <div className="kakao-map-state is-error">
+          <b>지도를 표시하지 못했어요.</b>
+          <span>{errorMessage}</span>
+        </div>
+      )}
+      {showControls && status === "ready" && (
+        <div className="map-zoom-controls" aria-label="지도 확대 축소">
+          <button type="button" onClick={zoomIn} aria-label="지도 확대"><Plus size={18} /></button>
+          <button type="button" onClick={zoomOut} aria-label="지도 축소"><Minus size={18} /></button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function mapsSafeRemoveListener(target, eventName, handler) {
+  if (typeof window === "undefined") return;
+  const kakaoEvent = window.kakao?.maps?.event;
+  if (!kakaoEvent?.removeListener || !target || !handler) return;
+  kakaoEvent.removeListener(target, eventName, handler);
+}
+
+function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, routeResults = [], compact = false, hideHeader = false, visible = true }) {
+  const [expanded, setExpanded] = useState(false);
+  const [selectedSegmentIndex, setSelectedSegmentIndex] = useState(null);
+  const selectedDay = dayPlans[activeDay] || dayPlans[0];
+  const destinationContext = locationLabel(destinationLocation, "대한민국");
+  const originContext = locationLabel(originLocation, "출발지");
+
+  const providerRoute = useMemo(
+    () => routeResults.find((item) => item?.dayIndex === activeDay) ?? routeResults[activeDay] ?? null,
+    [activeDay, routeResults],
+  );
+
+  const segments = useMemo(
+    () => Array.isArray(providerRoute?.segments) ? providerRoute.segments : [],
+    [providerRoute],
+  );
+
+  const coloredSegments = useMemo(() => {
+    let routeOrder = 0;
+
+    return segments.map((segment, segmentIndex) => {
+      if (segment?.mode === "AIR") {
+        return {
+          ...segment,
+          _segmentIndex: segmentIndex,
+          _routeOrder: null,
+          _routeColor: null,
+        };
+      }
+
+      const color = ROUTE_SEGMENT_COLORS[routeOrder % ROUTE_SEGMENT_COLORS.length];
+      const next = {
+        ...segment,
+        _segmentIndex: segmentIndex,
+        _routeOrder: routeOrder,
+        _routeColor: color,
+      };
+      routeOrder += 1;
+      return next;
+    });
+  }, [segments]);
+
+  const handleSegmentSelect = useCallback((segmentIndex) => {
+    setSelectedSegmentIndex((current) => current === segmentIndex ? null : segmentIndex);
+  }, []);
+
+  useEffect(() => {
+    setSelectedSegmentIndex(null);
+  }, [activeDay]);
+
+  const route = useMemo(() => {
+    const segmentStops = stopsFromSegments(coloredSegments);
+    const fallbackStops = stopsFromDayPlan(selectedDay);
+
+    return {
+      label: selectedDay?.[0] || `${destinationContext} 여행 동선`,
+      stops: segmentStops.length ? segmentStops : fallbackStops,
+    };
+  }, [coloredSegments, destinationContext, selectedDay]);
+
+  const localSegments = coloredSegments.filter((segment) => segment?.mode !== "AIR");
+  const actualSegments = localSegments.filter((segment) =>
+    String(segment?.routeProvider || "").startsWith("KAKAO_MOBILITY"),
+  );
+  const estimatedSegments = localSegments.filter((segment) => segment?.routeProvider === "ESTIMATED");
+  const totalDistanceKm = localSegments.reduce(
+    (sum, segment) => sum + (Number.isFinite(Number(segment?.distanceKm)) ? Number(segment.distanceKm) : 0),
+    0,
+  );
+  const totalDurationMinutes = localSegments.reduce(
+    (sum, segment) => sum + (Number.isFinite(Number(segment?.durationMinutes)) ? Number(segment.durationMinutes) : 0),
+    0,
+  );
+
+  const selectedSegment = selectedSegmentIndex == null
+    ? null
+    : coloredSegments[selectedSegmentIndex] ?? null;
+  const selectedDistanceKm = Number.isFinite(Number(selectedSegment?.distanceKm))
+    ? Number(selectedSegment.distanceKm)
+    : null;
+  const selectedDurationMinutes = Number.isFinite(Number(selectedSegment?.durationMinutes))
+    ? Number(selectedSegment.durationMinutes)
+    : null;
+
+  const finalStop = route.stops[route.stops.length - 1] || {
+    name: destinationContext,
+    latitude: destinationLocation?.latitude,
+    longitude: destinationLocation?.longitude,
+  };
+  const openMapUrl = buildKakaoMapLink(finalStop);
+
+  const routeForStopIndex = (stopIndex) => {
+    if (!localSegments.length) return null;
+    return stopIndex < localSegments.length
+      ? localSegments[stopIndex]
+      : localSegments[Math.max(0, stopIndex - 1)];
+  };
 
   return (
     <section
@@ -40,47 +555,145 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
     >
       {!hideHeader && <header>
         <div>
-          <span>DAY {activeDay + 1} · 실제 장소 기반 동선</span>
+          <span>DAY {activeDay + 1} · KAKAO MOBILITY ROUTE</span>
           <b>{route.label}</b>
         </div>
-        <a href={openMapUrl} target="_blank" rel="noreferrer">
-          전체 지도 ↗
+        <a href={openMapUrl} target="_blank" rel="noreferrer noopener">
+          카카오맵 ↗
         </a>
       </header>}
+
       <div className="route-map-frame">
-        <iframe
-          src={mapUrl}
-          title={`DAY ${activeDay + 1} ${destinationContext} 동선 지도`}
-          loading="lazy"
+        <KakaoRouteCanvas
+          stops={route.stops}
+          segments={coloredSegments}
+          fallbackPoint={destinationLocation}
+          selectedSegmentIndex={selectedSegmentIndex}
+          onSegmentSelect={handleSegmentSelect}
+          visible={visible}
         />
-        <b>DAY {activeDay + 1} ROUTE</b>
-        <div className="route-stop-list">
-          {route.stops.map((stop, index) => (
-            <span key={`${stop.name}-${index}`}>
-              <i>{index + 1}</i>
-              {stop.name}
-            </span>
-          ))}
-        </div>
-        <small className="route-map-context">
-          {originContext} → {destinationContext} · 선택한 장소 기준
-        </small>
-        {compact && <button type="button" className="map-expand-trigger" onClick={() => setExpanded(true)}><Maximize2 size={15} /> 전체 화면으로 경로 보기</button>}
+
+        {compact && (
+          <button type="button" className="map-expand-trigger" onClick={() => setExpanded(true)}>
+            <Maximize2 size={15} /> 전체 화면으로 경로 보기
+          </button>
+        )}
       </div>
+
+      <small className="route-map-context route-map-context-outside">
+        {selectedSegment
+          ? `${selectedSegment.departureName} → ${selectedSegment.arrivalName} · 선택한 경로 기준`
+          : `${originContext} → ${destinationContext} · 경로선 또는 번호를 누르면 구간별 시간 확인`}
+      </small>
+
+      <div className="route-map-below-panel">
+        <div className={`route-map-status route-map-status-outside${selectedSegment ? " is-segment" : ""}`}>
+          {selectedSegment ? (
+            <>
+              <button type="button" className="route-status-reset" onClick={() => setSelectedSegmentIndex(null)}>
+                전체
+              </button>
+              <strong style={{ color: selectedSegment._routeColor }}>
+                {selectedSegment.departureName} → {selectedSegment.arrivalName}
+              </strong>
+              {selectedDistanceKm != null && <span>{selectedDistanceKm.toFixed(1)}km</span>}
+              {selectedDurationMinutes != null && <span>{Math.round(selectedDurationMinutes)}분</span>}
+              {selectedSegment.routeProvider === "ESTIMATED" && <small>추정 경로</small>}
+            </>
+          ) : (
+            <>
+              <strong>{actualSegments.length ? `전체 ${actualSegments.length}구간` : "장소 좌표 표시"}</strong>
+              {totalDistanceKm > 0 && <span>{totalDistanceKm.toFixed(1)}km</span>}
+              {totalDurationMinutes > 0 && <span>{Math.round(totalDurationMinutes)}분</span>}
+              {estimatedSegments.length > 0 && <small>추정 {estimatedSegments.length}구간 포함</small>}
+            </>
+          )}
+        </div>
+
+        <section className="route-stop-section" aria-label={`DAY ${activeDay + 1} 경로 목록`}>
+          <div className="route-stop-section-head">
+            <b>경로 목록</b>
+            <span>{route.stops.length}개 장소</span>
+          </div>
+
+          <div
+            id={`route-stop-list-day-${activeDay + 1}`}
+            className="route-stop-list route-stop-list-outside"
+          >
+            {route.stops.map((stop, index) => {
+              const linkedSegment = routeForStopIndex(index);
+              const linkedSegmentIndex = linkedSegment?._segmentIndex;
+              const active = linkedSegmentIndex != null && linkedSegmentIndex === selectedSegmentIndex;
+
+              return (
+                <button
+                  type="button"
+                  key={`${stop.name}-${index}`}
+                  className={active ? "is-active" : ""}
+                  onClick={() => {
+                    if (linkedSegmentIndex != null) {
+                      handleSegmentSelect(linkedSegmentIndex);
+                    }
+                  }}
+                  title={linkedSegment
+                    ? `${linkedSegment.departureName} → ${linkedSegment.arrivalName} 구간 보기`
+                    : stop.name}
+                >
+                  <i style={{ background: linkedSegment?._routeColor || ROUTE_SEGMENT_COLORS[0] }}>
+                    {index + 1}
+                  </i>
+                  <span>{stop.name}</span>
+                  {linkedSegment?.durationMinutes != null && (
+                    <em>{Math.round(Number(linkedSegment.durationMinutes))}분</em>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </section>
+      </div>
+
       {compact && expanded && (
         <div className="mobile-map-expanded" role="dialog" aria-modal="true" aria-label={`DAY ${activeDay + 1} 전체 경로 지도`}>
-          <header><span><small>DAY {activeDay + 1} ROUTE</small><b>{route.label}</b></span><button type="button" onClick={() => setExpanded(false)} aria-label="전체 지도 닫기"><Minimize2 size={16} /><span>지도 닫기</span></button></header>
+          <header>
+            <span><small>DAY {activeDay + 1} ROUTE</small><b>{route.label}</b></span>
+            <button type="button" onClick={() => setExpanded(false)} aria-label="전체 지도 닫기">
+              <Minimize2 size={16} /><span>지도 닫기</span>
+            </button>
+          </header>
+
           <div className="mobile-expanded-map-canvas">
-            <iframe src={mapUrl} title={`DAY ${activeDay + 1} 전체 화면 경로 지도`} />
-            <div className="map-zoom-controls" aria-label="지도 확대 축소">
-              <button type="button" onClick={() => setZoom((value) => Math.min(18, value + 1))} aria-label="지도 확대"><Plus size={18} /></button>
-              <button type="button" onClick={() => setZoom((value) => Math.max(7, value - 1))} aria-label="지도 축소"><Minus size={18} /></button>
-            </div>
+            <KakaoRouteCanvas
+              stops={route.stops}
+              segments={coloredSegments}
+              fallbackPoint={destinationLocation}
+              selectedSegmentIndex={selectedSegmentIndex}
+              onSegmentSelect={handleSegmentSelect}
+              visible={visible}
+              showControls
+              className="is-expanded"
+            />
           </div>
+
           <div className="mobile-map-stop-sheet">
             <b>오늘의 이동 순서</b>
-            {route.stops.map((stop, index) => <span key={`${stop.name}-expanded-${index}`}><i>{index + 1}</i>{stop.name}</span>)}
-            <a href={openMapUrl} target="_blank" rel="noreferrer">Google 지도에서 길찾기 ↗</a>
+            {route.stops.map((stop, index) => {
+              const linkedSegment = routeForStopIndex(index);
+              const linkedSegmentIndex = linkedSegment?._segmentIndex;
+              return (
+                <button
+                  type="button"
+                  key={`${stop.name}-expanded-${index}`}
+                  className={linkedSegmentIndex === selectedSegmentIndex ? "is-active" : ""}
+                  onClick={() => linkedSegmentIndex != null && handleSegmentSelect(linkedSegmentIndex)}
+                >
+                  <i style={{ background: linkedSegment?._routeColor || ROUTE_SEGMENT_COLORS[0] }}>{index + 1}</i>
+                  <span>{stop.name}</span>
+                  {linkedSegment?.durationMinutes != null && <small>{Math.round(Number(linkedSegment.durationMinutes))}분</small>}
+                </button>
+              );
+            })}
+            <a href={openMapUrl} target="_blank" rel="noreferrer noopener">카카오맵에서 보기 ↗</a>
           </div>
         </div>
       )}

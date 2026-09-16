@@ -2328,11 +2328,52 @@ export const stayChangeSummaryFor = (change) => {
     },
   ];
 };
-export const applyPlanEdits = (plans, edits) =>
-  plans.map((day, dayIndex) => {
-    let cursor = timeToMinutes(day[2][0]?.[0] || "08:30");
-    const rows = day[2].map((event, stopIndex) => {
-      const replacement = edits[`${dayIndex}-${stopIndex}`];
+export const applyPlanEdits = (plans, edits) => {
+  const safeEdits = edits && typeof edits === "object" ? edits : {};
+
+  // 백엔드 TripPlan은 startAt/endAt이 이미 실제 routing 결과를 반영한다.
+  // 수정사항이 하나도 없는데도 기존 함수가 모든 시각을 0분 이동 기준으로
+  // 다시 계산하면서 TransportSegment와 화면 시간이 달라지는 문제가 있었다.
+  if (Object.keys(safeEdits).length === 0) {
+    return plans;
+  }
+
+  return plans.map((day, dayIndex) => {
+    const events = Array.isArray(day?.[2]) ? day[2] : [];
+    const hasBackendTimeline = events.some((event) => Boolean(event?.[6]?.startAt));
+
+    // 실제 백엔드 일정은 장소 텍스트만 교체하고 시간은 그대로 유지한다.
+    // 경로/시간 재계산은 backend revision API가 담당해야 하므로 프론트가
+    // 임의의 15분/직선거리 추정으로 startAt을 덮어쓰지 않는다.
+    if (hasBackendTimeline) {
+      const rows = events.map((event, stopIndex) => {
+        const replacement = safeEdits[`${dayIndex}-${stopIndex}`];
+        if (!replacement) return event;
+
+        return [
+          event[0],
+          replacement.icon ?? event[1],
+          replacement.name ?? event[2],
+          replacement.detail ?? event[3],
+          replacement.duration ?? event[4],
+          event[5],
+          {
+            ...(event[6] || {}),
+            bookingUrl: replacement.bookingUrl ?? event[6]?.bookingUrl ?? null,
+            latitude: replacement.latitude ?? event[6]?.latitude ?? null,
+            longitude: replacement.longitude ?? event[6]?.longitude ?? null,
+            isGeographical: true,
+          },
+        ];
+      });
+
+      return [day[0], day[1], rows];
+    }
+
+    // mock 일정은 기존 방식대로 화면용 시간을 다시 계산한다.
+    let cursor = timeToMinutes(events[0]?.[0] || "08:30");
+    const rows = events.map((event, stopIndex) => {
+      const replacement = safeEdits[`${dayIndex}-${stopIndex}`];
       const source = replacement
         ? [
             event[0],
@@ -2354,8 +2395,10 @@ export const applyPlanEdits = (plans, edits) =>
       cursor += durationToMinutes(source[4]) + (source[5] ?? 15);
       return next;
     });
+
     return [day[0], day[1], rows];
   });
+};
 export const placeEntryCost = (name) => {
   if (/아르떼뮤지엄|케이블카|서울타워|과학관|수목원/.test(name)) return 20000;
   if (/카멜리아힐|한림공원|박물관|화성행궁|경기전|공산성|불국사/.test(name)) return 10000;

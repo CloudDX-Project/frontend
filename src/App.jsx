@@ -1794,6 +1794,7 @@ function App() {
                 setFlightTransitionOpen(false);
                 setFlightPickerLeg("return");
                 setFlightOpen(true);
+                void loadFlightOptions("return");
               }}
             >
               오는 편 비교 시작 →
@@ -1894,7 +1895,7 @@ function App() {
                     </b>
 
                     <small>
-                      백엔드에서 지역 기준 대표공항 자동 선택
+                      지역 기준 대표공항 자동 선택
                     </small>
                   </div>
                 </div>
@@ -1988,7 +1989,9 @@ function App() {
                   <button
                     type="button"
                     onClick={() =>
-                      void loadFlightOptions()
+                      void loadFlightOptions(
+                        flightPickerLeg,
+                      )
                     }
                   >
                     다시 조회
