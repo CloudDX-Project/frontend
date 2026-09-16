@@ -2,6 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 
 import {
+  estimateBaggageAllowance,
+  flightDurationMinutes,
   flightRecommendationScore,
   orderFlights,
 } from "../src/utils/flightRanking.js";
@@ -63,5 +65,36 @@ test("취소 항공편은 추천순에서 가장 낮은 점수를 받는다", ()
   assert.equal(
     flightRecommendationScore(cancelled, [...flights, cancelled], "outbound"),
     -1000,
+  );
+});
+
+test("예상 수하물은 표시 운임이 높아질수록 같은 용량이거나 커진다", () => {
+  const fareOptions = [
+    flight("low", "08:00", "09:10", 65000),
+    flight("middle", "10:00", "11:10", 85000),
+    flight("high", "12:00", "13:10", 125000),
+  ];
+
+  const allowances = fareOptions.map((item) =>
+    estimateBaggageAllowance(item, fareOptions),
+  );
+
+  assert.deepEqual(
+    allowances.map((item) => item.checkedKg),
+    [15, 20, 25],
+  );
+  assert.ok(allowances.every((item) => item.cabinKg === 10));
+});
+
+test("API가 개별 운항시간을 제공하면 시각 차이보다 해당 값을 우선 사용한다", () => {
+  const supplied = {
+    ...flight("variable-duration", "10:00", "11:15", 90000),
+    durationMinutes: 68,
+  };
+
+  assert.equal(flightDurationMinutes(supplied), 68);
+  assert.equal(
+    flightDurationMinutes(flight("calculated-duration", "10:00", "11:15", 90000)),
+    75,
   );
 });

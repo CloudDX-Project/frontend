@@ -10,21 +10,26 @@ const JEJU_AIRPORT = {
   shortName: "제주",
   region: "제주권",
 };
-function AirportCard({ airport, label, onClick, expanded }) {
+function AirportCard({ airport, label, onClick, expanded, selectable = true }) {
   return (
     <button
       type="button"
-      className="flight-route-airport"
-      aria-haspopup="dialog"
-      aria-expanded={expanded}
-      onClick={onClick}
+      className={`flight-route-airport ${selectable ? "is-selectable" : "is-fixed"}`}
+      aria-haspopup={selectable ? "dialog" : undefined}
+      aria-expanded={selectable ? expanded : undefined}
+      onClick={selectable ? onClick : undefined}
+      disabled={!selectable}
     >
       <span>{label}</span>
       <div>
         <strong>{airport.code}</strong>
         <b>{airport.city}</b>
         <small>{airport.name}</small>
-        <ChevronDown size={16} strokeWidth={1.8} aria-hidden="true" />
+        {selectable ? (
+          <ChevronDown size={16} strokeWidth={1.8} aria-hidden="true" />
+        ) : (
+          <em>고정</em>
+        )}
       </div>
     </button>
   );
@@ -71,6 +76,7 @@ export default function AirportRoutePicker({ airports, originAirport, leg, onOri
         <AirportCard
           airport={departureAirport}
           label="출발 공항"
+          selectable={selectableSide === "departure"}
           expanded={openSide === "departure"}
           onClick={() => setOpenSide((current) => current === "departure" ? "" : "departure")}
         />
@@ -80,6 +86,7 @@ export default function AirportRoutePicker({ airports, originAirport, leg, onOri
         <AirportCard
           airport={arrivalAirport}
           label="도착 공항"
+          selectable={selectableSide === "arrival"}
           expanded={openSide === "arrival"}
           onClick={() => setOpenSide((current) => current === "arrival" ? "" : "arrival")}
         />

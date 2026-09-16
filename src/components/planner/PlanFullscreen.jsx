@@ -651,7 +651,7 @@ function PlanFullscreen({
               onClick={() => setPlacePicker(null)}
               aria-label="장소 변경 닫기"
             >
-              ×
+              <X size={18} strokeWidth={1.8} aria-hidden="true" />
             </button>
             <p>✦ TripBuddy AI · ROUTE EDIT</p>
             <h3>

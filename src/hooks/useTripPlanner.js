@@ -72,6 +72,22 @@ const flightTimeLabel = (flight) => {
 const flightDurationMinutes = (
   flight,
 ) => {
+  const suppliedDuration =
+    Number(
+      flight?.durationMinutes,
+    );
+
+  if (
+    Number.isFinite(
+      suppliedDuration,
+    ) &&
+    suppliedDuration > 0
+  ) {
+    return Math.round(
+      suppliedDuration,
+    );
+  }
+
   if (
     !flight?.departureTime ||
     !flight?.arrivalTime

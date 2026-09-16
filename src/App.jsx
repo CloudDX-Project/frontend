@@ -1,14 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import {
-  Car,
+  ArrowRight,
+  ArrowUp,
   ChevronDown,
-  Home,
-  Plane,
+  Luggage,
   RotateCcw,
   SlidersHorizontal,
-  Smartphone,
-  Sparkles,
-  Ticket,
+  X,
 } from "lucide-react";
 
 import {
@@ -32,6 +30,7 @@ import {
   outboundOptions,
   paceOptions,
   quickLinks,
+  regionalPlaceAlternatives,
   returnTimeOptions,
   stayChangeSummaryFor,
   themeOptions,
@@ -55,10 +54,43 @@ import CarDetailsStep from "./components/planner/CarDetailsStep";
 import RentalComparisonModal from "./components/planner/RentalComparisonModal";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
-import { flightClockMinutes, orderFlights } from "./utils/flightRanking";
+import {
+  estimateBaggageAllowance,
+  flightClockMinutes,
+  flightDurationMinutes,
+  orderFlights,
+} from "./utils/flightRanking";
 import "./components/planner/flight-booking-modal.css";
 
-const quickAccessIcons = { sparkles: Sparkles, plane: Plane, home: Home, ticket: Ticket, car: Car, smartphone: Smartphone };
+const quickAccessIconAssets = {
+  sparkles: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/sparkles/3D/sparkles_3d.png", fallback: "✨" },
+  plane: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/airplane/3D/airplane_3d.png", fallback: "✈️" },
+  home: { src: "", fallback: "" },
+  ticket: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/admission-tickets/3D/admission_tickets_3d.png", fallback: "🎢" },
+  car: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/automobile/3D/automobile_3d.png", fallback: "🚗" },
+  smartphone: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/mobile-phone/3D/mobile_phone_3d.png", fallback: "📱" },
+};
+
+const flightStatusLabel = (status) => {
+  const value = String(status || "").trim();
+  const normalized = value.toLowerCase();
+
+  if (!value) return "운항 예정";
+  if (normalized.includes("cancel") || value.includes("취소")) return "운항 취소";
+  if (normalized.includes("delay") || value.includes("지연")) return "지연";
+  if (normalized.includes("depart") || value.includes("출발 완료")) return "출발 완료";
+  if (normalized.includes("arriv") || value.includes("도착 완료")) return "도착 완료";
+  if (
+    normalized.includes("schedule") ||
+    normalized.includes("on time") ||
+    value.includes("예정") ||
+    value.includes("정상")
+  ) {
+    return "운항 예정";
+  }
+
+  return value;
+};
 
 const flightOfferFor = (flight, flights, leg) => {
   const price = Number(flight?.estimatedPricePerPerson) || 0;
@@ -358,6 +390,21 @@ function App() {
 
   const flightDealCount = flightOffers.size;
 
+  const planningPreviewPlaces = useMemo(() => {
+    const regionalPlaces = regionalPlaceAlternatives[
+      destinationLocation?.region || ""
+    ]?.filter((place) => place.image) || [];
+
+    if (regionalPlaces.length) return regionalPlaces.slice(0, 7);
+
+    return destinationExplorerItems.slice(0, 6).map((place) => ({
+      name: place.title,
+      detail: place.subtitle,
+      image: place.image,
+      icon: "⌖",
+    }));
+  }, [destinationLocation?.region]);
+
   useEffect(() => {
     const handleAuthExpired = () => {
       setLoggedIn(false);
@@ -483,7 +530,7 @@ function App() {
               }}
               aria-label="로그인 닫기"
             >
-              ×
+              <X size={18} strokeWidth={1.8} aria-hidden="true" />
             </button>
 
             <p>TripBuddy 계정</p>
@@ -589,7 +636,7 @@ function App() {
               onClick={() => !myTripsLoading && setMyTripsOpen(false)}
               aria-label="내 예약 닫기"
             >
-              ×
+              <X size={18} strokeWidth={1.8} aria-hidden="true" />
             </button>
             <p>TripBuddy · MY TRIPS</p>
             <h3 id="my-trips-title">저장된 여행 일정</h3>
@@ -667,7 +714,7 @@ function App() {
       <section className="quick-access" aria-label="여행 바로가기">
         <div className="quick-access-inner">
           {quickLinks.map((link) => {
-            const Icon = quickAccessIcons[link.icon] || Sparkles;
+            const iconAsset = quickAccessIconAssets[link.icon] || quickAccessIconAssets.sparkles;
             return (
             <button
               type="button"
@@ -677,7 +724,13 @@ function App() {
                 window.requestAnimationFrame(() => document.querySelector(link.target)?.scrollIntoView({ behavior: "smooth" }));
               }}
             >
-              <span><Icon size={20} strokeWidth={2} /></span>
+              {link.icon === "home" ? (
+                <span className="quick-access-hotel-icon" aria-hidden="true"><i /></span>
+              ) : (
+                <span data-fallback={iconAsset.fallback}>
+                  <img src={iconAsset.src} alt="" aria-hidden="true" loading="eager" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.parentElement?.classList.add("is-fallback"); }} />
+                </span>
+              )}
               <b>{link.title}</b>
               <small>{link.text}</small>
             </button>
@@ -733,7 +786,7 @@ function App() {
                     onClick={submitPrompt}
                     aria-label="여행 요청 전송"
                   >
-                    ↵
+                    <ArrowUp size={17} strokeWidth={2.2} aria-hidden="true" />
                   </button>
                   <button
                     type="button"
@@ -741,7 +794,7 @@ function App() {
                     onClick={() => setPrompt("")}
                     aria-label="입력 내용 지우기"
                   >
-                    ×
+                    <X size={18} strokeWidth={1.8} aria-hidden="true" />
                   </button>
                 </div>
               </div>
@@ -825,7 +878,7 @@ function App() {
                           <b>출발지를 선택해 주세요</b>
                         </span>
                       )}
-                      <i className="route-chevron">⌄</i>
+                      <i className="route-chevron"><ChevronDown size={18} strokeWidth={2} aria-hidden="true" /></i>
                     </button>
                     {departureMenuOpen && (
                       <RegionLocationMenu
@@ -846,7 +899,7 @@ function App() {
                     )}
                   </div>
                   <i className="route-direction" aria-hidden="true">
-                    →
+                    <ArrowRight size={20} strokeWidth={2.1} />
                   </i>
                   <div className="route-picker route-destination-picker">
                     <small>도착지</small>
@@ -873,7 +926,7 @@ function App() {
                           <b>도착지를 선택해 주세요</b>
                         </span>
                       )}
-                      <i className="route-chevron">⌄</i>
+                      <i className="route-chevron"><ChevronDown size={18} strokeWidth={2} aria-hidden="true" /></i>
                     </button>
                     {menuOpen && (
                       <DestinationExplorer
@@ -1116,56 +1169,58 @@ function App() {
                 )}
                 {localTransport === "RENTAL" && (
                   <section className="rental-section">
-                    <div className="booking-heading">
-                      <div>
-                        <p>현지 렌터카 선택</p>
-                        <small>
-                          {selectedFlight
-                            ? `${selectedFlight.airline} 항공 선택 뒤, AI가 2박 3일 동선에 맞춰 비교했어요.`
-                            : "AI가 2박 3일 동선과 여행 인원을 기준으로 비교했어요."}
-                        </small>
-                      </div>
-                      <em>2박 3일 · 48시간 비교</em>
-                    </div>
-                    <div className="rental-ai-tip">
-                      <span>✦</span>
-                      <p>
-                        <b>AI 추천</b> 애월·협재·중문까지 이동하는 일정이라면
-                        렌터카가 가장 유연해요. <strong>빌리카</strong>는 현재
-                        비교 목록 중 가장 낮은 가격입니다.
-                      </p>
-                    </div>
-                    <div className="booking-summary rental-summary">
-                      <div>
-                        <span>🚗</span>
+                    <div className={`rental-confirmation-card ${selectedRental ? "is-selected" : ""}`}>
+                      <header>
                         <div>
-                          <small>
-                            {selectedRental
-                              ? `${selectedRental.car} · 2박 3일 48시간 총 대여료`
-                            : `${destinationLocation.detail} 현지 이동 수단`}
-                          </small>
-                          <b>
-                            {selectedRental
-                              ? `${selectedRental.company} · 총 ${money(selectedRental.price)}원`
-                              : "2박 3일 특가 렌터카를 팝업에서 비교해 보세요"}
-                          </b>
+                          <span>현지 이동</span>
+                          <h3>{selectedRental ? "선택한 렌터카" : "렌터카 선택"}</h3>
                         </div>
+                        <em>{nights}박 · 48시간</em>
+                      </header>
+                      <div className="rental-confirmation-body">
+                        {selectedRental?.image ? (
+                          <img src={selectedRental.image} alt={`${selectedRental.car} 차량`} />
+                        ) : (
+                          <span className="rental-confirmation-icon" aria-hidden="true">🚗</span>
+                        )}
+                        <div className="rental-confirmation-info">
+                          <small>{selectedRental?.company || `${destinationLocation.detail} 현지 이동`}</small>
+                          <strong>{selectedRental?.car || "여행 일정에 맞는 차량을 비교해 보세요"}</strong>
+                          {selectedRental ? (
+                            <div>
+                              <span>{selectedRental.insurance || "보험 조건 확인"}</span>
+                              <span>{selectedRental.pickup || "제주공항 인수"}</span>
+                              {selectedRental.score && <span>평점 {selectedRental.score}</span>}
+                            </div>
+                          ) : (
+                            <p>차종·보험·인수 조건과 총 대여료를 한 화면에서 비교할 수 있어요.</p>
+                          )}
+                        </div>
+                        {selectedRental && (
+                          <div className="rental-confirmation-price">
+                            <small>48시간 총액</small>
+                            <strong>{money(selectedRental.price)}원</strong>
+                            <span>{selectedRental.note || `${nights}박 일정 기준`}</span>
+                          </div>
+                        )}
                       </div>
-                      {selectedRental && (
-                        <strong>
-                          총 {money(selectedRental.price)}원
-                          <small>2박 3일 · 48시간</small>
-                        </strong>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (showPlan) setQuickEditTarget("rental");
-                          setRentalOpen(true);
-                        }}
-                      >
-                        {selectedRental ? "렌터카 변경" : "렌터카 고르기"} →
-                      </button>
+                      <footer>
+                        <p>
+                          <b>AI 추천</b>{" "}
+                          {selectedRental
+                            ? `${destinationLocation.detail}을 포함한 제주 동선과 보험 조건을 함께 반영한 선택입니다.`
+                            : "제주 이동 거리와 여행 인원을 기준으로 알맞은 차량을 추천해 드려요."}
+                        </p>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (showPlan) setQuickEditTarget("rental");
+                            setRentalOpen(true);
+                          }}
+                        >
+                          {selectedRental ? "렌터카 변경" : "렌터카 고르기"} <span aria-hidden="true">→</span>
+                        </button>
+                      </footer>
                     </div>
                   </section>
                 )}
@@ -1176,7 +1231,7 @@ function App() {
               </div>
             )}
             {destinationLocation && (
-              <section className="booking-section">
+              <section className="booking-section stay-selection-section">
                 <div className="booking-heading">
                   <div>
                     <p>
@@ -1192,42 +1247,63 @@ function App() {
                       : "숙소 미선택"}
                   </em>
                 </div>
-                <div className="booking-summary">
-                  <div>
-                    <span>⌂</span>
-                    <div>
-                      <small>
-                        {selectedStay
-                          ? `${selectedStay.area} · 객실 ${rooms}개`
-                          : `${destinationLocation.region} 숙소`}
-                      </small>
-                      <b>
-                        {selectedStay
-                          ? selectedStay.name
-                          : "가격대와 지역으로 숙소를 찾아보세요"}
-                      </b>
-                    </div>
-                  </div>
-                  {selectedStay && (
-                    <strong>
-                      {selectedStay.priceText ||
-                        (
-                          selectedStay.priceAvg != null
-                            ? `평균 1박 ${money(selectedStay.priceAvg)}원`
-                            : "가격 정보 확인"
+                {selectedStay ? (
+                  <article className="stay-confirmation-card">
+                    <img src={selectedStay.image} alt={`${selectedStay.name} 대표 이미지`} />
+                    <div className="stay-confirmation-info">
+                      <div className="stay-confirmation-meta">
+                        <span>{selectedStay.area}</span>
+                        {selectedStay.rating != null && (
+                          <span>★ {selectedStay.rating}{selectedStay.ratingScale ? `/${selectedStay.ratingScale}` : ""}</span>
                         )}
-                    </strong>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      if (showPlan) setQuickEditTarget("stay");
-                      setStayOpen(true);
-                    }}
-                  >
-                    숙소 전체 비교 →
-                  </button>
-                </div>
+                        {selectedStay.reviewCount > 0 && <span>후기 {money(selectedStay.reviewCount)}개</span>}
+                      </div>
+                      <h3>{selectedStay.name}</h3>
+                      <div className="stay-confirmation-details">
+                        <span><small>투숙</small><b>{nights}박 · 객실 {rooms}개</b></span>
+                        {(selectedStay.checkInTime || selectedStay.checkOutTime) && (
+                          <span>
+                            <small>이용 시간</small>
+                            <b>{selectedStay.checkInTime || "체크인 확인"} → {selectedStay.checkOutTime || "체크아웃 확인"}</b>
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="stay-confirmation-price">
+                      <small>{selectedStay.priceAvg != null ? "평균 1박" : "가격 안내"}</small>
+                      <strong>
+                        {selectedStay.priceAvg != null
+                          ? `${money(selectedStay.priceAvg)}원`
+                          : selectedStay.priceText || "가격 확인"}
+                      </strong>
+                      {selectedStay.priceAvg != null && (
+                        <span>예상 총 {money(selectedStay.priceAvg * nights * rooms)}원</span>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (showPlan) setQuickEditTarget("stay");
+                          setStayOpen(true);
+                        }}
+                      >
+                        숙소 변경 <span aria-hidden="true">→</span>
+                      </button>
+                    </div>
+                  </article>
+                ) : (
+                  <div className="booking-summary">
+                    <div>
+                      <span>⌂</span>
+                      <div>
+                        <small>{destinationLocation.region} 숙소</small>
+                        <b>가격대와 지역으로 숙소를 찾아보세요</b>
+                      </div>
+                    </div>
+                    <button type="button" onClick={() => setStayOpen(true)}>
+                      숙소 전체 비교 →
+                    </button>
+                  </div>
+                )}
                 {stayOpen && (
                   <div
                     className="booking-picker stay-picker"
@@ -1257,7 +1333,7 @@ function App() {
                         }}
                         aria-label="숙소 비교 닫기"
                       >
-                        ×
+                        <X size={18} strokeWidth={1.8} aria-hidden="true" />
                       </button>
                     </header>
                     <div className="stay-ai-recommendation">
@@ -1597,7 +1673,7 @@ function App() {
           if (event.target === event.currentTarget) setIsDisclaimerOpen(false);
         }}>
           <section className="ai-modal disclaimer-modal" role="dialog" aria-modal="true" aria-labelledby="disclaimer-title">
-            <button type="button" className="modal-close" onClick={() => setIsDisclaimerOpen(false)} aria-label="안내 닫기">×</button>
+            <button type="button" className="modal-close" onClick={() => setIsDisclaimerOpen(false)} aria-label="안내 닫기"><X size={18} strokeWidth={1.8} aria-hidden="true" /></button>
             <p>AI TRIP ESTIMATE</p>
             <h3 id="disclaimer-title">⚠️ AI 예상 경비 및 일정 안내</h3>
             <ul>
@@ -1615,6 +1691,23 @@ function App() {
       {showScrollTop && <button className="scroll-to-top" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>↑ TOP</button>}
       {planning && (
         <div className="planning-overlay" role="status" aria-live="polite">
+          <div className="planning-panorama" aria-hidden="true">
+            <div className="planning-panorama-track">
+              {[...planningPreviewPlaces, ...planningPreviewPlaces].map((place, index) => (
+                <figure key={`${place.name}-${index}`} style={{ "--card-index": index }}>
+                  <img src={place.image} alt="" />
+                  <figcaption>
+                    <span>{place.icon || "⌖"}</span>
+                    <div>
+                      <b>{place.name}</b>
+                      <small>{place.representativeMenu || place.detail}</small>
+                    </div>
+                  </figcaption>
+                </figure>
+              ))}
+            </div>
+            <span className="planning-scan-line" />
+          </div>
           <div
             className={`planning-loader ${planningMode === "stay-revision" ? "stay-revision-loader" : ""}`}
           >
@@ -1707,7 +1800,7 @@ function App() {
               onClick={() => setTravelerPromptOpen(false)}
               aria-label="인원 입력 창 닫기"
             >
-              ×
+              <X size={18} strokeWidth={1.8} aria-hidden="true" />
             </button>
             <p>✦ TripBuddy AI · TRIP PARTY</p>
             <Premium3dIcon type="traveler" />
@@ -1764,7 +1857,7 @@ function App() {
               onClick={() => setTransportModalOpen(false)}
               aria-label="질문 닫기"
             >
-              ×
+              <X size={18} strokeWidth={1.8} aria-hidden="true" />
             </button>
             <p>
               ✦ TripBuddy AI ·{" "}
@@ -1950,14 +2043,15 @@ function App() {
           >
             <button
               type="button"
-              className="modal-close"
+              className="modal-close flight-modal-close"
               onClick={() => {
                 setFlightOpen(false);
                 setQuickEditTarget("");
               }}
               aria-label="항공편 닫기"
+              title="닫기"
             >
-              ×
+              <X size={20} strokeWidth={1.8} aria-hidden="true" />
             </button>
             <p>✦ TripBuddy AI · FLIGHT MATCH</p>
             <div className="journey-chip">
@@ -2084,6 +2178,10 @@ function App() {
                         returnFlightId;
 
                   const deal = flightOffers.get(flight.id) || null;
+                  const baggage = estimateBaggageAllowance(
+                    flight,
+                    displayFlights,
+                  );
 
                   const departureTime =
                     flight.departureTime?.slice(
@@ -2098,33 +2196,14 @@ function App() {
                     ) ?? "--:--";
 
                   const durationMinutes =
-                    (() => {
-                      if (
-                        !flight.departureTime ||
-                        !flight.arrivalTime
-                      ) {
-                        return 0;
-                      }
-
-                      return Math.max(
-                        0,
-                        Math.round(
-                          (new Date(
-                            flight.arrivalTime,
-                          ).getTime() -
-                            new Date(
-                              flight.departureTime,
-                            ).getTime()) /
-                            60000,
-                        ),
-                      );
-                    })();
+                    flightDurationMinutes(flight);
 
                   return (
                     <button
                       type="button"
                       key={flight.id}
                       className={`${isSelected ? "selected" : ""} ${deal ? "sale-flight" : ""} ${deal?.featured ? "featured-flight" : ""}`}
+                      aria-pressed={isSelected}
                       onClick={() =>
                         chooseFlight(
                           flight.id,
@@ -2166,7 +2245,9 @@ function App() {
 
                           <i>
                             <small>
-                              {durationMinutes}분
+                              {durationMinutes < Number.MAX_SAFE_INTEGER
+                                ? `예상 ${durationMinutes}분`
+                                : "시간 확인 중"}
                             </small>
 
                             <b>
@@ -2194,13 +2275,21 @@ function App() {
                           </i>
 
                           <i>
-                            {flight.status ||
-                              "운항 상태 확인"}
+                            {flightStatusLabel(flight.status)}
                           </i>
 
                           <i>
                             예상 운임
                           </i>
+
+                          <span
+                            className={`flight-baggage flight-baggage-${baggage.tier}`}
+                            title={`가격대 기준 시연 정보 · 기내 수하물 ${baggage.cabinKg}kg`}
+                          >
+                            <Luggage size={12} strokeWidth={2} aria-hidden="true" />
+                            예상 위탁 {baggage.checkedKg}kg
+                            <small>· 기내 {baggage.cabinKg}kg</small>
+                          </span>
                         </span>
 
                         {deal ? (
@@ -2230,6 +2319,12 @@ function App() {
                         <small>
                           {deal ? "특가 · 편도 1인" : "예상 · 편도 1인"}
                         </small>
+
+                        {isSelected ? (
+                          <span className="flight-selected-indicator">
+                            ✓ 선택 완료
+                          </span>
+                        ) : null}
                       </strong>
                     </button>
                   );
@@ -2448,7 +2543,7 @@ function App() {
               onClick={() => setStayChangeCompareOpen(false)}
               aria-label="숙소 변경 비교 닫기"
             >
-              ×
+              <X size={18} strokeWidth={1.8} aria-hidden="true" />
             </button>
             <p>✦ TripBuddy AI · BEFORE & AFTER</p>
             <h3 id="stay-change-compare-title">

@@ -1,3 +1,4 @@
+import { X } from "lucide-react";
 import { jejuRegionOptions } from "../../data/mockData";
 
 export default function JejuRegionModal({
@@ -22,7 +23,7 @@ export default function JejuRegionModal({
           onClick={onClose}
           aria-label="제주 세부지역 선택 닫기"
         >
-          ×
+          <X size={18} strokeWidth={1.8} aria-hidden="true" />
         </button>
         <p>✦ TripBuddy AI · JEJU REGION GUIDE</p>
         <h3 id="jeju-area-title">

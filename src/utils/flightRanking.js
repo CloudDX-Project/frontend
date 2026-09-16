@@ -10,6 +10,11 @@ export const flightClockMinutes = (value) => {
 };
 
 export const flightDurationMinutes = (flight) => {
+  const suppliedDuration = Number(flight?.durationMinutes);
+  if (Number.isFinite(suppliedDuration) && suppliedDuration > 0) {
+    return Math.round(suppliedDuration);
+  }
+
   if (!flight?.departureTime || !flight?.arrivalTime) {
     return Number.MAX_SAFE_INTEGER;
   }
@@ -22,6 +27,34 @@ export const flightDurationMinutes = (flight) => {
         60000,
     ),
   );
+};
+
+export const estimateBaggageAllowance = (flight, flights = []) => {
+  const price = Number(flight?.estimatedPricePerPerson);
+  const uniquePrices = [
+    ...new Set(
+      flights
+        .map((item) => Number(item?.estimatedPricePerPerson))
+        .filter((itemPrice) => Number.isFinite(itemPrice) && itemPrice > 0),
+    ),
+  ].sort((a, b) => a - b);
+
+  if (!Number.isFinite(price) || price <= 0 || uniquePrices.length <= 1) {
+    return { checkedKg: 15, cabinKg: 10, tier: "light" };
+  }
+
+  const priceIndex = Math.max(0, uniquePrices.indexOf(price));
+  const pricePercentile = priceIndex / (uniquePrices.length - 1);
+
+  if (pricePercentile > 0.67) {
+    return { checkedKg: 25, cabinKg: 10, tier: "flex" };
+  }
+
+  if (pricePercentile > 0.33) {
+    return { checkedKg: 20, cabinKg: 10, tier: "standard" };
+  }
+
+  return { checkedKg: 15, cabinKg: 10, tier: "light" };
 };
 
 export const flightRecommendationScore = (flight, flights, leg) => {

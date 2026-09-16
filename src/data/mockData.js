@@ -37,13 +37,15 @@ export const heroSlides = [
 ];
 
 export const images = {
-  jeju: jejuCoastPhoto,
+  // 가이드 카드는 메인 히어로·여행지 탐색 카드와 겹치지 않는 실제 명소 사진을 사용합니다.
+  jeju:
+    "https://tong.visitkorea.or.kr/cms/resource/56/3114756_image2_1.jpg",
   fukuoka:
-    "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=1600&q=90",
+    "https://unsplash.com/photos/XNhdYWw_xcg/download?force=true&w=1600",
   bangkok:
-    "https://images.unsplash.com/photo-1563492065599-3520f775eeed?auto=format&fit=crop&w=1600&q=90",
+    "https://api.tourismthailand.org/upload/live/content_article/1124-17204.png",
   newyork:
-    "https://images.unsplash.com/photo-1485871981521-5b1fd3805eee?auto=format&fit=crop&w=1600&q=90",
+    "https://unsplash.com/photos/Zmod14qJWws/download?force=true&w=1600",
   coast: "https://cdn.sisunnews.co.kr/news/photo/201810/91116_202218_2718.jpg",
 };
 export const destinations = [
@@ -51,28 +53,28 @@ export const destinations = [
     id: "jeju",
     title: "제주도",
     city: "Jeju, Korea",
-    tag: "돌하르방과 푸른 바다",
+    tag: "성산일출봉과 푸른 제주 바다",
     image: images.jeju,
   },
   {
     id: "fukuoka",
     title: "후쿠오카",
     city: "Fukuoka, Japan",
-    tag: "다자이후와 골목의 여유",
+    tag: "후쿠오카 타워와 도심의 야경",
     image: images.fukuoka,
   },
   {
     id: "bangkok",
     title: "방콕",
     city: "Bangkok, Thailand",
-    tag: "왓 아룬 너머의 노을",
+    tag: "짜오프라야 강변의 왓 아룬",
     image: images.bangkok,
   },
   {
     id: "newyork",
     title: "뉴욕",
     city: "New York, USA",
-    tag: "맨해튼의 화려한 하루",
+    tag: "골든아워의 맨해튼 스카이라인",
     image: images.newyork,
   },
 ];

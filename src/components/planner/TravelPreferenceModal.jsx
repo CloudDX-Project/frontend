@@ -1,4 +1,4 @@
-import { ArrowLeft, ArrowRight, Check } from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, X } from "lucide-react";
 import { useState } from "react";
 import { foodPreferenceCardOptions } from "../../data/mockData";
 import "./travel-preference-modal.css";
@@ -31,7 +31,7 @@ export default function TravelPreferenceModal({
   return (
     <div className="ai-modal-backdrop preference-modal-backdrop" role="presentation">
       <section className="ai-modal preference-modal preference-step-modal" role="dialog" aria-modal="true" aria-labelledby="preference-modal-title">
-        <button type="button" className="modal-close" onClick={onClose} aria-label="여행 취향 설정 닫기">×</button>
+        <button type="button" className="modal-close" onClick={onClose} aria-label="여행 취향 설정 닫기"><X size={18} strokeWidth={1.8} aria-hidden="true" /></button>
 
         <header className="preference-step-header">
           <p>✦ TripBuddy AI · TRAVEL STYLE</p>

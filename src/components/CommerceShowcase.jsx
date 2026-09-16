@@ -92,16 +92,16 @@ export default function CommerceShowcase() {
 
   useEffect(() => {
     if (primaryPaused) return undefined;
-    const timer = window.setInterval(() => setPrimaryTick((current) => current + 1), 4000);
+    const timer = window.setInterval(() => setPrimaryTick((current) => current + 1), 3000);
     return () => window.clearInterval(timer);
   }, [primaryPaused]);
 
   return (
     <section className="commerce-showcase" aria-label="여행 상품 추천">
-      <InfiniteProductRow id="commerce-tours" eyebrow="TRENDING EXPERIENCES · 12" title="사진만 봐도 떠나고 싶은 투어 & 액티비티" description="세계 곳곳의 버킷리스트 경험을 4초마다 새롭게 만나보세요." linkLabel="투어" items={tourProducts} synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
+      <InfiniteProductRow id="commerce-tours" eyebrow="TRENDING EXPERIENCES · 12" title="사진만 봐도 떠나고 싶은 투어 & 액티비티" description="세계 곳곳의 버킷리스트 경험을 3초마다 새롭게 만나보세요." linkLabel="투어" items={tourProducts} synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
       <InfiniteProductRow id="commerce-stays" eyebrow="LIMITED STAY DEALS" title="예산 방어 필수! 마감 임박 타임세일 숙소" description="여행의 분위기와 예산을 모두 지키는 인기 숙소를 모았어요." linkLabel="숙소" items={saleStays} horizontal synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
-      <InfiniteProductRow id="commerce-passes" eyebrow="MOVE SMARTER" title="도시와 도시를 가볍게 잇는 교통패스" description="기차부터 현지 대중교통까지, 이동 횟수와 동선에 맞춰 비교하세요." linkLabel="교통패스" items={transportPasses} />
-      <InfiniteProductRow id="commerce-esim" eyebrow="STAY CONNECTED" title="도착하는 순간 바로 연결되는 글로벌 eSIM" description="여행지 사진과 함께 데이터 용량·사용 지역을 빠르게 비교하세요." linkLabel="eSIM" items={eSimProducts} />
+      <InfiniteProductRow id="commerce-passes" eyebrow="MOVE SMARTER" title="도시와 도시를 가볍게 잇는 교통패스" description="기차부터 현지 대중교통까지, 이동 횟수와 동선에 맞춰 비교하세요." linkLabel="교통패스" items={transportPasses} synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
+      <InfiniteProductRow id="commerce-esim" eyebrow="STAY CONNECTED" title="도착하는 순간 바로 연결되는 글로벌 eSIM" description="여행지 사진과 함께 데이터 용량·사용 지역을 빠르게 비교하세요." linkLabel="eSIM" items={eSimProducts} synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
     </section>
   );
 }

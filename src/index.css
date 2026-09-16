@@ -2457,3 +2457,810 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
 .plan-fullscreen.mobile-preview .restaurant-detail-hero{height:190px;min-height:190px}
 .plan-fullscreen.mobile-preview .restaurant-menu-list{max-height:280px}
 @media(max-width:700px){.restaurant-detail-modal{height:min(760px,calc(100dvh - 24px));max-height:calc(100dvh - 24px)}.restaurant-detail-hero{height:210px;min-height:210px}.restaurant-menu-list{max-height:300px}.restaurant-detail-place-links a{min-height:34px;font-size:9px}}
+
+/* 예약 선택 완료 카드는 핵심 조건과 금액을 한 화면에 모읍니다. */
+.rental-confirmation-card { overflow: hidden; border: 1px solid #c8dfd7; border-radius: 14px; background: #fff; box-shadow: 0 10px 24px rgba(21, 76, 68, .055); }
+.rental-confirmation-card > header { display: flex; align-items: flex-start; justify-content: space-between; gap: 14px; padding: 15px 18px 11px; }
+.rental-confirmation-card > header > div { display: grid; gap: 3px; }
+.rental-confirmation-card > header span { color: #168178; font-size: 9px; font-weight: 900; letter-spacing: .45px; }
+.rental-confirmation-card > header h3 { margin: 0; color: #183f3d; font-size: 16px; letter-spacing: -.45px; }
+.rental-confirmation-card > header em { padding: 6px 9px; border-radius: 999px; background: #fff2e9; color: #c45d31; font-size: 9px; font-style: normal; font-weight: 850; white-space: nowrap; }
+.rental-confirmation-body { display: grid; grid-template-columns: 138px minmax(0, 1fr) auto; align-items: center; gap: 19px; margin: 0 18px; padding: 14px 0 16px; border-top: 1px solid #e5eeeb; }
+.rental-confirmation-body > img { width: 138px; height: 102px; border: 1px solid #dfe9e5; border-radius: 11px; background: #eff5f2; object-fit: cover; object-position: center; box-shadow: 0 6px 14px rgba(24, 70, 64, .08); }
+.rental-confirmation-icon { display: grid; width: 76px; height: 76px; place-items: center; border-radius: 20px; background: linear-gradient(145deg, #e3f5ef, #f5fbf8); font-size: 31px; }
+.rental-confirmation-info { display: grid; min-width: 0; gap: 6px; }
+.rental-confirmation-info > small { color: #567a73; font-size: 10px; font-weight: 800; }
+.rental-confirmation-info > strong { overflow: hidden; color: #123f3b; font-size: 17px; font-weight: 900; letter-spacing: -.35px; text-overflow: ellipsis; white-space: nowrap; }
+.rental-confirmation-info > div { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 3px; }
+.rental-confirmation-info > div span { display: inline-flex; min-height: 23px; align-items: center; padding: 4px 7px; border-radius: 6px; background: #edf6f3; color: #426b64; font-size: 9px; font-weight: 800; line-height: 1; }
+.rental-confirmation-info > p { margin: 2px 0 0; color: #66847d; font-size: 9px; line-height: 1.5; }
+.rental-confirmation-price { display: grid; min-width: 150px; justify-items: end; gap: 2px; padding-left: 18px; border-left: 1px solid #e0ebe7; }
+.rental-confirmation-price small { color: #5f817a; font-size: 9px; font-weight: 800; }
+.rental-confirmation-price strong { color: #08766f; font: 900 21px 'Inter', 'Pretendard', sans-serif; letter-spacing: -.7px; }
+.rental-confirmation-price span { color: #718e87; font-size: 9px; font-weight: 650; }
+.rental-confirmation-card > footer { display: flex; align-items: center; justify-content: space-between; gap: 15px; padding: 12px 13px 12px 18px; border-top: 1px solid #dfece7; background: #f2faf6; }
+.rental-confirmation-card > footer p { display: flex; align-items: center; gap: 8px; margin: 0; color: #426c65; font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: 10px; font-weight: 650; line-height: 1.55; }
+.rental-confirmation-card > footer p b { display: inline-flex; min-height: 25px; flex: 0 0 auto; align-items: center; padding: 4px 8px; border-radius: 999px; background: #dff2ec; color: #087b72; font-family: 'Pretendard', 'Noto Sans KR', sans-serif; font-size: 10px; font-weight: 900; letter-spacing: -.15px; line-height: 1; }
+.rental-confirmation-card > footer button { flex: 0 0 auto; min-height: 36px; padding: 0 13px; border: 0; border-radius: 8px; background: #0a746d; color: #fff; font-size: 10px; font-weight: 850; }
+.rental-confirmation-card > footer button span { margin-left: 4px; }
+
+.stay-selection-section > .booking-heading p { color: #173f3d; font-size: 16px; font-weight: 900; letter-spacing: -.25px; }
+.stay-selection-section > .booking-heading small { margin-top: 5px; color: #68847e; font-size: 11px; font-weight: 650; line-height: 1.45; }
+.stay-selection-section > .booking-heading em { color: #b95129; font-size: 10px; font-weight: 850; }
+.stay-confirmation-card { display: grid; grid-template-columns: 165px minmax(0, 1fr) 185px; overflow: hidden; min-height: 154px; border: 1px solid #d6dfd9; border-radius: 14px; background: #fff; box-shadow: 0 10px 24px rgba(63, 72, 61, .055); }
+.stay-confirmation-card > img { width: 165px; height: 100%; min-height: 154px; background: #eef3ef; object-fit: cover; }
+.stay-confirmation-info { display: grid; min-width: 0; align-content: center; gap: 9px; padding: 18px 21px; }
+.stay-confirmation-meta { display: flex; flex-wrap: wrap; gap: 5px; }
+.stay-confirmation-meta span { display: inline-flex; min-height: 23px; align-items: center; padding: 4px 7px; border-radius: 6px; background: #eef6f3; color: #426c65; font-size: 9px; font-weight: 800; line-height: 1; }
+.stay-confirmation-info h3 { overflow: hidden; margin: 0; color: #123f3c; font-size: 19px; font-weight: 900; letter-spacing: -.7px; text-overflow: ellipsis; white-space: nowrap; }
+.stay-confirmation-details { display: flex; flex-wrap: wrap; gap: 10px 20px; margin-top: 1px; }
+.stay-confirmation-details > span { display: grid; gap: 3px; }
+.stay-confirmation-details small { color: #718983; font-size: 9px; font-weight: 700; }
+.stay-confirmation-details b { color: #355f59; font-size: 10px; font-weight: 850; }
+.stay-confirmation-price { display: grid; align-content: center; justify-items: end; gap: 4px; padding: 18px; border-left: 1px solid #e1e9e5; background: #fafcf9; }
+.stay-confirmation-price > small { color: #607d77; font-size: 9px; font-weight: 800; }
+.stay-confirmation-price > strong { color: #08736c; font: 900 20px 'Inter', 'Pretendard', sans-serif; letter-spacing: -.65px; text-align: right; }
+.stay-confirmation-price > span { color: #607b75; font-size: 9px; font-weight: 750; }
+.stay-confirmation-price > button { min-height: 38px; margin-top: 7px; padding: 0 13px; border: 1px solid #0b786f; border-radius: 8px; background: #0b786f; color: #fff; font-size: 10px; font-weight: 850; }
+.stay-confirmation-price > button span { margin-left: 4px; }
+.stay-selection-section .booking-summary::before { display: block; grid-column: 1 / -1; margin-bottom: 2px; padding: 9px 10px; border: 1px solid #f0d1ba; border-radius: 7px; background: linear-gradient(90deg, #fff4ec, #fffcf7); color: #aa6034; content: '✦ 가격·거리·평점을 비교하고 여행 동선에 맞는 숙소를 선택하세요'; font-size: 10px; font-weight: 700; }
+
+/* 일정 생성 중 실제 후보 장소를 검토하는 듯한 파노라마 연출 */
+.planning-overlay { overflow: hidden; isolation: isolate; background: radial-gradient(circle at 50% 48%, rgba(249, 253, 251, .72), rgba(238, 247, 243, .90) 52%, rgba(226, 240, 235, .96)); }
+.planning-panorama { position: absolute; z-index: 0; inset: 0; display: grid; align-items: center; overflow: hidden; opacity: .86; mask-image: linear-gradient(to right, transparent, #000 8%, #000 92%, transparent); }
+.planning-panorama::before, .planning-panorama::after { position: absolute; z-index: 2; top: 0; bottom: 0; width: 18vw; content: ''; pointer-events: none; }
+.planning-panorama::before { left: 0; background: linear-gradient(90deg, rgba(237, 247, 243, .95), transparent); }
+.planning-panorama::after { right: 0; background: linear-gradient(-90deg, rgba(237, 247, 243, .95), transparent); }
+.planning-panorama-track { display: flex; width: max-content; gap: 22px; padding-left: 22px; animation: planningPanorama 32s linear infinite; }
+.planning-panorama figure { position: relative; width: 290px; height: 188px; flex: 0 0 auto; overflow: hidden; margin: 0; border: 1px solid rgba(255,255,255,.78); border-radius: 22px; background: #dfeae5; box-shadow: 0 20px 44px rgba(22, 73, 66, .16); filter: blur(1.5px) saturate(.86); transform: translateY(-17px); animation: planningCardClarity 7s ease-in-out infinite; animation-delay: calc(var(--card-index) * -.72s); }
+.planning-panorama figure:nth-child(even) { transform: translateY(17px); }
+.planning-panorama figure img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); }
+.planning-panorama figure::after { position: absolute; inset: 0; background: linear-gradient(180deg, transparent 38%, rgba(8, 43, 41, .82)); content: ''; }
+.planning-panorama figcaption { position: absolute; z-index: 1; right: 16px; bottom: 15px; left: 16px; display: flex; align-items: center; gap: 9px; color: #fff; text-align: left; }
+.planning-panorama figcaption > span { display: grid; width: 31px; height: 31px; flex: 0 0 auto; place-items: center; border: 1px solid rgba(255,255,255,.55); border-radius: 10px; background: rgba(255,255,255,.17); backdrop-filter: blur(7px); font-size: 15px; }
+.planning-panorama figcaption > div { display: grid; min-width: 0; gap: 2px; }
+.planning-panorama figcaption b { overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+.planning-panorama figcaption small { overflow: hidden; color: rgba(255,255,255,.76); font-size: 8px; text-overflow: ellipsis; white-space: nowrap; }
+.planning-scan-line { position: absolute; z-index: 3; top: 50%; left: 50%; width: min(760px, 72vw); height: 250px; border: 1px solid rgba(12, 131, 119, .16); border-radius: 34px; box-shadow: 0 0 70px rgba(9, 126, 114, .12); transform: translate(-50%, -50%); pointer-events: none; }
+.planning-loader { position: relative; z-index: 4; width: min(590px, calc(100vw - 40px)); padding: 38px 40px; border-color: rgba(255,255,255,.9); background: rgba(255,255,253,.89); box-shadow: 0 28px 80px rgba(10, 60, 55, .23); backdrop-filter: blur(18px) saturate(1.08); }
+.planning-loader::before { position: absolute; top: 0; right: 42px; left: 42px; height: 3px; border-radius: 0 0 3px 3px; background: linear-gradient(90deg, transparent, #0f9285, #e88652, transparent); content: ''; }
+@keyframes planningPanorama { to { transform: translateX(calc(-50% - 11px)); } }
+@keyframes planningCardClarity { 0%, 100% { filter: blur(1.6px) saturate(.82); opacity: .62; } 45%, 60% { filter: blur(0) saturate(1.04); opacity: 1; } }
+
+@media (max-width: 760px) {
+  .rental-confirmation-body { grid-template-columns: 88px minmax(0, 1fr); gap: 11px; margin: 0 14px; }
+  .rental-confirmation-body > img { width: 88px; height: 84px; }
+  .rental-confirmation-price { grid-column: 1 / -1; width: 100%; min-width: 0; align-items: center; grid-template-columns: 1fr auto; justify-items: start; padding: 10px 0 0; border-top: 1px solid #e4ece9; border-left: 0; }
+  .rental-confirmation-price span { grid-column: 1 / -1; }
+  .rental-confirmation-card > footer { align-items: stretch; flex-direction: column; }
+  .rental-confirmation-card > footer p { align-items: flex-start; }
+  .rental-confirmation-card > footer button { width: 100%; }
+  .stay-confirmation-card { grid-template-columns: 104px minmax(0, 1fr); }
+  .stay-confirmation-card > img { width: 104px; min-height: 126px; }
+  .stay-confirmation-info { padding: 13px 12px; }
+  .stay-confirmation-info h3 { font-size: 16px; }
+  .stay-confirmation-price { grid-column: 1 / -1; align-items: center; grid-template-columns: 1fr auto; justify-items: start; padding: 12px 13px; border-top: 1px solid #e1e9e5; border-left: 0; }
+  .stay-confirmation-price > span { grid-column: 1; }
+  .stay-confirmation-price > button { grid-column: 2; grid-row: 1 / 3; margin: 0; }
+  .planning-panorama-track { gap: 13px; }
+  .planning-panorama figure { width: 220px; height: 148px; border-radius: 17px; }
+  .planning-scan-line { width: 88vw; height: 210px; }
+  .planning-loader { padding: 31px 20px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .planning-panorama-track, .planning-panorama figure { animation: none; }
+}
+
+/* Flight result cards: balanced carrier, schedule and fare columns. */
+@media (min-width: 761px) {
+  .flight-modal .flight-catalog > button {
+    grid-template-columns: 48px minmax(0, 1fr) 165px;
+    align-items: start;
+    column-gap: 16px;
+    row-gap: 13px;
+    padding: 16px 20px 17px;
+  }
+
+  .flight-modal .flight-catalog .airline-mark,
+  .flight-modal .flight-catalog > button.sale-flight .airline-mark {
+    align-self: start;
+    margin-top: 2px;
+  }
+
+  .flight-modal .flight-card-main {
+    display: grid;
+    grid-template-columns: 118px minmax(280px, 1fr);
+    align-items: start;
+    column-gap: 14px;
+    row-gap: 9px;
+    width: 100%;
+  }
+
+  .flight-modal .flight-airline-name {
+    display: grid;
+    grid-column: 1;
+    align-self: start;
+    gap: 3px;
+    padding-top: 2px;
+  }
+
+  .flight-modal .flight-airline-name small {
+    margin: 0;
+  }
+
+  .flight-modal .flight-segment {
+    grid-column: 2;
+    grid-template-columns: max-content 210px max-content;
+    align-self: start;
+    gap: 12px;
+    width: max-content;
+    max-width: 100%;
+    justify-self: start;
+  }
+
+  .flight-modal .flight-segment > span {
+    min-width: 58px;
+    justify-items: center;
+    text-align: center;
+  }
+
+  .flight-modal .flight-inclusions {
+    grid-column: 1 / -1;
+    margin-top: 2px !important;
+  }
+
+  .flight-modal .flight-deal {
+    grid-column: 1 / -1;
+    margin-top: 0;
+  }
+
+  .flight-modal .flight-catalog > button > .flight-price {
+    align-self: stretch;
+    align-content: start;
+    gap: 5px;
+    padding-top: 1px;
+    padding-left: 20px;
+  }
+}
+
+.flight-modal .flight-catalog > button.featured-flight,
+.flight-modal .flight-catalog > button.featured-flight.selected {
+  border: 2px solid #ed7448;
+  background: linear-gradient(105deg, #fff4eb 0%, #fffaf5 34%, #fff 76%);
+  box-shadow: 0 0 0 2px rgba(227, 112, 61, .07), 0 12px 28px rgba(134, 74, 42, .12);
+}
+
+.flight-modal .flight-catalog > button.featured-flight:hover,
+.flight-modal .flight-catalog > button.featured-flight.selected:hover {
+  border-color: #df6035;
+  box-shadow: 0 0 0 2px rgba(227, 112, 61, .10), 0 15px 30px rgba(134, 74, 42, .16);
+}
+
+.flight-modal .flight-catalog > button.featured-flight .flight-sale-sticker {
+  border-color: #df7243;
+  background: linear-gradient(105deg, #df5c34, #ee8348);
+  color: #fff;
+  box-shadow: 0 5px 12px rgba(204, 82, 40, .18);
+}
+
+.flight-modal .flight-catalog > button.featured-flight > .flight-price {
+  border-left-color: #efd6c6;
+}
+
+.flight-modal .flight-catalog > button.featured-flight > .flight-price b {
+  color: #d95730;
+}
+
+.flight-modal .flight-selected-indicator {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 3px;
+  padding: 5px 8px;
+  border-radius: 999px;
+  background: #e7f4f0;
+  color: #126f67;
+  font-size: 9px;
+  font-weight: 850;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.flight-modal .featured-flight .flight-selected-indicator {
+  background: #fce7dc;
+  color: #bd4f2b;
+}
+
+.flight-modal .flight-inclusions {
+  align-items: center;
+  min-height: 24px;
+}
+
+.flight-modal .flight-inclusions i,
+.flight-modal .flight-inclusions .flight-baggage {
+  box-sizing: border-box;
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 4px 8px;
+  line-height: 1;
+}
+
+.stay-picker .price-filters button,
+.stay-picker .area-filters button {
+  font-weight: 700;
+}
+
+.stay-picker .price-filters button.active,
+.stay-picker .area-filters button.active {
+  font-weight: 850;
+}
+
+/* 예약 단계와 취향 카테고리가 한눈에 분리되도록 간격과 경계를 통일합니다. */
+.transport-choice {
+  border-bottom: 0;
+}
+
+.rental-section,
+.stay-selection-section {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top-color: #cfe0da;
+}
+
+.stay-selection-section + .planner-final-preferences {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid #cfe0da;
+}
+
+.planner-final-preferences {
+  gap: 15px;
+}
+
+.planner-final-preferences > .theme-preference,
+.planner-final-preferences > .pace-preference,
+.planner-final-preferences > .food-preference {
+  position: relative;
+  overflow: hidden;
+  border-color: #cbded7;
+  border-radius: 12px;
+  background: linear-gradient(105deg, #f9fdfb 0%, #fff 70%);
+  box-shadow: 0 7px 18px rgba(25, 72, 65, .045);
+}
+
+.planner-final-preferences > .theme-preference::before,
+.planner-final-preferences > .pace-preference::before,
+.planner-final-preferences > .food-preference::before {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 4px;
+  background: #58ac9e;
+  content: '';
+}
+
+.planner-final-preferences > .theme-preference,
+.planner-final-preferences > .pace-preference {
+  padding-left: 21px;
+}
+
+.planner-final-preferences > .food-preference {
+  padding-left: 21px;
+}
+
+.planner-final-preferences small {
+  color: #52766f;
+  font-weight: 800;
+}
+
+.planner-final-preferences > div > div > b,
+.planner-final-preferences .food-preference-heading > b {
+  color: #1c504a;
+  font-weight: 850;
+}
+
+/* 가이드 카드 이미지는 원본 여백 없이 카드 전체를 채웁니다. */
+.compact-inspiration .city-grid article {
+  background: #fffefa;
+}
+
+.compact-inspiration .city-grid img {
+  object-fit: cover;
+  object-position: center;
+  background: #e8f0ec;
+}
+
+.compact-inspiration .city-grid article:first-child img {
+  object-position: center 44%;
+}
+
+.compact-inspiration .city-grid article:nth-child(2) img {
+  object-position: center 54%;
+}
+
+.compact-inspiration .city-grid article:nth-child(4) img {
+  object-position: center 48%;
+}
+
+/* 하단 큐레이션 영역은 가이드에서 상품 카테고리로 자연스럽게 이어집니다. */
+.compact-inspiration {
+  padding-top: 76px;
+  padding-bottom: 42px;
+  background: linear-gradient(180deg, #edf7f3 0%, #f2f9f6 100%);
+}
+
+.planner-section {
+  padding-bottom: 58px;
+}
+
+.compact-inspiration .section-heading,
+.compact-inspiration .city-grid {
+  width: min(1280px, 100%);
+  max-width: 1280px;
+  margin-right: auto;
+  margin-left: auto;
+  box-sizing: border-box;
+}
+
+.compact-inspiration .section-heading {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+  gap: 28px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.compact-inspiration .section-heading::after {
+  display: none;
+}
+
+.compact-inspiration .section-heading .eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #d96137;
+  font-weight: 900;
+  letter-spacing: 1.1px;
+}
+
+.compact-inspiration .section-heading .eyebrow::before {
+  width: 22px;
+  height: 2px;
+  border-radius: 999px;
+  background: currentColor;
+  content: '';
+}
+
+.compact-inspiration .section-heading > button {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 1px solid rgba(39, 91, 83, .2);
+  border-radius: 10px;
+  background: rgba(255,255,255,.72);
+  box-shadow: 0 6px 16px rgba(22,63,57,.045);
+}
+
+.compact-inspiration .section-heading > button:hover {
+  border-color: currentColor;
+  background: transparent;
+  color: #148578;
+  transform: translateX(3px);
+}
+
+.compact-inspiration .city-grid article {
+  border-color: #d9e3de;
+  box-shadow: 0 13px 30px rgba(51, 75, 65, .09);
+  transition: border-color .22s ease, box-shadow .22s ease, transform .22s ease;
+}
+
+.compact-inspiration .city-grid article:hover {
+  border-color: #9dc9bd;
+  box-shadow: 0 18px 36px rgba(28, 83, 73, .14);
+  transform: translateY(-4px);
+}
+
+@media (max-width: 760px) {
+  .compact-inspiration {
+    padding-top: 62px;
+    padding-bottom: 30px;
+  }
+
+  .compact-inspiration .section-heading {
+    grid-template-columns: 1fr;
+    align-items: start;
+    gap: 13px;
+    padding: 0;
+  }
+
+  .compact-inspiration .section-heading > button {
+    width: max-content;
+  }
+}
+
+@media (max-width: 760px) {
+  .rental-section,
+  .stay-selection-section {
+    margin-top: 20px;
+    padding-top: 20px;
+  }
+
+  .stay-selection-section + .planner-final-preferences {
+    margin-top: 20px;
+    padding-top: 20px;
+  }
+}
+
+/* 교통편과 숙소도 취향 카테고리와 같은 선택 단계로 읽히게 정리합니다. */
+.transport-choice {
+  position: relative;
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #cbded7;
+  border-left: 4px solid #58ac9e;
+  border-radius: 14px;
+  background: linear-gradient(105deg, #f8fdfb 0%, #fff 72%);
+  box-shadow: 0 8px 20px rgba(25, 72, 65, .05);
+}
+
+.transport-choice > div:first-child > p,
+.stay-selection-section > .booking-heading p {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.transport-choice > div:first-child > p::before,
+.stay-selection-section > .booking-heading p::before {
+  display: inline-flex;
+  min-height: 24px;
+  align-items: center;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #dff3ed;
+  color: #08766e;
+  font-size: 9px;
+  font-weight: 900;
+  line-height: 1;
+}
+
+.transport-choice > div:first-child > p::before {
+  content: '교통';
+}
+
+.stay-selection-section > .booking-heading p::before {
+  content: '숙소';
+}
+
+.transport-choice > div:first-child > small {
+  display: block;
+  max-width: 390px;
+  margin-top: 7px;
+  color: #617f79;
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1.65;
+}
+
+.transport-choice .transport-result > span {
+  min-height: 55px;
+  align-content: center;
+  padding: 9px 12px;
+  border-color: #cfe2db;
+  border-radius: 9px;
+  background: #fff;
+}
+
+.transport-choice .transport-result > i {
+  font-size: 16px;
+}
+
+.transport-choice .independent-booking-tools {
+  margin-top: 2px;
+  border-color: #c7ded6;
+  background: #f2faf7;
+}
+
+.stay-selection-section {
+  position: relative;
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid #cbded7;
+  border-left: 4px solid #58ac9e;
+  border-radius: 14px;
+  background: linear-gradient(105deg, #fbfefc 0%, #fff 72%);
+  box-shadow: 0 8px 20px rgba(25, 72, 65, .05);
+}
+
+.stay-selection-section > .booking-heading {
+  margin-bottom: 15px;
+  padding-bottom: 13px;
+  border-bottom: 1px solid #dfebe7;
+}
+
+.stay-selection-section > .booking-heading p {
+  margin-bottom: 0;
+}
+
+.stay-selection-section .stay-confirmation-card {
+  border-color: #ccdcd6;
+  box-shadow: 0 8px 20px rgba(35, 76, 69, .045);
+}
+
+@media (max-width: 760px) {
+  .transport-choice,
+  .stay-selection-section {
+    margin-top: 20px;
+    padding: 16px;
+    border-radius: 12px;
+  }
+
+  .transport-choice > div:first-child > small {
+    max-width: none;
+  }
+}
+
+/* 팝업 전반에서 X 아이콘의 광학 중심과 버튼 중심을 일치시킵니다. */
+.modal-close {
+  display: grid;
+  padding: 0;
+  place-items: center;
+  line-height: 0;
+}
+
+.modal-close svg,
+.destination-explorer-close svg,
+.location-menu-close svg,
+.trip-calendar-close svg,
+.restaurant-detail-close svg,
+.prompt-clear svg {
+  display: block;
+  flex: none;
+}
+
+.prompt-box .prompt-actions .prompt-clear {
+  display: grid;
+  padding: 0;
+  place-items: center;
+  line-height: 0;
+}
+
+/* 히어로 위 빠른 이동 배너: 대비와 정보 위계를 강화합니다. */
+.quick-access {
+  margin-top: -54px;
+}
+
+.quick-access-inner {
+  width: min(1240px, 100%);
+  padding: 13px 18px;
+  border-color: rgba(202, 221, 215, .95);
+  border-radius: 22px;
+  background: rgba(255, 255, 253, .985);
+  box-shadow: 0 20px 38px rgba(19, 61, 55, .18), 0 2px 4px rgba(19, 61, 55, .05);
+}
+
+.quick-access button {
+  grid-template-columns: 46px minmax(0, 1fr);
+  min-height: 60px;
+  column-gap: 11px;
+  padding: 9px 14px;
+  border-right-color: #e1ebe7;
+}
+
+.quick-access button > span {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  font-size: 19px;
+}
+
+.quick-access button > span img {
+  display: block;
+  width: 29px;
+  height: 29px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgba(28, 72, 65, .12));
+}
+
+.quick-access button > span img[hidden] {
+  display: none;
+}
+
+.quick-access button:nth-child(3) > span {
+  border-color: #e8d4a8;
+  background: #fff8e9;
+  color: #b58132;
+}
+
+.quick-access button:nth-child(3) > span.is-fallback::after {
+  color: #bb8730;
+  text-shadow: 0 1px 1px rgba(132, 84, 21, .18);
+  font-family: "Segoe UI Symbol", "Noto Sans Symbols 2", sans-serif;
+  font-size: 24px;
+}
+
+.quick-access-hotel-icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  overflow: visible;
+  width: 44px;
+  height: 44px;
+  border: 1px solid #e8d4a8;
+  border-radius: 14px;
+  background: #fff8e9;
+  color: #171c1b;
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72);
+}
+
+.quick-access-hotel-icon i {
+  position: relative;
+  display: block;
+  width: 19px;
+  height: 19px;
+  margin: 0;
+  border: 1.5px solid #b8802e;
+  border-top: 0;
+  border-radius: 1px 1px 2px 2px;
+  background:
+    linear-gradient(90deg, transparent 0 3px, #272b29 3px 5px, transparent 5px 8px, #272b29 8px 10px, transparent 10px 13px, #272b29 13px 15px, transparent 15px),
+    linear-gradient(#e4bf70, #c18b39);
+  box-shadow: inset 0 -4px 0 #242826;
+}
+
+.quick-access-hotel-icon i::before {
+  position: absolute;
+  top: -6px;
+  left: -3px;
+  width: 23px;
+  height: 7px;
+  background: #242826;
+  border-bottom: 1px solid #b8802e;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  content: "";
+}
+
+.quick-access-hotel-icon i::after {
+  position: absolute;
+  right: 6px;
+  bottom: 0;
+  width: 4px;
+  height: 7px;
+  border-radius: 2px 2px 0 0;
+  background: #f7e6b8;
+  content: "";
+}
+
+.quick-access button:nth-child(4) > span {
+  border-color: #bddbe8;
+  background: #eef8fc;
+  color: #367f9b;
+}
+
+.quick-access button > span.is-fallback::after {
+  display: block;
+  color: currentColor;
+  content: attr(data-fallback);
+  font-family: "Noto Sans KR", sans-serif;
+  font-size: 22px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.quick-access b {
+  color: #214d49;
+  font-size: 12px;
+  font-weight: 850;
+  letter-spacing: -.25px;
+}
+
+.quick-access small {
+  color: #6a837d;
+  font-size: 10px;
+  line-height: 1.4;
+}
+
+.quick-access button:hover {
+  background: #f3faf7;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 760px) {
+  .quick-access {
+    margin-top: -30px;
+  }
+
+  .quick-access-inner {
+    padding: 10px;
+    border-radius: 16px;
+  }
+
+  .quick-access button {
+    min-height: 52px;
+    grid-template-columns: 36px minmax(0, 1fr);
+    padding: 8px 7px;
+  }
+
+  .quick-access button > span {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+    font-size: 15px;
+  }
+
+  .quick-access-hotel-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 11px;
+  }
+
+  .quick-access-hotel-icon i {
+    width: 17px;
+    height: 18px;
+    margin-bottom: 4px;
+    transform: scale(.9);
+  }
+
+  .quick-access button > span img {
+    width: 23px;
+    height: 23px;
+  }
+
+  .quick-access button > span.is-fallback::after {
+    font-size: 18px;
+  }
+}
+
+/* 아이콘은 글자 기준선의 영향을 받지 않고 각 컨트롤의 기하학적 중심에 놓입니다. */
+:where(button, a, [role="button"]) > svg,
+:where(button, a, [role="button"]) > span > svg,
+:where(button, a, [role="button"]) > i > svg {
+  display: block;
+  flex: none;
+}
+
+.quick-access button > span,
+.planner-summary-copy > i,
+.route-empty-label > i,
+.route-direction,
+.route-chevron,
+.prompt-box .prompt-actions button,
+.commerce-like,
+.preference-step-progress i,
+.food-card-check {
+  place-items: center;
+  line-height: 0;
+}
+
+.route-chevron {
+  display: grid;
+  flex: 0 0 20px;
+  width: 20px;
+  height: 20px;
+}
+
+.route-direction,
+.prompt-box .prompt-actions button,
+.commerce-like {
+  padding: 0;
+}
+
+.quick-access button > span svg,
+.planner-summary-copy > i svg,
+.route-empty-label > i svg,
+.route-direction svg,
+.route-chevron svg,
+.preference-step-progress i svg,
+.food-card-check svg,
+.commerce-like svg {
+  display: block;
+  margin: 0;
+}
