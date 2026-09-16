@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { getCalendarWeather } from "../api/weatherApi";
+import { getAccessToken } from "../api/apiClient";
 
 import "./trip-date-picker.css";
 
@@ -703,6 +704,11 @@ export default function TripDatePicker({
   ] =
     useState([]);
 
+  const [
+    weatherNotice,
+    setWeatherNotice,
+  ] = useState("");
+
 
   const dragState =
     useRef(null);
@@ -749,7 +755,7 @@ export default function TripDatePicker({
    */
   useEffect(
     () => {
-      if (!open) {
+      if (!open && !getAccessToken()) {
         return undefined;
       }
 
@@ -809,6 +815,10 @@ export default function TripDatePicker({
           [],
         );
 
+        setWeatherNotice(
+          "도착지를 선택하면 해당 지역의 날씨를 함께 보여드려요.",
+        );
+
         return undefined;
       }
 
@@ -818,6 +828,9 @@ export default function TripDatePicker({
 
 
       let active = true;
+
+      setWeatherForecast([]);
+      setWeatherNotice("날씨를 불러오고 있어요.");
 
 
       const loadWeather =
@@ -853,6 +866,12 @@ export default function TripDatePicker({
 
             setWeatherForecast(
               weather,
+            );
+
+            setWeatherNotice(
+              weather.length > 0
+                ? ""
+                : "현재 확인 가능한 예보가 없습니다.",
             );
 
 
@@ -901,6 +920,12 @@ export default function TripDatePicker({
 
             setWeatherForecast(
               [],
+            );
+
+            setWeatherNotice(
+              error?.status === 401
+                ? "로그인하면 선택한 지역의 날씨를 확인할 수 있어요."
+                : "날씨 연결이 잠시 지연되고 있어요. 날짜 선택은 그대로 진행할 수 있습니다.",
             );
 
 
@@ -1493,6 +1518,13 @@ export default function TripDatePicker({
                       </button>
                     </div>
                   </header>
+
+                  {weatherNotice ? (
+                    <div className="trip-calendar-weather-notice" role="status">
+                      <span aria-hidden="true">☀</span>
+                      {weatherNotice}
+                    </div>
+                  ) : null}
 
 
                   <div className="trip-calendar-body">

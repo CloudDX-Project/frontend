@@ -14,6 +14,8 @@
 .trip-calendar-header > div:first-child > span { display: inline-flex; align-items: center; gap: 6px; color: #078a80; font-size: 11px; font-weight: 900; letter-spacing: .05em; }
 .trip-calendar-header h2 { margin: 5px 0 3px; font-size: 21px; letter-spacing: -.045em; }
 .trip-calendar-header p { margin: 0; color: #728985; font-size: 12px; font-weight: 600; }
+.trip-calendar-weather-notice { display:flex; align-items:center; justify-content:center; gap:7px; min-height:34px; padding:8px 18px; border-bottom:1px solid #e8f0ee; background:#f5fbf9; color:#55756f; font-size:11px; font-weight:750; }
+.trip-calendar-weather-notice span { color:#e8a63a; font-size:14px; }
 .trip-calendar-controls { display: flex; align-items: center; gap: 7px; }
 .trip-calendar-controls button, .trip-calendar-controls select { height: 37px; border: 1px solid #d5e2df; border-radius: 9px; background: #fff; color: #385d58; font: 750 12px "Noto Sans KR", sans-serif; }
 .trip-calendar-controls button { display: grid; width: 37px; place-items: center; cursor: pointer; }
