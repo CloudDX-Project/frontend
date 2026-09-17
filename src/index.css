@@ -312,11 +312,11 @@ main:has(.stay-picker)::after { position: fixed; z-index: 34; inset: 0; backgrou
 .hero-image { background-repeat: no-repeat; background-size: cover; background-color: #0b5256; opacity: 0; transition: opacity 1.1s cubic-bezier(.22, .61, .36, 1); will-change: opacity; }
 .hero-image.is-active { opacity: 1; }
 .hero-image--santorini { background-position: left 50% !important; background-size: cover; }
-.hero-image--zhangjiajie { background-position: center 55% !important; background-size: cover; filter: saturate(1.12) contrast(1.1) brightness(1.015); }
+.hero-image--zhangjiajie { background-position: center 55% !important; background-size: cover; filter: saturate(1.12) contrast(1.1) brightness(1.015); transform: scale(1.1) translateX(6.5%); }
 .hero-image--kyoto { background-position: left 50% !important; background-size: cover; }
 .hero-image--borabora { background-position: center 56% !important; background-size: cover; filter: saturate(1.2) contrast(1.07) brightness(1.045); }
-.hero-image--venice { background-position: 45% 50% !important; background-size: cover; }
-.hero-image--manarola { background-position: center 53% !important; background-size: cover; filter: saturate(1.14) contrast(1.08) brightness(1.025); transform: scaleX(-1); }
+.hero-image--venice { background-position: 45% 50% !important; background-size: cover; transform: scale(1.045) translateX(1.55%); }
+.hero-image--niagara { background-position: 52% 50% !important; background-size: cover; filter: saturate(1.025) contrast(1.02) brightness(.995); transform: none; }
 @media (max-width: 760px) {
   .hero-inner { width: auto; margin: 0; padding-right: 20px; padding-left: 20px; }
   .hero h1, .hero-copy { max-width: none; }
@@ -3245,19 +3245,23 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
 }
 
 .quick-access button:nth-child(1) > span.quick-access-icon img {
-  transform: scale(1.08);
+  filter: none;
+  transform: scale(1.01);
 }
 
 .quick-access button:nth-child(2) > span.quick-access-icon img {
-  transform: translateY(1px) scale(1.12);
+  filter: none;
+  transform: translateY(1px) scale(1.04);
 }
 
 .quick-access button:nth-child(3) > span.quick-access-icon img {
-  transform: scale(.98);
+  filter: none;
+  transform: scale(1.01);
 }
 
 .quick-access button:nth-child(4) > span.quick-access-icon img {
-  transform: scale(1.02);
+  filter: none;
+  transform: scale(.97);
 }
 
 .quick-access button:nth-child(5) > span.quick-access-icon img {

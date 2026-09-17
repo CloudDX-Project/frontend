@@ -2,14 +2,10 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   ArrowUp,
-  CalendarCheck2,
   ChevronDown,
-  Hotel,
   Luggage,
-  Plane,
   RotateCcw,
   SlidersHorizontal,
-  Ticket,
   X,
 } from "lucide-react";
 
@@ -59,6 +55,10 @@ import RentalComparisonModal from "./components/planner/RentalComparisonModal";
 import { buildPlanningPreview } from "./utils/planningPreview";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
+import quickAccessPlanner from "./assets/quick-access/teal-planner.png";
+import quickAccessFlight from "./assets/quick-access/blue-flight.png";
+import quickAccessHotel from "./assets/quick-access/gold-hotel.png";
+import quickAccessActivity from "./assets/quick-access/teal-activity.png";
 import quickAccessMobility from "./assets/quick-access/premium-mobility.png";
 import quickAccessEsim from "./assets/quick-access/premium-esim.png";
 import {
@@ -70,15 +70,12 @@ import {
 import "./components/planner/flight-booking-modal.css";
 
 const quickAccessIconAssets = {
+  sparkles: { src: quickAccessPlanner, fallback: "일정" },
+  plane: { src: quickAccessFlight, fallback: "항공" },
+  home: { src: quickAccessHotel, fallback: "숙소" },
+  ticket: { src: quickAccessActivity, fallback: "투어" },
   car: { src: quickAccessMobility, fallback: "교통" },
   smartphone: { src: quickAccessEsim, fallback: "eSIM" },
-};
-
-const quickAccessIconComponents = {
-  sparkles: CalendarCheck2,
-  plane: Plane,
-  home: Hotel,
-  ticket: Ticket,
 };
 
 const flightStatusLabel = (status) => {
@@ -735,7 +732,6 @@ function App() {
       <section className="quick-access" aria-label="여행 바로가기">
         <div className="quick-access-inner">
           {quickLinks.map((link) => {
-            const Icon = quickAccessIconComponents[link.icon];
             const iconAsset = quickAccessIconAssets[link.icon];
             return (
             <button
@@ -746,8 +742,8 @@ function App() {
                 window.requestAnimationFrame(() => document.querySelector(link.target)?.scrollIntoView({ behavior: "smooth" }));
               }}
             >
-              <span className={`quick-access-icon${Icon ? " is-vector" : ""}`} data-fallback={iconAsset?.fallback || ""}>
-                {Icon ? <Icon size={29} strokeWidth={1.8} aria-hidden="true" /> : <img src={iconAsset.src} alt="" aria-hidden="true" loading="eager" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.parentElement?.classList.add("is-fallback"); }} />}
+              <span className="quick-access-icon" data-fallback={iconAsset?.fallback || ""}>
+                <img src={iconAsset.src} alt="" aria-hidden="true" loading="eager" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.parentElement?.classList.add("is-fallback"); }} />
               </span>
               <b>{link.title}</b>
               <small>{link.text}</small>

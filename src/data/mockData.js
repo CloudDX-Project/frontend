@@ -30,9 +30,9 @@ export const heroSlides = [
     src: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?auto=format&fit=crop&w=2200&q=90",
   },
   {
-    id: "manarola",
-    label: "이탈리아 친퀘테레 마나롤라",
-    src: "https://unsplash.com/photos/DsS4q5L9llo/download?force=true&w=2400",
+    id: "niagara",
+    label: "캐나다 나이아가라 폭포",
+    src: "https://images.unsplash.com/photo-1598402453861-4fbcbf6ced3b?auto=format&fit=max&w=3600&q=95",
   },
 ];
 
