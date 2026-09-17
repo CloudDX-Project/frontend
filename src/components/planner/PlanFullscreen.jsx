@@ -7,6 +7,8 @@ import TransitionIcon from "../common/TransitionIcon";
 import BrandPolygon from "../icons/BrandPolygon";
 import CampusTimetable from "./CampusTimetable";
 import RouteMap from "./RouteMap";
+import AttractionDetailModal from "./AttractionDetailModal";
+import { eventClock } from "../../utils/planTime.js";
 
 
 
@@ -78,6 +80,7 @@ function PlanFullscreen({
   const [mobilePreview, setMobilePreview] = useState(false);
   const [orderRecalculating, setOrderRecalculating] = useState(false);
   const [restaurantDetail, setRestaurantDetail] = useState(null);
+  const [attractionDetailTarget, setAttractionDetailTarget] = useState(null);
   const [restaurantDetailType, setRestaurantDetailType] = useState("RESTAURANT");
   const [restaurantLoading, setRestaurantLoading] = useState(false);
   const [restaurantError, setRestaurantError] = useState("");
@@ -457,11 +460,8 @@ function PlanFullscreen({
                     : "";
                 const isArrivalAirport =
                   backendPlaceType === "AIRPORT" && backendCategory.includes("ARRIVAL_AIRPORT");
-                const displayTime =
-                  formatFlightClock(metadata.startAt)
-                  || (metadata.flightDepartureAt ? formatFlightClock(metadata.flightDepartureAt) : null)
-                  || time;
-                const displayStay = isArrivalAirport ? "도착" : stay;
+                const displayTime = eventClock(time, metadata);
+                const displayStay = isArrivalAirport && !(metadata.stayMinutes > 0) ? "도착" : stay;
                 const isCafe = backendPlaceType === "CAFE"
                   || (!backendPlaceType && (/☕/.test(icon || "") || /카페|커피|디저트|베이커리/.test(name || "")));
                 const isRestaurant = backendPlaceType === "RESTAURANT"
@@ -519,6 +519,16 @@ function PlanFullscreen({
                           >
                             <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
                             <span>메뉴·후기 보기</span>
+                          </button>
+                        ) : backendPlaceType === "ATTRACTION" && /^[1-9]\d*$/.test(String(metadata.placeId ?? "")) ? (
+                          <button type="button" className="restaurant-detail-trigger"
+                            onPointerDown={event => event.stopPropagation()}
+                            onClick={event => {
+                              event.stopPropagation();
+                              setAttractionDetailTarget({ id: metadata.placeId, name });
+                            }} aria-label={`${name} 관광지 상세보기`}>
+                            <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
+                            <span>상세보기</span>
                           </button>
                         ) : <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>}
                         {liveBookingUrl ? (
@@ -631,6 +641,11 @@ function PlanFullscreen({
           </div>
         </aside>
       </div>
+      {attractionDetailTarget && (
+        <AttractionDetailModal key={String(attractionDetailTarget.id)}
+          attractionId={attractionDetailTarget.id} name={attractionDetailTarget.name}
+          onClose={() => setAttractionDetailTarget(null)} />
+      )}
       {restaurantDetail && (
         <div className="restaurant-detail-backdrop" role="presentation" onMouseDown={(event) => {
           if (event.target === event.currentTarget) setRestaurantDetail(null);
