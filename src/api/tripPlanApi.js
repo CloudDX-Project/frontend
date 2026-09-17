@@ -1611,6 +1611,8 @@ export async function requestTripPlan(
   tripId,
   {
     signal,
+    pollIntervalMs = 2000,
+    pollTimeoutMs = 300000,
   } = {},
 ) {
   if (!tripId) {
@@ -1636,13 +1638,119 @@ export async function requestTripPlan(
         signal,
 
         timeoutMs:
-          120000,
+          15000,
       },
     );
 
-  return normalizeTripPlanResponse(
-    response,
+  /* 이전 동기식 응답도 계속 지원한다. */
+  if (
+    Array.isArray(response?.days) ||
+    Array.isArray(response?.dayPlans)
+  ) {
+    return normalizeTripPlanResponse(response);
+  }
+
+  const deadline =
+    Date.now() + Math.max(1000, pollTimeoutMs);
+
+  while (Date.now() < deadline) {
+    await waitForPlanPoll(pollIntervalMs, signal);
+
+    const statusResponse =
+      await getTripPlanStatus(tripId, { signal });
+
+    const status =
+      String(statusResponse?.status || "").toUpperCase();
+
+    if (status === "COMPLETED") {
+      if (!statusResponse?.plan) {
+        throw new Error(
+          "완료된 여행 일정 결과가 비어 있습니다.",
+        );
+      }
+
+      return normalizeTripPlanResponse(statusResponse.plan);
+    }
+
+    if (status === "FAILED") {
+      throw new Error(
+        statusResponse?.errorMessage ||
+          "여행 일정 생성에 실패했습니다.",
+      );
+    }
+
+    if (status !== "PENDING" && status !== "PROCESSING") {
+      throw new Error(
+        `알 수 없는 여행 일정 생성 상태입니다: ${status || "EMPTY"}`,
+      );
+    }
+  }
+
+  throw new Error(
+    "여행 일정 생성 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.",
   );
+}
+
+
+/**
+ * 비동기 일정 생성 상태 및 완료 결과 조회
+ *
+ * GET /api/trips/{tripId}/plan
+ */
+export async function getTripPlanStatus(
+  tripId,
+  {
+    signal,
+  } = {},
+) {
+  if (!tripId) {
+    throw new TypeError(
+      "여행 일정 조회를 위한 tripId가 없습니다.",
+    );
+  }
+
+  return apiClient.request(
+    `/api/trips/${encodeURIComponent(tripId)}/plan`,
+    {
+      method: "GET",
+      signal,
+      timeoutMs: 15000,
+    },
+  );
+}
+
+
+function waitForPlanPoll(
+  milliseconds,
+  signal,
+) {
+  if (signal?.aborted) {
+    return Promise.reject(createPlanAbortError());
+  }
+
+  return new Promise((resolve, reject) => {
+    const onAbort = () => {
+      clearTimeout(timeoutId);
+      signal?.removeEventListener("abort", onAbort);
+      reject(createPlanAbortError());
+    };
+
+    const timeoutId = setTimeout(() => {
+      signal?.removeEventListener("abort", onAbort);
+      resolve();
+    }, Math.max(0, milliseconds));
+
+    signal?.addEventListener("abort", onAbort, { once: true });
+  });
+}
+
+
+function createPlanAbortError() {
+  const error = new Error(
+    "여행 일정 생성 요청이 취소되었습니다.",
+  );
+  error.name = "AbortError";
+  return error;
 }
 
 
