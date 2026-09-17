@@ -2,10 +2,14 @@ import { useEffect, useMemo, useState } from "react";
 import {
   ArrowRight,
   ArrowUp,
+  CalendarCheck2,
   ChevronDown,
+  Hotel,
   Luggage,
+  Plane,
   RotateCcw,
   SlidersHorizontal,
+  Ticket,
   X,
 } from "lucide-react";
 
@@ -37,7 +41,7 @@ import {
   timeLabel,
   transportName,
 } from "./data/mockData";
-import DestinationExplorer from "./components/DestinationExplorer";
+import DestinationExplorer, { preloadJejuDestinationImages } from "./components/DestinationExplorer";
 import CommerceShowcase from "./components/CommerceShowcase";
 import TripDatePicker from "./components/TripDatePicker";
 import { ManualTravelTimeStep, TicketScheduleStep } from "./components/planner/TransportScheduleStep";
@@ -55,10 +59,6 @@ import RentalComparisonModal from "./components/planner/RentalComparisonModal";
 import { buildPlanningPreview } from "./utils/planningPreview";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
-import quickAccessAi from "./assets/quick-access/premium-ai-planner.png";
-import quickAccessFlight from "./assets/quick-access/premium-flight.png";
-import quickAccessHotel from "./assets/quick-access/premium-hotel.png";
-import quickAccessActivity from "./assets/quick-access/premium-activity.png";
 import quickAccessMobility from "./assets/quick-access/premium-mobility.png";
 import quickAccessEsim from "./assets/quick-access/premium-esim.png";
 import {
@@ -70,12 +70,15 @@ import {
 import "./components/planner/flight-booking-modal.css";
 
 const quickAccessIconAssets = {
-  sparkles: { src: quickAccessAi, fallback: "AI" },
-  plane: { src: quickAccessFlight, fallback: "항공" },
-  home: { src: quickAccessHotel, fallback: "숙소" },
-  ticket: { src: quickAccessActivity, fallback: "투어" },
   car: { src: quickAccessMobility, fallback: "교통" },
   smartphone: { src: quickAccessEsim, fallback: "eSIM" },
+};
+
+const quickAccessIconComponents = {
+  sparkles: CalendarCheck2,
+  plane: Plane,
+  home: Hotel,
+  ticket: Ticket,
 };
 
 const flightStatusLabel = (status) => {
@@ -192,6 +195,15 @@ function App() {
     updateScrollTop();
     window.addEventListener("scroll", updateScrollTop, { passive: true });
     return () => window.removeEventListener("scroll", updateScrollTop);
+  }, []);
+  useEffect(() => {
+    const startPreload = () => preloadJejuDestinationImages();
+    if ("requestIdleCallback" in window) {
+      const idleId = window.requestIdleCallback(startPreload, { timeout: 1800 });
+      return () => window.cancelIdleCallback(idleId);
+    }
+    const timer = window.setTimeout(startPreload, 450);
+    return () => window.clearTimeout(timer);
   }, []);
   const {
     setDestinationType,
@@ -723,7 +735,8 @@ function App() {
       <section className="quick-access" aria-label="여행 바로가기">
         <div className="quick-access-inner">
           {quickLinks.map((link) => {
-            const iconAsset = quickAccessIconAssets[link.icon] || quickAccessIconAssets.sparkles;
+            const Icon = quickAccessIconComponents[link.icon];
+            const iconAsset = quickAccessIconAssets[link.icon];
             return (
             <button
               type="button"
@@ -733,8 +746,8 @@ function App() {
                 window.requestAnimationFrame(() => document.querySelector(link.target)?.scrollIntoView({ behavior: "smooth" }));
               }}
             >
-              <span className="quick-access-icon" data-fallback={iconAsset.fallback}>
-                <img src={iconAsset.src} alt="" aria-hidden="true" loading="eager" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.parentElement?.classList.add("is-fallback"); }} />
+              <span className={`quick-access-icon${Icon ? " is-vector" : ""}`} data-fallback={iconAsset?.fallback || ""}>
+                {Icon ? <Icon size={29} strokeWidth={1.8} aria-hidden="true" /> : <img src={iconAsset.src} alt="" aria-hidden="true" loading="eager" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.parentElement?.classList.add("is-fallback"); }} />}
               </span>
               <b>{link.title}</b>
               <small>{link.text}</small>

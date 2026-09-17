@@ -23,7 +23,23 @@ export default defineConfig({
           { src: "/pwa-512x512.png", sizes: "512x512", type: "image/png", purpose: "any maskable" },
         ],
       },
-      workbox: { navigateFallback: "/index.html" },
+      workbox: {
+        navigateFallback: "/index.html",
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/api\.cdn\.visitjeju\.net\/photomng\/imgpath\//,
+            handler: "CacheFirst",
+            options: {
+              cacheName: "visit-jeju-attraction-images-v1",
+              cacheableResponse: { statuses: [0, 200] },
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
+        ],
+      },
     }),
   ],
   build: {

@@ -1,12 +1,21 @@
-.trip-date-field { position: relative; padding-right: 13px !important; padding-left: 13px !important; }
-.trip-date-range-trigger { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr) 24px; align-items: center; gap: 10px; padding: 12px; border: 1px solid #c9dfd9; border-radius: 13px; background: #fbfdfc; color: #14564f; text-align: left; cursor: pointer; }
+.trip-date-field { position: relative; padding-right: 13px !important; padding-left: 13px !important; border-color: #bfddd5 !important; background: linear-gradient(135deg, #fbfffd 0%, #f5fbf8 100%) !important; }
+.trip-date-field > small { padding-bottom: 10px; border-bottom: 1px solid #dcebe6; color: #6f8a84 !important; font-size: 11px !important; font-weight: 700; }
+.trip-date-field > small > b { display: inline-flex; align-items: center; min-height: 24px; padding: 4px 9px; border-radius: 999px; background: #e4f5ef; color: #08776e !important; font-size: 12px !important; font-weight: 900 !important; }
+.trip-date-range-trigger { display: grid; width: 100%; grid-template-columns: minmax(0, 1fr) 34px minmax(0, 1fr) 32px; align-items: center; gap: 10px; margin-top: 10px; padding: 7px; border: 1px solid #b8d9d1; border-radius: 13px; background: #fff; color: #14564f; text-align: left; cursor: pointer; box-shadow: 0 4px 12px rgba(17, 92, 83, .05); }
 .trip-date-range-trigger:hover, .trip-date-range-trigger:focus-visible { border-color: #0c9488; outline: 0; box-shadow: 0 0 0 3px rgba(13, 148, 136, .1); }
-.trip-date-range-trigger > span { display: grid; gap: 4px; min-width: 0; }
+.trip-date-range-trigger > span { display: grid; gap: 4px; min-width: 0; min-height: 58px; align-content: center; padding: 8px 11px; border-radius: 9px; background: #f4faf7; }
 .trip-date-range-trigger b { font-size: 15px; font-weight: 900; }
 .trip-date-range-trigger small { overflow: hidden; color: #365f5a; font-size: 12px; font-weight: 750; text-overflow: ellipsis; white-space: nowrap; }
 .trip-date-range-trigger em { color: #0c877d; font-size: 11px; font-style: normal; font-weight: 800; }
-.trip-date-range-trigger > i { color: #0c9488; font-style: normal; font-weight: 900; text-align: center; }
-.trip-date-range-trigger > svg { color: #0c877d; }
+.trip-date-range-trigger > i { display: grid; width: 28px; height: 28px; place-items: center; border-radius: 50%; background: #e2f3ee; color: #087c72; font-style: normal; font-weight: 900; text-align: center; }
+.trip-date-range-trigger > svg { box-sizing: content-box; padding: 6px; border-radius: 8px; background: #e7f5f1; color: #087c72; }
+
+@media (max-width: 520px) {
+  .trip-date-field > small { align-items: flex-start !important; flex-direction: column; gap: 5px !important; }
+  .trip-date-range-trigger { grid-template-columns: minmax(0, 1fr) 28px minmax(0, 1fr); }
+  .trip-date-range-trigger > svg { display: none; }
+  .trip-date-range-trigger > span { padding: 8px; }
+}
 
 .trip-calendar-backdrop { position: fixed; z-index: 190; inset: 0; display: grid; place-items: center; padding: 24px; overflow: auto; background: rgba(9, 52, 48, .57); backdrop-filter: blur(7px); }
 .trip-calendar-modal { width: min(1100px, 100%); overflow: hidden; border: 1px solid #c9e3dc; border-radius: 24px; background: #fff; box-shadow: 0 28px 75px rgba(2, 45, 41, .32); color: #173f3b; }

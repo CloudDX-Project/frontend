@@ -38,12 +38,30 @@ function costGroupDescription(group, travelers) {
   return "";
 }
 
+function costGroupPresentation(group) {
+  const label = String(group || "");
+  if (/개인 교통비/.test(label)) return { className: "is-personal-transport", kicker: "개별 결제" };
+  if (/공동 예약·차량비/.test(label)) return { className: "is-shared-booking", kicker: "함께 나눠 결제" };
+  if (/식사·관광비/.test(label)) return { className: "is-food-activity", kicker: "현지 사용 예상" };
+  if (/장소 변경 차액/.test(label)) return { className: "is-plan-adjustment", kicker: "일정 변경 반영" };
+  return { className: "", kicker: "예상 경비" };
+}
+
 function CostGroupCard({ group, money, travelers }) {
+  const presentation = costGroupPresentation(group.group);
+  const [groupTitle, ...basisParts] = String(group.group || "").split(" · ");
+  const groupBasis = basisParts.join(" · ");
+  const groupTotal = group.rows.reduce((sum, row) => sum + (Number(row[1]) || 0), 0);
+  const totalLabel = /공동 예약·차량비/.test(group.group) ? "1인 부담" : "1인 합계";
   return (
-    <section>
+    <section className={`cost-group-card ${presentation.className}`.trim()}>
       <h3>
-        <span>{group.group}</span>
-        <strong>{money(group.rows.reduce((sum, row) => sum + (Number(row[1]) || 0), 0))}원</strong>
+        <span>
+          <small className="cost-group-kicker">{presentation.kicker}</small>
+          <b>{groupTitle}</b>
+          {groupBasis && <em>{groupBasis}</em>}
+        </span>
+        <strong><small>{totalLabel}</small>{money(groupTotal)}원</strong>
       </h3>
       {costGroupDescription(group.group, travelers) && (
         <small className="cost-group-caption">
@@ -51,11 +69,18 @@ function CostGroupCard({ group, money, travelers }) {
         </small>
       )}
       {group.rows.map(([name, value, note], rowIndex) => {
+        const numericValue = Number(value);
+        const hasKnownPrice = Number.isFinite(numericValue) && numericValue > 0;
+        const explicitlyFree = /무료|입장료\s*없음|free/i.test(note || "");
         const approximate = /예상|평균|참고|공개 메뉴|대표가/.test(note || "") || /고등어|카페|점심|저녁|시장|오설록|새별|카멜리아|성산/.test(name);
         return (
           <p key={`${name}-inline-${rowIndex}`}>
             <span><b>{name}</b><small>{note}</small></span>
-            <strong>{approximate ? "약 " : ""}1인 {money(value)}원</strong>
+            <strong>
+              {hasKnownPrice
+                ? `${approximate ? "약 " : ""}1인 ${money(numericValue)}원`
+                : explicitlyFree ? "무료" : "가격 확인 필요"}
+            </strong>
           </p>
         );
       })}
@@ -137,9 +162,8 @@ function PlanFullscreen({
             : "현지 이동 미선택";
   const tripTitle = (
     <>
-      {destinationName}에서 완성하는
-      <br />
-      나만의 여행
+      <span>{destinationName}에서</span>
+      <span>완성하는 나만의 여행</span>
     </>
   );
   const showUtilityMessage = (message) => {
@@ -335,7 +359,7 @@ function PlanFullscreen({
             <div className="full-budget-top">
               <span>선택한 예약 기준 · 1인 예상 경비</span>
               <h2>1인 {money(total)}원</h2>
-              <p>총 {travelers}명 여행비 {money(total * (travelers || 1))}원</p>
+              <p>총 {travelers}명 예상 여행비 약 {money(total * (travelers || 1))}원</p>
             </div>
             <button
               type="button"
@@ -443,11 +467,11 @@ function PlanFullscreen({
                   || /렌터카/.test(name);
                 const isAirportStop =
                   backendPlaceType === "AIRPORT"
-                  || /공항|항공|탑승/.test(name || "");
+                  || (!backendPlaceType && /(?:국제)?공항$|항공편|탑승/.test(name || ""));
                 const isArrivalAirport =
                   backendPlaceType === "AIRPORT" && backendCategory.includes("ARRIVAL_AIRPORT");
                 const hasPartnerBooking = isRentalStop || (isAirportStop && !isArrivalAirport);
-                const bookingLabel = isRentalStop ? "렌터카 특가 예약" : "항공권 특가 예약";
+                const bookingLabel = "제휴사 예약하기";
                 const costLabel = isRentalStop
                   ? selectedRental?.price
                     ? `렌터카 총 ${money(selectedRental.price)}원`
@@ -526,7 +550,7 @@ function PlanFullscreen({
                             <span>상세보기</span>
                           </button>
                         ) : <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>}
-                        {liveBookingUrl ? (
+                        {hasPartnerBooking && liveBookingUrl ? (
                           <a
                             className={`stop-booking-link ${isRentalStop ? "is-rental" : "is-flight"}`}
                             href={liveBookingUrl}
@@ -535,12 +559,10 @@ function PlanFullscreen({
                             onClick={(event) => event.stopPropagation()}
                             aria-label={`${metadata.bookingProvider || "제휴사"}에서 ${name} 예약하기`}
                           >
-                            <small>PARTNER BENEFIT</small>
                             <span>{bookingLabel} <em>↗</em></span>
                           </a>
-                        ) : metadata.bookingUrl || hasPartnerBooking ? (
+                        ) : hasPartnerBooking ? (
                           <button type="button" className={`stop-booking-link ${isRentalStop ? "is-rental" : "is-flight"}`} onClick={(event) => { event.stopPropagation(); showUtilityMessage("제휴 예약 페이지 연동 준비 중입니다."); }}>
-                            <small>PARTNER BENEFIT</small>
                             <span>{bookingLabel} <em>↗</em></span>
                           </button>
                         ) : null}
@@ -595,7 +617,7 @@ function PlanFullscreen({
               <header>
                 <span>선택한 예약 기준 · 1인 예상 경비</span>
                 <h2>1인 {money(total)}원</h2>
-                <p>총 {travelers}명 여행비 {money(total * (travelers || 1))}원</p>
+                <p>총 {travelers}명 예상 여행비 약 {money(total * (travelers || 1))}원</p>
               </header>
               <div className="inline-cost-groups">
                 <div className="inline-cost-column inline-cost-column-left">

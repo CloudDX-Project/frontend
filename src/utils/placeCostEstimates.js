@@ -13,6 +13,7 @@ const CURATED_PLACE_COSTS = [
   { match: /자매국수/, price: 12000, source: "국수·곁들임 평균" },
   { match: /고집돌우럭/, price: 30000, source: "대표 세트 1인 환산" },
   { match: /명진전복/, price: 18000, source: "전복돌솥밥 대표 메뉴가" },
+  { match: /핸즈\s*웍스|맨즈\s*윅스/, price: 30000, source: "제주 공방 체험 공개가 비교 예상" },
 ];
 
 export function getPlaceCostEstimate(name, metadata = {}) {

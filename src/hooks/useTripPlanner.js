@@ -1377,13 +1377,13 @@ function useTripPlanner() {
     rentalId,
     setRentalId,
   ] =
-    useState("");
+    useState(initialBookingSelection.rental?.id || "");
 
   const [
     restoredRental,
     setRestoredRental,
   ] =
-    useState(null);
+    useState(initialBookingSelection.rental || null);
 
 
   const [
@@ -2112,6 +2112,7 @@ function useTripPlanner() {
       const bookingSelection = {
         outboundFlight: selectedOutboundFlight || null,
         returnFlight: selectedReturnFlight || null,
+        rental: selectedRental || null,
         stay: selectedStay || null,
       };
 
@@ -2125,7 +2126,7 @@ function useTripPlanner() {
     } catch {
       // 저장소가 차단되어도 현재 세션의 선택 상태는 계속 유지한다.
     }
-  }, [selectedOutboundFlight, selectedReturnFlight, selectedStay]);
+  }, [selectedOutboundFlight, selectedReturnFlight, selectedRental, selectedStay]);
 
 
   const dates =
@@ -2796,19 +2797,26 @@ function useTripPlanner() {
           : 0;
 
 
-  const itineraryDistanceKm =
-    Math.max(
-      45,
+  const routedItineraryDistanceKm =
+    (backendPlan?.routes || [])
+      .flatMap((route) => route?.segments || [])
+      .filter((segment) => String(segment?.mode || "").toUpperCase() !== "AIR")
+      .reduce((sum, segment) => {
+        const distance = Number(segment?.distanceKm);
+        return sum + (Number.isFinite(distance) && distance > 0 ? distance : 0);
+      }, 0);
 
-      Math.round(
-        nights *
-          72 +
-          Object.keys(
-            planEdits,
-          ).length *
-            18,
-      ),
-    );
+
+  const itineraryDistanceKm =
+    routedItineraryDistanceKm > 0
+      ? Math.round(routedItineraryDistanceKm * 10) / 10
+      : Math.max(
+          45,
+          Math.round(
+            nights * 72 +
+              Object.keys(planEdits).length * 18,
+          ),
+        );
 
 
   const vehicleEfficiency =
@@ -3444,7 +3452,12 @@ function useTripPlanner() {
       : [];
 
 
-  const resolveBackendCostItem = (item) => {
+  const isSharedBackendCostItem = (item, itemLabel) =>
+    String(item.scope || "").toLowerCase() === "shared" ||
+    /숙박|숙소|호텔|렌터카|주유|주차/.test(itemLabel);
+
+
+  const resolveBackendCostItem = (item, { isShared = false } = {}) => {
     const itemLabel = String(
       item.placeName || item.vendorName || item.name || item.label || item.category || "여행 비용",
     );
@@ -3456,7 +3469,13 @@ function useTripPlanner() {
         normalizedRowLabel.includes(normalizedLabel) ||
         normalizedLabel.includes(normalizedRowLabel);
     });
-    const rawValue = Number(item.perPerson ?? item.total ?? 0);
+    const perPersonValue = Number(item.perPerson);
+    const totalValue = Number(item.total);
+    const rawValue = Number.isFinite(perPersonValue) && perPersonValue > 0
+      ? perPersonValue
+      : Number.isFinite(totalValue) && totalValue > 0
+        ? isShared ? totalValue / party : totalValue
+        : 0;
     const matchedValue = Number(itineraryMatch?.row?.[1] || 0);
     const itemType = String(item.type || item.itemType || item.category || "").toUpperCase();
     const likelyMeal = itineraryMatch?.type === "meal" ||
@@ -3488,13 +3507,11 @@ function useTripPlanner() {
               groups,
               item,
             ) => {
-              const resolvedItem = resolveBackendCostItem(item);
-              const { itemLabel } = resolvedItem;
-
-
-              const isShared =
-                item.scope === "shared" ||
-                /숙박|숙소|호텔|렌터카|주유|주차/.test(itemLabel);
+              const itemLabel = String(
+                item.placeName || item.vendorName || item.name || item.label || item.category || "여행 비용",
+              );
+              const isShared = isSharedBackendCostItem(item, itemLabel);
+              const resolvedItem = resolveBackendCostItem(item, { isShared });
 
               const isMealOrActivity =
                 resolvedItem.itineraryMatch?.type === "activity" ||
@@ -3572,7 +3589,12 @@ function useTripPlanner() {
 
 
   const backendMissingCostAdjustment = backendCostItems.reduce((sum, item) => {
-    const resolved = resolveBackendCostItem(item);
+    const itemLabel = String(
+      item.placeName || item.vendorName || item.name || item.label || item.category || "여행 비용",
+    );
+    const resolved = resolveBackendCostItem(item, {
+      isShared: isSharedBackendCostItem(item, itemLabel),
+    });
     return sum + (resolved.rawValue <= 0 && resolved.value > 0 ? resolved.value : 0);
   }, 0);
 
@@ -4261,7 +4283,7 @@ function useTripPlanner() {
           "tripDraft",
           JSON.stringify({
             ...(currentDraft && typeof currentDraft === "object" ? currentDraft : {}),
-            bookingSelection: { outboundFlight: null, returnFlight: null, stay: null },
+            bookingSelection: { outboundFlight: null, returnFlight: null, rental: null, stay: null },
           }),
         );
       } catch {
@@ -5791,85 +5813,20 @@ function useTripPlanner() {
                 stay.id,
           );
 
-        if (
-          didChangeStay
-        ) {
-          setStayChange({
-            from:
-              previousStay,
-
-            to:
-              stay,
-          });
+        if (!didChangeStay) {
+          return notify("현재 적용 중인 숙소예요.");
         }
 
-        setPlanViewOpen(
-          false,
-        );
+        setStayChange({ from: previousStay, to: stay });
+        setPlanViewOpen(false);
 
-        setPlanningMode(
-          "stay-revision",
-        );
-
-        setPlanningStage(
-          "calculating",
-        );
-
-        setPlanning(
-          true,
-        );
-
-        window.setTimeout(
-          () =>
-            setPlanningStage(
-              "ready",
-            ),
-
-          1900,
-        );
-
-        window.setTimeout(
-          () => {
-            setActiveDay(
-              0,
-            );
-
-            setPlanRevision(
-              (
-                current,
-              ) =>
-                current +
-                1,
-            );
-
-            setShowPlan(
-              true,
-            );
-
-            setPlanning(
-              false,
-            );
-
-            setPlanViewOpen(
-              true,
-            );
-
-            if (
-              didChangeStay
-            ) {
-              setStayChangePromptOpen(
-                true,
-              );
-            }
-
-            notify(
-              `${stay.name} 기준으로 숙소 권역과 세부 경비를 새로 설계했어요.`,
-            );
-          },
-
-          3100,
-        );
-
+        // 선택 상태만 바꾸는 연출이 아니라 새 accommodationId로 여행과
+        // 일정을 다시 생성해야 숙소 좌표가 후보·경로·비용 계산의 기준이 된다.
+        void generate({
+          stayOverride: stay,
+          mode: "stay-revision",
+          previousStayOverride: previousStay,
+        });
         return;
       }
 
@@ -6467,7 +6424,13 @@ function useTripPlanner() {
     costForEvent;
 
 
-  const generate = async () => {
+  const generate = async ({
+    stayOverride = null,
+    mode = "create",
+    previousStayOverride = null,
+  } = {}) => {
+
+  const effectiveStay = stayOverride || selectedStay;
 
   /*
    * ==========================================
@@ -6595,7 +6558,7 @@ function useTripPlanner() {
   }
 
 
-  if (!selectedStay) {
+  if (!effectiveStay) {
     return notify(
       "숙소를 선택해 주세요.",
     );
@@ -6604,8 +6567,8 @@ function useTripPlanner() {
 
   const accommodationId =
     Number(
-      selectedStay.accommodationId ??
-      selectedStay.id,
+      effectiveStay.accommodationId ??
+      effectiveStay.id,
     );
 
 
@@ -6904,7 +6867,7 @@ function useTripPlanner() {
    */
 
   setPlanningMode(
-    "create",
+    mode,
   );
 
   setPlanning(
@@ -7154,9 +7117,12 @@ function useTripPlanner() {
     );
 
 
-    notify(
-      "AI 여행 일정이 생성되었습니다.",
-    );
+    if (mode === "stay-revision") {
+      setStayChangePromptOpen(true);
+      notify(`${effectiveStay.name}을 기준으로 이동 동선과 경비를 다시 계산했어요.`);
+    } else {
+      notify("AI 여행 일정이 생성되었습니다.");
+    }
 
   } catch (error) {
 
@@ -7171,10 +7137,19 @@ function useTripPlanner() {
       false,
     );
 
+    if (mode === "stay-revision") {
+      if (previousStayOverride?.id != null) {
+        setStayId(previousStayOverride.id);
+      }
+      setStayChange(null);
+      setPlanViewOpen(true);
+    }
+
 
     notify(
-      error?.message ||
-        "여행 일정을 생성하지 못했습니다.",
+      mode === "stay-revision"
+        ? `${error?.message || "새 숙소 기준 일정을 생성하지 못했습니다."} 기존 숙소 일정을 유지합니다.`
+        : error?.message || "여행 일정을 생성하지 못했습니다.",
     );
   }
 };

@@ -73,7 +73,22 @@ export function loadKakaoNaviSdk() {
   return sdkPromise;
 }
 
-export function startKakaoNavigation(destination) {
+function toNaviLocation(location, fallbackName) {
+  const latitude = Number(location?.latitude ?? location?.lat ?? location?.y);
+  const longitude = Number(location?.longitude ?? location?.lng ?? location?.x);
+
+  if (!Number.isFinite(latitude) || !Number.isFinite(longitude)) {
+    return null;
+  }
+
+  return {
+    name: String(location?.name || fallbackName),
+    x: longitude,
+    y: latitude,
+  };
+}
+
+export function startKakaoNavigation(destination, viaPoints = []) {
   const latitude = Number(destination?.latitude ?? destination?.lat ?? destination?.y);
   const longitude = Number(destination?.longitude ?? destination?.lng ?? destination?.x);
 
@@ -86,10 +101,18 @@ export function startKakaoNavigation(destination) {
   }
 
   const Kakao = window.Kakao;
+  const normalizedViaPoints = viaPoints
+    .map((point, index) => toNaviLocation(point, `경유지 ${index + 1}`))
+    .filter(Boolean)
+    .slice(0, 3);
+
   Kakao.Navi.start({
     name: String(destination?.name || "다음 여행지"),
     x: longitude,
     y: latitude,
     coordType: "wgs84",
+    rpOption: 100,
+    routeInfo: false,
+    viaPoints: normalizedViaPoints,
   });
 }
