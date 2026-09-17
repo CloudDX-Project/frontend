@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Maximize2, Minimize2, Minus, Plus } from "lucide-react";
+import { CarFront, Maximize2, Minus, Navigation, Plus, X } from "lucide-react";
 import { locationLabel } from "../../data/mockData";
 import { loadKakaoMapsSdk } from "../../lib/kakaoMap";
+import { loadKakaoNaviSdk, startKakaoNavigation } from "../../lib/kakaoNavi";
 
 const ROUTE_SEGMENT_COLORS = [
   "#0b766d",
@@ -104,6 +105,23 @@ function buildKakaoMapLink(stop) {
   }
 
   return `https://map.kakao.com/link/map/${encodeURIComponent(name)},${point.latitude},${point.longitude}`;
+}
+
+function buildKakaoDirectionsLink(stops = [], mode = "car") {
+  const routeStops = uniqueStops(stops)
+    .filter((stop) => pointFrom(stop))
+    .slice(0, 7);
+
+  if (routeStops.length < 2) {
+    return buildKakaoMapLink(routeStops[0]);
+  }
+
+  const path = routeStops.map((stop) => {
+    const point = pointFrom(stop);
+    return `${encodeURIComponent(String(stop.name || "여행지").trim())},${point.latitude},${point.longitude}`;
+  }).join("/");
+
+  return `https://map.kakao.com/link/by/${mode}/${path}`;
 }
 
 function createMarkerElement(stop, index, color, onSelect) {
@@ -453,6 +471,8 @@ function mapsSafeRemoveListener(target, eventName, handler) {
 function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, routeResults = [], compact = false, hideHeader = false, visible = true }) {
   const [expanded, setExpanded] = useState(false);
   const [selectedSegmentIndex, setSelectedSegmentIndex] = useState(null);
+  const [navigationMessage, setNavigationMessage] = useState("");
+  const [navigationReady, setNavigationReady] = useState(false);
   const selectedDay = dayPlans[activeDay] || dayPlans[0];
   const destinationContext = locationLabel(destinationLocation, "대한민국");
   const originContext = locationLabel(originLocation, "출발지");
@@ -500,6 +520,22 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
     setSelectedSegmentIndex(null);
   }, [activeDay]);
 
+  useEffect(() => {
+    let active = true;
+
+    loadKakaoNaviSdk()
+      .then(() => {
+        if (active) setNavigationReady(true);
+      })
+      .catch(() => {
+        if (active) setNavigationReady(false);
+      });
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
   const route = useMemo(() => {
     const segmentStops = stopsFromSegments(coloredSegments);
     const fallbackStops = stopsFromDayPlan(selectedDay);
@@ -534,12 +570,63 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
     ? Number(selectedSegment.durationMinutes)
     : null;
 
-  const finalStop = route.stops[route.stops.length - 1] || {
-    name: destinationContext,
-    latitude: destinationLocation?.latitude,
-    longitude: destinationLocation?.longitude,
+  const openMapUrl = buildKakaoDirectionsLink(route.stops, "car");
+
+  const navigationDestination = useMemo(() => {
+    if (selectedSegment) {
+      const arrival = segmentPoint(selectedSegment, "arrival");
+      if (arrival) {
+        return {
+          name: selectedSegment.arrivalName || "다음 여행지",
+          ...arrival,
+        };
+      }
+    }
+
+    return route.stops[1] || route.stops[0] || null;
+  }, [route.stops, selectedSegment]);
+
+  const navigationFallbackUrl = useMemo(() => {
+    if (selectedSegment) {
+      const departure = segmentPoint(selectedSegment, "departure");
+      const arrival = segmentPoint(selectedSegment, "arrival");
+      if (departure && arrival) {
+        return buildKakaoDirectionsLink([
+          { name: selectedSegment.departureName || "출발", ...departure },
+          { name: selectedSegment.arrivalName || "도착", ...arrival },
+        ], "car");
+      }
+    }
+
+    return buildKakaoDirectionsLink(route.stops.slice(0, 2), "car");
+  }, [route.stops, selectedSegment]);
+
+  const handleNavigationStart = () => {
+    if (!navigationDestination) {
+      setNavigationMessage("내비게이션을 시작할 장소 좌표가 없어요.");
+      return;
+    }
+
+    const mobileDevice = typeof navigator !== "undefined" && (
+      navigator.userAgentData?.mobile === true ||
+      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")
+    );
+
+    if (mobileDevice && navigationReady) {
+      try {
+        startKakaoNavigation(navigationDestination);
+        setNavigationMessage(`${navigationDestination.name} 카카오내비를 실행했습니다.`);
+        return;
+      } catch (error) {
+        setNavigationMessage(error?.message || "카카오내비 앱을 열지 못해 카카오맵으로 연결합니다.");
+      }
+    }
+
+    window.open(navigationFallbackUrl, "_blank", "noopener,noreferrer");
+    setNavigationMessage(mobileDevice
+      ? "카카오내비 준비 전이라 선택 구간의 카카오맵 길찾기를 열었습니다."
+      : "PC 프리뷰에서는 선택 구간의 카카오맵 길찾기를 열었습니다. 실제 모바일에서는 내비가 실행됩니다.");
   };
-  const openMapUrl = buildKakaoMapLink(finalStop);
 
   const routeForStopIndex = (stopIndex) => {
     if (!localSegments.length) return null;
@@ -559,7 +646,7 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
           <b>{route.label}</b>
         </div>
         <a href={openMapUrl} target="_blank" rel="noreferrer noopener">
-          카카오맵 ↗
+          <Navigation size={13} /> 전체 길찾기
         </a>
       </header>}
 
@@ -658,7 +745,7 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
           <header>
             <span><small>DAY {activeDay + 1} ROUTE</small><b>{route.label}</b></span>
             <button type="button" onClick={() => setExpanded(false)} aria-label="전체 지도 닫기">
-              <Minimize2 size={16} /><span>지도 닫기</span>
+              <X size={19} /><span>닫기</span>
             </button>
           </header>
 
@@ -676,24 +763,42 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
           </div>
 
           <div className="mobile-map-stop-sheet">
-            <b>오늘의 이동 순서</b>
-            {route.stops.map((stop, index) => {
-              const linkedSegment = routeForStopIndex(index);
-              const linkedSegmentIndex = linkedSegment?._segmentIndex;
-              return (
-                <button
-                  type="button"
-                  key={`${stop.name}-expanded-${index}`}
-                  className={linkedSegmentIndex === selectedSegmentIndex ? "is-active" : ""}
-                  onClick={() => linkedSegmentIndex != null && handleSegmentSelect(linkedSegmentIndex)}
-                >
-                  <i style={{ background: linkedSegment?._routeColor || ROUTE_SEGMENT_COLORS[0] }}>{index + 1}</i>
-                  <span>{stop.name}</span>
-                  {linkedSegment?.durationMinutes != null && <small>{Math.round(Number(linkedSegment.durationMinutes))}분</small>}
-                </button>
-              );
-            })}
-            <a href={openMapUrl} target="_blank" rel="noreferrer noopener">카카오맵에서 보기 ↗</a>
+            <div className="mobile-map-sheet-head">
+              <span><b>오늘의 이동 순서</b><small>{route.stops.length}개 장소</small></span>
+              <span className="mobile-map-totals">
+                {totalDistanceKm > 0 && <b>{totalDistanceKm.toFixed(1)}km</b>}
+                {totalDurationMinutes > 0 && <b>{Math.round(totalDurationMinutes)}분</b>}
+              </span>
+            </div>
+            <div className="mobile-map-stop-scroll">
+              {route.stops.map((stop, index) => {
+                const linkedSegment = routeForStopIndex(index);
+                const linkedSegmentIndex = linkedSegment?._segmentIndex;
+                return (
+                  <button
+                    type="button"
+                    key={`${stop.name}-expanded-${index}`}
+                    className={linkedSegmentIndex === selectedSegmentIndex ? "is-active" : ""}
+                    onClick={() => linkedSegmentIndex != null && handleSegmentSelect(linkedSegmentIndex)}
+                  >
+                    <i style={{ background: linkedSegment?._routeColor || ROUTE_SEGMENT_COLORS[0] }}>{index + 1}</i>
+                    <span>{stop.name}</span>
+                    {linkedSegment?.durationMinutes != null && <small>{Math.round(Number(linkedSegment.durationMinutes))}분</small>}
+                  </button>
+                );
+              })}
+            </div>
+            <div className="mobile-map-actions">
+              <button type="button" className="mobile-kakao-navi-cta" onClick={handleNavigationStart} disabled={!navigationDestination}>
+                <CarFront size={16} />
+                <span><small>{selectedSegment ? "SELECTED ROUTE" : "NEXT DESTINATION"}</small><b>내비게이션 시작</b></span>
+                <em>→</em>
+              </button>
+              <a className="mobile-kakao-route-cta" href={openMapUrl} target="_blank" rel="noreferrer noopener">
+                <Navigation size={15} /> 전체 경로 <span>↗</span>
+              </a>
+            </div>
+            {navigationMessage && <p className="mobile-navigation-message" role="status">{navigationMessage}</p>}
           </div>
         </div>
       )}

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { preconnect, preload } from "react-dom";
 import { isMockModeEnabled } from "../api/apiClient";
 import { recommendAccommodations } from "../api/accommodationApi";
 import { searchFlights } from "../api/flightApi";
@@ -39,6 +40,7 @@ import {
   today,
   transportName,
 } from "../data/mockData";
+import { getPlaceCostEstimate } from "../utils/placeCostEstimates";
 
 
 const flightTimeLabel = (flight) => {
@@ -219,6 +221,10 @@ const normalizeFlightCandidate = (
 };
 
 
+const planEventKey = (event, dayIndex, eventIndex) =>
+  event?.[6]?.id || `day-${dayIndex + 1}-stop-${eventIndex + 1}`;
+
+
 const applyPlanOrders = (
   plans,
   orders,
@@ -247,10 +253,9 @@ const applyPlanOrders = (
           ].map(
             (
               event,
+              eventIndex,
             ) => [
-              event[
-                6
-              ]?.id,
+              planEventKey(event, dayIndex, eventIndex),
 
               event,
             ],
@@ -294,12 +299,9 @@ const applyPlanOrders = (
             ].filter(
               (
                 event,
+                eventIndex,
               ) =>
-                !known.has(
-                  event[
-                    6
-                  ]?.id,
-                ),
+                !known.has(planEventKey(event, dayIndex, eventIndex)),
             ),
           ],
         ],
@@ -442,6 +444,8 @@ const readInitialDraft =
 
         next.localTransport =
           "";
+
+        delete next.bookingSelection;
       }
 
       return next;
@@ -725,6 +729,11 @@ function useTripPlanner() {
       readInitialDraft,
     );
 
+  const initialBookingSelection =
+    initialDraft.bookingSelection && typeof initialDraft.bookingSelection === "object"
+      ? initialDraft.bookingSelection
+      : {};
+
 
   const [
     destinationType,
@@ -998,10 +1007,14 @@ function useTripPlanner() {
   useEffect(
     () => {
       try {
+        const currentDraft = JSON.parse(
+          window.localStorage.getItem("tripDraft") || "{}",
+        );
         window.localStorage.setItem(
           "tripDraft",
 
           JSON.stringify({
+            ...(currentDraft && typeof currentDraft === "object" ? currentDraft : {}),
             destinationType,
             destinationLocation,
             departureLocation,
@@ -1258,7 +1271,7 @@ function useTripPlanner() {
     setOrigin,
   ] =
     useState(
-      "GMP",
+      initialBookingSelection.outboundFlight?.departureAirport || "GMP",
     );
 
 
@@ -1302,14 +1315,14 @@ function useTripPlanner() {
     flightId,
     setFlightId,
   ] =
-    useState("");
+    useState(initialBookingSelection.outboundFlight?.id || "");
 
 
   const [
     returnFlightId,
     setReturnFlightId,
   ] =
-    useState("");
+    useState(initialBookingSelection.returnFlight?.id || "");
 
 
   const [
@@ -1318,16 +1331,20 @@ function useTripPlanner() {
   ] =
     useState({
       departureAirport:
-        "",
+        initialBookingSelection.outboundFlight?.departureAirport || "",
 
       arrivalAirport:
-        "",
+        initialBookingSelection.outboundFlight?.arrivalAirport || "",
 
       outboundFlights:
-        [],
+        initialBookingSelection.outboundFlight
+          ? [initialBookingSelection.outboundFlight]
+          : [],
 
       returnFlights:
-        [],
+        initialBookingSelection.returnFlight
+          ? [initialBookingSelection.returnFlight]
+          : [],
     });
 
 
@@ -1431,7 +1448,9 @@ function useTripPlanner() {
     setStayCatalog,
   ] =
     useState(
-      [],
+      initialBookingSelection.stay
+        ? [initialBookingSelection.stay]
+        : [],
     );
 
 
@@ -1532,7 +1551,7 @@ function useTripPlanner() {
     stayId,
     setStayId,
   ] =
-    useState("");
+    useState(initialBookingSelection.stay?.id || "");
 
 
   const [
@@ -1892,8 +1911,8 @@ function useTripPlanner() {
       (
         flight,
       ) =>
-        flight.id ===
-        flightId,
+        String(flight.id) ===
+        String(flightId),
     );
 
 
@@ -1902,8 +1921,8 @@ function useTripPlanner() {
       (
         flight,
       ) =>
-        flight.id ===
-        returnFlightId,
+        String(flight.id) ===
+        String(returnFlightId),
     );
 
 
@@ -2043,6 +2062,22 @@ function useTripPlanner() {
     );
 
 
+  useEffect(() => {
+    if (!flightOpen && !rentalOpen) return;
+    // Match the modal's initial recommendation order without changing catalog data.
+    const firstVisible = [...rentalCatalog]
+      .sort((a, b) => Number(b.score) - Number(a.score))
+      .slice(0, 2);
+    for (const rental of firstVisible) {
+      if (!rental.image) continue;
+      preload(rental.image, { as: "image", fetchPriority: "low" });
+    }
+    if (firstVisible.some((rental) => rental.image?.includes("commons.wikimedia.org"))) {
+      preconnect("https://commons.wikimedia.org");
+      preconnect("https://upload.wikimedia.org");
+    }
+  }, [flightOpen, rentalOpen, rentalCatalog]);
+
   const selectedRental =
     rentalCatalog.find(
       (
@@ -2061,9 +2096,36 @@ function useTripPlanner() {
       (
         stay,
       ) =>
-        stay.id ===
-        stayId,
+        String(stay.id) ===
+        String(stayId),
     );
+
+
+  /*
+   * 사용자가 확정한 예약 선택은 검색 결과 배열과 별도로 보존한다.
+   * 같은 여행 조건에서 API 목록이 재조회되거나 화면이 다시 열려도
+   * 선택한 항공편과 숙소가 후보 목록에서 사라지지 않는다.
+   */
+  useEffect(() => {
+    try {
+      const currentDraft = JSON.parse(window.localStorage.getItem("tripDraft") || "{}");
+      const bookingSelection = {
+        outboundFlight: selectedOutboundFlight || null,
+        returnFlight: selectedReturnFlight || null,
+        stay: selectedStay || null,
+      };
+
+      window.localStorage.setItem(
+        "tripDraft",
+        JSON.stringify({
+          ...(currentDraft && typeof currentDraft === "object" ? currentDraft : {}),
+          bookingSelection,
+        }),
+      );
+    } catch {
+      // 저장소가 차단되어도 현재 세션의 선택 상태는 계속 유지한다.
+    }
+  }, [selectedOutboundFlight, selectedReturnFlight, selectedStay]);
 
 
   const dates =
@@ -2856,37 +2918,22 @@ function useTripPlanner() {
     )}일`;
 
 
-  const costForEvent =
-    (
-      name,
-      metadata = {},
-    ) =>
-      metadata.pricePerPerson !=
-        null &&
-      Number.isFinite(
-        Number(
-          metadata.pricePerPerson,
-        ),
-      ) &&
-      Number(
-        metadata.pricePerPerson,
-      ) >=
-        0
-        ? Number(
-            metadata.pricePerPerson,
-          )
-        : eventPrice(
-            name,
+  const costForEvent = (name, metadata = {}) => {
+    const suppliedPrice = Number(metadata.pricePerPerson);
+    if (Number.isFinite(suppliedPrice) && suppliedPrice > 0) return suppliedPrice;
 
-            {
-              selectedFlight,
-              selectedRental,
-              selectedStay,
-              party,
-              rooms,
-              nights,
-            },
-          );
+    const estimated = getPlaceCostEstimate(name, metadata);
+    if (estimated.price > 0) return estimated.price;
+
+    return eventPrice(name, {
+      selectedFlight,
+      selectedRental,
+      selectedStay,
+      party,
+      rooms,
+      nights,
+    });
+  };
 
 
   const itineraryCostRows =
@@ -2964,6 +3011,8 @@ function useTripPlanner() {
                 )
               );
 
+            const placeEstimate = getPlaceCostEstimate(name, metadata);
+
             return [
               {
                 type:
@@ -2986,7 +3035,7 @@ function useTripPlanner() {
                     metadata.provider
                       ? `${metadata.provider} 제공가`
                       : isMeal
-                        ? "네이버 지도 공개 메뉴 참고 · 1인 평균"
+                        ? `${placeEstimate.source} · 1인 예상`
                         : "1인 입장·체험 기준"
                   }`,
                 ],
@@ -3395,6 +3444,42 @@ function useTripPlanner() {
       : [];
 
 
+  const resolveBackendCostItem = (item) => {
+    const itemLabel = String(
+      item.placeName || item.vendorName || item.name || item.label || item.category || "여행 비용",
+    );
+    const normalizedLabel = itemLabel.replace(/\s+/g, "");
+    const itineraryMatch = itineraryCostRows.find(({ row }) => {
+      const rowLabel = String(row?.[0] || "");
+      const normalizedRowLabel = rowLabel.replace(/\s+/g, "");
+      return normalizedRowLabel === normalizedLabel ||
+        normalizedRowLabel.includes(normalizedLabel) ||
+        normalizedLabel.includes(normalizedRowLabel);
+    });
+    const rawValue = Number(item.perPerson ?? item.total ?? 0);
+    const matchedValue = Number(itineraryMatch?.row?.[1] || 0);
+    const itemType = String(item.type || item.itemType || item.category || "").toUpperCase();
+    const likelyMeal = itineraryMatch?.type === "meal" ||
+      /RESTAURANT|CAFE|FOOD|MEAL/.test(itemType) ||
+      /식비|식사|카페|커피|메뉴/.test(itemLabel);
+    const fallback = likelyMeal
+      ? getPlaceCostEstimate(itemLabel, { type: /CAFE/.test(itemType) ? "CAFE" : "RESTAURANT" })
+      : { price: 0, source: "" };
+    const value = rawValue > 0 ? rawValue : matchedValue > 0 ? matchedValue : fallback.price;
+
+    return {
+      itemLabel,
+      itineraryMatch,
+      likelyMeal,
+      rawValue,
+      value,
+      note: rawValue > 0
+        ? item.note || (item.approximate ? "백엔드 예상 견적" : "백엔드 확정 견적")
+        : itineraryMatch?.row?.[2] || (fallback.price > 0 ? `${fallback.source} · 1인 예상` : item.note || "현장 확인"),
+    };
+  };
+
+
   const costDetails =
     backendCostItems.length
       ? Object.values(
@@ -3403,15 +3488,8 @@ function useTripPlanner() {
               groups,
               item,
             ) => {
-              const itemLabel =
-                String(
-                  item.placeName ||
-                  item.vendorName ||
-                  item.name ||
-                  item.label ||
-                  item.category ||
-                  "여행 비용",
-                );
+              const resolvedItem = resolveBackendCostItem(item);
+              const { itemLabel } = resolvedItem;
 
 
               const isShared =
@@ -3419,6 +3497,8 @@ function useTripPlanner() {
                 /숙박|숙소|호텔|렌터카|주유|주차/.test(itemLabel);
 
               const isMealOrActivity =
+                resolvedItem.itineraryMatch?.type === "activity" ||
+                resolvedItem.likelyMeal ||
                 /식비|식사|카페|커피|메뉴|관광|체험|입장/.test(itemLabel);
 
               const key =
@@ -3449,18 +3529,9 @@ function useTripPlanner() {
                   item.category ||
                   "여행 비용",
 
-                Number(
-                  item.perPerson ??
-                    item.total ??
-                    0,
-                ),
+                resolvedItem.value,
 
-                item.note ||
-                  (
-                    item.approximate
-                      ? "백엔드 예상 견적"
-                      : "백엔드 확정 견적"
-                  ),
+                resolvedItem.note,
               ]);
 
               return groups;
@@ -3500,20 +3571,26 @@ function useTripPlanner() {
     );
 
 
+  const backendMissingCostAdjustment = backendCostItems.reduce((sum, item) => {
+    const resolved = resolveBackendCostItem(item);
+    return sum + (resolved.rawValue <= 0 && resolved.value > 0 ? resolved.value : 0);
+  }, 0);
+
+
   const total =
     Number.isFinite(
       backendPerPerson,
     ) &&
     backendPerPerson >=
       0
-      ? backendPerPerson
+      ? backendPerPerson + backendMissingCostAdjustment
       : Number.isFinite(
             backendGrandTotal,
           ) &&
           backendGrandTotal >=
             0
         ? backendGrandTotal /
-          party
+          party + backendMissingCostAdjustment
         : mockTotal;
 
 
@@ -3568,6 +3645,16 @@ function useTripPlanner() {
    */
   const loadStayOptions =
     async () => {
+      const mergeSelectedStay = (nextCatalog, previousCatalog = []) => {
+        const lockedStay = previousCatalog.find(
+          (stay) => String(stay.id) === String(stayId),
+        );
+        if (!lockedStay) return nextCatalog;
+        return nextCatalog.some((stay) => String(stay.id) === String(lockedStay.id))
+          ? nextCatalog
+          : [lockedStay, ...nextCatalog];
+      };
+
       const latitude =
         Number(
           destinationLocation
@@ -3598,9 +3685,7 @@ function useTripPlanner() {
           longitude,
         )
       ) {
-        setStayCatalog(
-          [],
-        );
+        setStayCatalog((previous) => mergeSelectedStay([], previous));
 
         setStayError(
           "숙소 추천을 위해 도착지 좌표가 필요합니다.",
@@ -3748,9 +3833,7 @@ function useTripPlanner() {
             }),
           );
 
-        setStayCatalog(
-          normalized,
-        );
+        setStayCatalog((previous) => mergeSelectedStay(normalized, previous));
 
         if (
           import.meta.env
@@ -3800,9 +3883,7 @@ function useTripPlanner() {
           error?.message ||
           "숙소 정보를 불러오지 못했습니다.";
 
-        setStayCatalog(
-          [],
-        );
+        setStayCatalog((previous) => mergeSelectedStay([], previous));
 
         setStayError(
           nextMessage,
@@ -3980,35 +4061,31 @@ function useTripPlanner() {
         setFlightSearchResult(
           (
             previous,
-          ) => ({
-            departureAirport:
-              result
-                ?.departureAirport ||
-              previous
-                ?.departureAirport ||
-              "",
+          ) => {
+            const lockedOutbound = previous?.outboundFlights?.find(
+              (flight) => String(flight.id) === String(flightId),
+            );
+            const lockedReturn = previous?.returnFlights?.find(
+              (flight) => String(flight.id) === String(returnFlightId),
+            );
+            const nextOutbound = isReturn
+              ? previous?.outboundFlights || []
+              : lockedOutbound && !fetchedOutboundFlights.some((flight) => String(flight.id) === String(lockedOutbound.id))
+                ? [lockedOutbound, ...fetchedOutboundFlights]
+                : fetchedOutboundFlights;
+            const nextReturn = isReturn
+              ? lockedReturn && !fetchedReturnFlights.some((flight) => String(flight.id) === String(lockedReturn.id))
+                ? [lockedReturn, ...fetchedReturnFlights]
+                : fetchedReturnFlights
+              : previous?.returnFlights || [];
 
-            arrivalAirport:
-              result
-                ?.arrivalAirport ||
-              previous
-                ?.arrivalAirport ||
-              "",
-
-            outboundFlights:
-              isReturn
-                ? previous
-                    ?.outboundFlights ||
-                  []
-                : fetchedOutboundFlights,
-
-            returnFlights:
-              isReturn
-                ? fetchedReturnFlights
-                : previous
-                    ?.returnFlights ||
-                  [],
-          }),
+            return {
+              departureAirport: result?.departureAirport || previous?.departureAirport || "",
+              arrivalAirport: result?.arrivalAirport || previous?.arrivalAirport || "",
+              outboundFlights: nextOutbound,
+              returnFlights: nextReturn,
+            };
+          },
         );
 
         if (
@@ -4020,17 +4097,6 @@ function useTripPlanner() {
               origin,
           );
 
-          setFlightId(
-            "",
-          );
-
-          setReturnFlightId(
-            "",
-          );
-        } else {
-          setReturnFlightId(
-            "",
-          );
         }
 
         if (
@@ -4092,6 +4158,29 @@ function useTripPlanner() {
           return false;
         }
 
+        // Start the return lookup only after outbound has finished, respecting
+        // the supplier's existing request throttling. The picker shares it.
+        if (!isReturn) {
+          const resolvedAirport = flightOriginAirports.find(
+            (airport) => airport.code === result?.departureAirport,
+          );
+          void searchFlights({
+            departure: resolvedAirport
+              ? `${resolvedAirport.city} ${resolvedAirport.name}`
+              : departure,
+            destination: arrival,
+            direction: "RETURN",
+            startDate,
+            startTime: "00:00",
+            endDate,
+            endTime: "23:59",
+            peopleCount: travelers,
+          }).catch(() => {
+            // Optional warm-up must not interrupt outbound selection.
+            // Failed requests aren't cached; opening return retries normally.
+          });
+        }
+
         return true;
       } catch (
         error
@@ -4121,18 +4210,14 @@ function useTripPlanner() {
               "",
 
             outboundFlights:
-              isReturn
-                ? previous
-                    ?.outboundFlights ||
-                  []
-                : [],
+              previous
+                ?.outboundFlights ||
+              [],
 
             returnFlights:
-              isReturn
-                ? []
-                : previous
-                    ?.returnFlights ||
-                  [],
+              previous
+                ?.returnFlights ||
+              [],
           }),
         );
 
@@ -4170,6 +4255,19 @@ function useTripPlanner() {
 
   const resetRouteBookings =
     () => {
+      try {
+        const currentDraft = JSON.parse(window.localStorage.getItem("tripDraft") || "{}");
+        window.localStorage.setItem(
+          "tripDraft",
+          JSON.stringify({
+            ...(currentDraft && typeof currentDraft === "object" ? currentDraft : {}),
+            bookingSelection: { outboundFlight: null, returnFlight: null, stay: null },
+          }),
+        );
+      } catch {
+        // storage optional
+      }
+
       setFlightId(
         "",
       );
@@ -4255,7 +4353,7 @@ function useTripPlanner() {
       region,
       district,
     ) => {
-      setDepartureLocation({
+      const nextDepartureLocation = {
         ...district,
 
         region:
@@ -4278,7 +4376,13 @@ function useTripPlanner() {
           ] ||
           region.airportCode ||
           "GMP",
-      });
+      };
+      const departureChanged =
+        String(departureLocation?.id || "") !== String(nextDepartureLocation.id || "") ||
+        String(departureLocation?.detail || departureLocation?.name || "") !==
+          String(nextDepartureLocation.detail || nextDepartureLocation.name || "");
+
+      setDepartureLocation(nextDepartureLocation);
 
       setDepartureRegionId(
         region.id,
@@ -4298,7 +4402,7 @@ function useTripPlanner() {
           "GMP",
       );
 
-      resetRouteBookings();
+      if (departureChanged) resetRouteBookings();
 
       setTransportPromptReady(
         false,
@@ -4731,6 +4835,11 @@ function useTripPlanner() {
                 true,
             };
 
+      const destinationChanged =
+        String(destinationLocation?.id || "") !== String(nextLocation.id || "") ||
+        String(destinationLocation?.detail || destinationLocation?.name || "") !==
+          String(nextLocation.detail || nextLocation.name || "");
+
       const matchedRegion =
         koreanRegions.find(
           (
@@ -4778,7 +4887,7 @@ function useTripPlanner() {
           : "전체",
       );
 
-      resetRouteBookings();
+      if (destinationChanged) resetRouteBookings();
 
       setTransportPromptReady(
         Boolean(
@@ -5139,48 +5248,23 @@ function useTripPlanner() {
         );
       }
 
-      setFlightId(
-        "",
-      );
+      const modeChanged = Boolean(transport && transport !== mode);
 
-      setReturnFlightId(
-        "",
-      );
-
-      setOutboundTicketId(
-        "",
-      );
-
-      setReturnTicketId(
-        "",
-      );
-
-      setManualTimeConfirmed(
-        false,
-      );
-
-      setPlanEdits(
-        {},
-      );
-
-      setPlanOrders(
-        {},
-      );
-
-      setShowPlan(
-        false,
-      );
-
-      setPlanViewOpen(
-        false,
-      );
+      if (modeChanged) {
+        setFlightId("");
+        setReturnFlightId("");
+        setOutboundTicketId("");
+        setReturnTicketId("");
+        setManualTimeConfirmed(false);
+        setPlanEdits({});
+        setPlanOrders({});
+        setShowPlan(false);
+        setPlanViewOpen(false);
+        setLocalTransport("");
+      }
 
       setTransport(
         mode,
-      );
-
-      setLocalTransport(
-        "",
       );
 
       if (
@@ -6247,11 +6331,7 @@ function useTripPlanner() {
           (
             index,
           ) =>
-            events[
-              index
-            ][
-              6
-            ]?.id,
+            planEventKey(events[index], dayIndex, index),
         );
 
       const sourceRank =
@@ -6326,13 +6406,12 @@ function useTripPlanner() {
         events.map(
           (
             event,
+            eventIndex,
           ) =>
             event[
               6
             ]?.isLocked
-              ? event[
-                  6
-                ]?.id
+              ? planEventKey(event, dayIndex, eventIndex)
               : movableIds[
                   movableCursor++
                 ],
@@ -6519,6 +6598,25 @@ function useTripPlanner() {
   if (!selectedStay) {
     return notify(
       "숙소를 선택해 주세요.",
+    );
+  }
+
+
+  const accommodationId =
+    Number(
+      selectedStay.accommodationId ??
+      selectedStay.id,
+    );
+
+
+  if (
+    !Number.isInteger(
+      accommodationId,
+    ) ||
+    accommodationId <= 0
+  ) {
+    return notify(
+      "선택한 숙소 정보를 다시 확인해 주세요.",
     );
   }
 
@@ -6902,10 +7000,7 @@ function useTripPlanner() {
         /*
          * Trip 생성 시 선택값을 함께 저장.
          */
-        accommodationId:
-          Number(
-            selectedStay.id,
-          ),
+        accommodationId,
 
         outboundFlight,
 
@@ -6945,23 +7040,13 @@ function useTripPlanner() {
      * STEP 2
      *
      * POST /api/trips/{tripId}/plan
+     * 최신 backend는 Request Body를 받지 않는다.
      * ========================================
      */
 
     const nextBackendPlan =
       await requestTripPlan(
         tripId,
-
-        {
-          accommodationId:
-            Number(
-              selectedStay.id,
-            ),
-
-          outboundFlight,
-
-          returnFlight,
-        },
       );
 
 
@@ -7031,7 +7116,7 @@ function useTripPlanner() {
 
     /*
      * ========================================
-     * STEP 6
+     * STEP 5
      *
      * 기존 일정 UI 열기
      * ========================================

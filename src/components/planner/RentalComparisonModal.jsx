@@ -102,7 +102,13 @@ export default function RentalComparisonModal({
             return (
               <article key={rental.id} className={`rental-offer-card${selected ? " selected" : ""}`}>
                 <div className="rental-offer-image">
-                  <img src={rental.image} alt={`${rental.car} 대표 차종`} loading="lazy" />
+                  <img
+                    src={rental.image}
+                    alt={`${rental.car} 대표 차종`}
+                    loading={index < 2 ? "eager" : "lazy"}
+                    decoding="async"
+                    fetchPriority={index === 0 ? "high" : "auto"}
+                  />
                   <span>{index === 0 ? "추천 1순위" : rental.badge}</span>
                   <small>대표 차종 또는 동급</small>
                 </div>

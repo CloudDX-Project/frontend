@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { X } from "lucide-react";
 import { getAttractionDetail } from "../../api/attractionApi.js";
+import { getJejuAttractionDetail } from "../../data/jejuAttractionDetails.js";
 import "./attraction-detail-modal.css";
 
 function imageUrl(value) {
@@ -37,7 +38,14 @@ export default function AttractionDetailModal({ attractionId, name, onClose }) {
     setFailedImages([]);
     (async () => {
       try {
-        const result = await getAttractionDetail(attractionId, { signal: controller.signal });
+        const fallback = getJejuAttractionDetail(name);
+        const hasDatabaseId = /^[1-9]\d*$/.test(String(attractionId ?? ""));
+        const result = hasDatabaseId
+          ? await getAttractionDetail(attractionId, { signal: controller.signal }).catch(cause => {
+              if (fallback) return fallback;
+              throw cause;
+            })
+          : fallback || await getAttractionDetail(attractionId, { signal: controller.signal });
         if (active) setDetail(result);
       } catch (cause) {
         if (active) setError(cause?.status === 404
@@ -48,7 +56,7 @@ export default function AttractionDetailModal({ attractionId, name, onClose }) {
       }
     })();
     return () => { active = false; controller.abort(); };
-  }, [attractionId, attempt]);
+  }, [attractionId, name, attempt]);
 
   useEffect(() => {
     const previousFocus = document.activeElement;

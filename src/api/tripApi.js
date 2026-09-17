@@ -1,4 +1,4 @@
-import { apiClient } from "./apiClient";
+import { apiClient } from "./apiClient.js";
 
 /**
  * 여행 기본 정보 생성
@@ -57,7 +57,6 @@ export async function createTrip({
    * ========================================
    */
   rental = null,
-
   signal,
 }) {
   return apiClient.request("/api/trips", {
@@ -108,7 +107,6 @@ export async function createTrip({
     timeoutMs: 15000,
   });
 }
-
 export async function getMyTrips({ signal } = {}) {
   return apiClient.request("/api/trips", {
     method: "GET",

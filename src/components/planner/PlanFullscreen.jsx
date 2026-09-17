@@ -9,6 +9,7 @@ import CampusTimetable from "./CampusTimetable";
 import RouteMap from "./RouteMap";
 import AttractionDetailModal from "./AttractionDetailModal";
 import { eventClock } from "../../utils/planTime.js";
+import { hasJejuAttractionDetail } from "../../data/jejuAttractionDetails.js";
 
 
 
@@ -35,6 +36,31 @@ function costGroupDescription(group, travelers) {
   }
 
   return "";
+}
+
+function CostGroupCard({ group, money, travelers }) {
+  return (
+    <section>
+      <h3>
+        <span>{group.group}</span>
+        <strong>{money(group.rows.reduce((sum, row) => sum + (Number(row[1]) || 0), 0))}원</strong>
+      </h3>
+      {costGroupDescription(group.group, travelers) && (
+        <small className="cost-group-caption">
+          {costGroupDescription(group.group, travelers)}
+        </small>
+      )}
+      {group.rows.map(([name, value, note], rowIndex) => {
+        const approximate = /예상|평균|참고|공개 메뉴|대표가/.test(note || "") || /고등어|카페|점심|저녁|시장|오설록|새별|카멜리아|성산/.test(name);
+        return (
+          <p key={`${name}-inline-${rowIndex}`}>
+            <span><b>{name}</b><small>{note}</small></span>
+            <strong>{approximate ? "약 " : ""}1인 {money(value)}원</strong>
+          </p>
+        );
+      })}
+    </section>
+  );
 }
 
 function PlanFullscreen({
@@ -70,7 +96,6 @@ function PlanFullscreen({
   // no fixed three-day index is assumed when the API replaces the mock generator.
   const safeDayPlans = Array.isArray(dayPlans) ? dayPlans : [];
   const day = safeDayPlans[activeDay] || ["일정 준비 중", "선택한 날짜의 일정을 구성하고 있어요.", []];
-  const [costExpanded, setCostExpanded] = useState(false);
   const [scheduleView, setScheduleView] = useState("timeline");
   const [placePicker, setPlacePicker] = useState(null);
   const [customPlace, setCustomPlace] = useState("");
@@ -310,51 +335,16 @@ function PlanFullscreen({
             <div className="full-budget-top">
               <span>선택한 예약 기준 · 1인 예상 경비</span>
               <h2>1인 {money(total)}원</h2>
-              <p>
-                총 {travelers}명 여행비 {money(total * (travelers || 1))}원
-              </p>
+              <p>총 {travelers}명 여행비 {money(total * (travelers || 1))}원</p>
             </div>
             <button
               type="button"
               className="full-cost-toggle"
-              aria-expanded={costExpanded}
-              onClick={() => setCostExpanded((current) => !current)}
+              onClick={() => setScheduleView("budget")}
             >
-              <span>{costExpanded ? "상세 경비 접기" : "상세 경비 보기"}</span>
-              <b>{costExpanded ? "⌃" : "⌄"}</b>
+              <span>상세 경비 보기</span>
+              <b>→</b>
             </button>
-            {costExpanded && (
-              <div className="full-cost-groups">
-                {costDetails.map((group) => (
-                  <section key={group.group}>
-                    <h3>{group.group}</h3>
-                    {costGroupDescription(group.group, travelers) && (
-                      <small className="cost-group-caption">
-                        {costGroupDescription(group.group, travelers)}
-                      </small>
-                    )}
-                    {group.rows.map(([name, value, note], rowIndex) => {
-                      const approximate =
-                        /예상/.test(note || "") || /고등어|카페|점심|저녁|시장|오설록|새별|카멜리아|성산/.test(name);
-                      return (
-                        <p key={`${name}-${rowIndex}`}>
-                          <span>
-                            <b>{name}</b>
-                            <small>{note}</small>
-                          </span>
-                          <strong>
-                            {approximate ? "약 " : ""}1인 {money(value)}원
-                          </strong>
-                        </p>
-                      );
-                    })}
-                  </section>
-                ))}
-                <p className="cost-uncertainty">
-                  ※ 식비·간식·체험비는 실제 주문, 인원, 현장 요금에 따라 약간의 차이가 날 수 있어요.
-                </p>
-              </div>
-            )}
           </section>
         </aside>
         <main className="full-timetable">
@@ -451,6 +441,13 @@ function PlanFullscreen({
                   /RENTAL|RENT_CAR|CAR_RENTAL/.test(backendPlaceType)
                   || /RENTAL|RENT_CAR|CAR_RENTAL/.test(backendCategory)
                   || /렌터카/.test(name);
+                const isAirportStop =
+                  backendPlaceType === "AIRPORT"
+                  || /공항|항공|탑승/.test(name || "");
+                const isArrivalAirport =
+                  backendPlaceType === "AIRPORT" && backendCategory.includes("ARRIVAL_AIRPORT");
+                const hasPartnerBooking = isRentalStop || (isAirportStop && !isArrivalAirport);
+                const bookingLabel = isRentalStop ? "렌터카 특가 예약" : "항공권 특가 예약";
                 const costLabel = isRentalStop
                   ? selectedRental?.price
                     ? `렌터카 총 ${money(selectedRental.price)}원`
@@ -458,8 +455,6 @@ function PlanFullscreen({
                   : price
                     ? `${approximate ? "약 " : ""}1인 ${money(price)}원`
                     : "";
-                const isArrivalAirport =
-                  backendPlaceType === "AIRPORT" && backendCategory.includes("ARRIVAL_AIRPORT");
                 const displayTime = eventClock(time, metadata);
                 const displayStay = isArrivalAirport && !(metadata.stayMinutes > 0) ? "도착" : stay;
                 const isCafe = backendPlaceType === "CAFE"
@@ -520,7 +515,7 @@ function PlanFullscreen({
                             <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
                             <span>메뉴·후기 보기</span>
                           </button>
-                        ) : backendPlaceType === "ATTRACTION" && /^[1-9]\d*$/.test(String(metadata.placeId ?? "")) ? (
+                        ) : backendPlaceType === "ATTRACTION" && (/^[1-9]\d*$/.test(String(metadata.placeId ?? "")) || hasJejuAttractionDetail(name)) ? (
                           <button type="button" className="restaurant-detail-trigger"
                             onPointerDown={event => event.stopPropagation()}
                             onClick={event => {
@@ -533,20 +528,20 @@ function PlanFullscreen({
                         ) : <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>}
                         {liveBookingUrl ? (
                           <a
-                            className="stop-booking-link"
+                            className={`stop-booking-link ${isRentalStop ? "is-rental" : "is-flight"}`}
                             href={liveBookingUrl}
                             target="_blank"
                             rel="noreferrer noopener sponsored"
                             onClick={(event) => event.stopPropagation()}
                             aria-label={`${metadata.bookingProvider || "제휴사"}에서 ${name} 예약하기`}
                           >
-                            <span>{metadata.bookingProvider || "제휴사"} 예약하기</span>
-                            <small>바로가기 ↗</small>
+                            <small>PARTNER BENEFIT</small>
+                            <span>{bookingLabel} <em>↗</em></span>
                           </a>
-                        ) : metadata.bookingUrl ? (
-                          <button type="button" className="stop-booking-link" onClick={(event) => { event.stopPropagation(); showUtilityMessage("백엔드 예약 시스템 연동 대기 중입니다."); }}>
-                            <span>제휴사 예약하기</span>
-                            <small>예약 확인 ↗</small>
+                        ) : metadata.bookingUrl || hasPartnerBooking ? (
+                          <button type="button" className={`stop-booking-link ${isRentalStop ? "is-rental" : "is-flight"}`} onClick={(event) => { event.stopPropagation(); showUtilityMessage("제휴 예약 페이지 연동 준비 중입니다."); }}>
+                            <small>PARTNER BENEFIT</small>
+                            <span>{bookingLabel} <em>↗</em></span>
                           </button>
                         ) : null}
                       </div>
@@ -603,20 +598,16 @@ function PlanFullscreen({
                 <p>총 {travelers}명 여행비 {money(total * (travelers || 1))}원</p>
               </header>
               <div className="inline-cost-groups">
-                {costDetails.map((group) => (
-                  <section key={`inline-${group.group}`}>
-                    <h3>{group.group}</h3>
-                    {costGroupDescription(group.group, travelers) && (
-                      <small className="cost-group-caption">
-                        {costGroupDescription(group.group, travelers)}
-                      </small>
-                    )}
-                    {group.rows.map(([name, value, note], rowIndex) => {
-                      const approximate = /예상|평균|참고/.test(note || "") || /고등어|카페|점심|저녁|시장|오설록|새별|카멜리아|성산/.test(name);
-                      return <p key={`${name}-inline-${rowIndex}`}><span><b>{name}</b><small>{note}</small></span><strong>{approximate ? "약 " : ""}1인 {money(value)}원</strong></p>;
-                    })}
-                  </section>
-                ))}
+                <div className="inline-cost-column inline-cost-column-left">
+                  {costDetails.filter((group) => !/식사·관광비/.test(group.group)).map((group) => (
+                    <CostGroupCard key={`inline-${group.group}`} group={group} money={money} travelers={travelers} />
+                  ))}
+                </div>
+                <div className="inline-cost-column inline-cost-column-right">
+                  {costDetails.filter((group) => /식사·관광비/.test(group.group)).map((group) => (
+                    <CostGroupCard key={`inline-${group.group}`} group={group} money={money} travelers={travelers} />
+                  ))}
+                </div>
               </div>
               <p className="cost-uncertainty">※ 식비·간식·체험비는 실제 주문, 인원, 현장 요금에 따라 달라질 수 있어요.</p>
             </section>
@@ -700,6 +691,17 @@ function PlanFullscreen({
                     <div className="restaurant-section-title"><span>후기 한눈에 보기</span><small>{restaurantDetail.isMock ? "시연용 요약" : restaurantDetail.sourceLabel}</small></div>
                     <p>{restaurantDetail.reviewSummary}</p>
                     <div>{restaurantDetail.reviewKeywords?.map((keyword) => <span key={keyword}>#{keyword}</span>)}</div>
+                    <div className="restaurant-review-action">
+                      {/^https?:\/\//i.test(restaurantDetail.placeUrl || "") ? (
+                        <a href={restaurantDetail.placeUrl} target="_blank" rel="noreferrer noopener">
+                          <MapPin size={14} /> 카카오플레이스에서 전체 후기 보기 <ExternalLink size={12} />
+                        </a>
+                      ) : /^https?:\/\//i.test(restaurantDetail.naverMapUrl || "") ? (
+                        <a href={restaurantDetail.naverMapUrl} target="_blank" rel="noreferrer noopener">
+                          <MapPin size={14} /> 네이버 지도에서 전체 후기 보기 <ExternalLink size={12} />
+                        </a>
+                      ) : null}
+                    </div>
                   </section>
                   <footer>
                     <div>

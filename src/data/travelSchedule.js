@@ -46,8 +46,13 @@ export const recalculateDayTimeline = (day, localTransport = "RENTAL") => {
   }
   let cursor = clockMinutes(events[0][0]);
   const scheduled = events.map((event) => {
-    const next = [clock(cursor), ...event.slice(1)];
-    cursor += durationMinutes(event[4]) + Math.max(0, Number(event[5]) || 0);
+    const metadata = event[6] || {};
+    const fixedClock = metadata.isLocked && isTime(event[0])
+      ? clockMinutes(event[0])
+      : null;
+    const start = fixedClock == null ? cursor : fixedClock;
+    const next = [clock(start), ...event.slice(1)];
+    cursor = start + durationMinutes(event[4]) + Math.max(0, Number(event[5]) || 0);
     return next;
   });
   return [day[0], day[1], scheduled];

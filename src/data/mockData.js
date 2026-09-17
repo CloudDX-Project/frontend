@@ -2180,12 +2180,28 @@ export const regionalPlaceAlternatives = {
     { icon: "🌿", name: "오설록 티 뮤지엄", latitude: 33.3059, longitude: 126.2895, detail: "서부 녹차밭과 전시 공간을 함께 둘러봐요.", duration: "90분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202110/20/003f420c-6efe-41e9-93b7-00fe6ac5e83b.webp" },
     { icon: "🌺", name: "카멜리아힐", latitude: 33.2897, longitude: 126.3701, detail: "계절 꽃과 정원 산책을 중심으로 일정을 구성해요.", duration: "95분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202410/15/fb2d2739-5e8e-4a87-9d1d-0281d95efeb7.webp" },
     { icon: "📸", name: "성산일출봉", latitude: 33.4581, longitude: 126.9426, detail: "동부 대표 명소를 중심으로 이동 동선을 다시 계산해요.", duration: "100분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202409/20/c8bf6191-832c-4605-a948-96f07f6112d2.webp" },
+    { icon: "🛍", name: "동문시장", latitude: 33.5116, longitude: 126.5260, detail: "제주 원도심의 시장 먹거리와 기념품을 함께 둘러봐요.", duration: "80분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202410/16/bdf6c336-fde3-4312-92be-7db8f3a37fbc.webp" },
+    { icon: "🌊", name: "함덕해수욕장", latitude: 33.5431, longitude: 126.6692, detail: "맑고 얕은 바다와 서우봉 산책을 한 동선으로 즐겨요.", duration: "90분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202408/20/a397a498-7bc9-4730-963a-cfa29ccffe7d.webp" },
+    { icon: "🌅", name: "한담해안산책로", latitude: 33.4626, longitude: 126.3108, detail: "현무암 해안과 애월 바다를 따라 여유롭게 걸어요.", duration: "70분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202110/28/6a66021a-e571-4ebb-8ddd-2f42ceb46c9c.webp" },
+    { icon: "🌅", name: "애월 카페 거리", latitude: 33.4635, longitude: 126.3094, detail: "오션뷰 카페와 한담 해안을 이어 휴식 중심의 동선을 만들어요.", duration: "80분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202409/25/4b1eef78-9b25-41c1-8839-30cc8796a7de.webp", category: "sight" },
+    { icon: "⛰", name: "산방산·용머리 해안", latitude: 33.2316, longitude: 126.3148, detail: "산방산과 독특한 해안 지질 경관을 함께 둘러봐요.", duration: "105분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202409/25/88cd0d87-306d-46e1-9b97-956fdf893f88.webp" },
+    { icon: "💧", name: "천제연폭포", latitude: 33.2528, longitude: 126.4173, detail: "중문의 폭포와 난대림 산책로를 따라 걸어요.", duration: "90분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202110/27/617daa5f-d818-47c1-b80d-59f45e96371b.webp" },
+    { icon: "🏖", name: "중문색달해수욕장", latitude: 33.2450, longitude: 126.4115, detail: "해안 절벽과 힘찬 파도가 어우러진 중문 해변을 감상해요.", duration: "80분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202407/24/a524251a-1057-43b5-b744-217f7f3ea78f.webp" },
+    { icon: "🪨", name: "주상절리대", latitude: 33.2379, longitude: 126.4260, detail: "용암이 만든 돌기둥과 중문 바다 전망을 둘러봐요.", duration: "70분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202410/21/1690de57-e791-4712-84e9-3963a82de0f1.webp" },
     { icon: "🍖", name: "고이정 애월", latitude: 33.4611, longitude: 126.3111, detail: "한담 산책로와 가까운 흑돼지 전문점이에요.", duration: "85분", representativeMenu: "보리짚불 흑돼지 근고기", image: "https://images.unsplash.com/photo-1529692236671-f1f6cf9683ba?auto=format&fit=crop&w=900&q=86" },
     { icon: "🍲", name: "성안식당", latitude: 33.4630, longitude: 126.3100, detail: "애월의 오래된 향토음식점에서 따뜻한 해물 한 끼를 즐겨요.", duration: "70분", representativeMenu: "전복뚝배기·갈치국", image: "https://images.unsplash.com/photo-1547592180-85f173990554?auto=format&fit=crop&w=900&q=86" },
     { icon: "🍚", name: "애월은혜전복", latitude: 33.4487, longitude: 126.3065, detail: "애월 해안과 가까운 전복 요리 전문점이에요.", duration: "70분", representativeMenu: "전복돌솥밥·전복물회", image: "https://images.unsplash.com/photo-1559847844-5315695dadae?auto=format&fit=crop&w=900&q=86" },
     { icon: "🍽", name: "애월돈가스집", latitude: 33.4641, longitude: 126.3090, detail: "제주산 흑돼지로 만든 든든한 돈가스를 맛봐요.", duration: "70분", representativeMenu: "흑돼지 왕돈가스", image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=86" },
     { icon: "🍱", name: "제주김만복 애월점", latitude: 33.4720, longitude: 126.3500, detail: "이동 중 가볍게 즐기기 좋은 제주식 김밥을 추천해요.", duration: "55분", representativeMenu: "전복김밥·오징어무침", image: "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=900&q=86" },
     { icon: "🍜", name: "이춘옥 원조고등어쌈밥", latitude: 33.4838, longitude: 126.3774, detail: "애월 해안도로에서 즐기는 제주식 고등어 한 상이에요.", duration: "75분", representativeMenu: "고등어쌈밥·고등어조림", image: "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🍚", name: "꽃밥", latitude: 33.4722, longitude: 126.3547, detail: "제주 식재료를 담은 정갈한 한식 한 상을 즐겨요.", duration: "70분", representativeMenu: "꽃밥정식·산채들깨수제비", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202305/19/3aa4cf3f-d1a8-4f65-b515-75fd764a2c93.webp" },
+    { icon: "🥩", name: "애월회관", latitude: 33.4668, longitude: 126.3209, detail: "애월 해안권에서 제주 흑돼지를 즐기는 저녁 동선이에요.", duration: "80분", representativeMenu: "흑오겹살·흑목살", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202511/18/242c4d62-e6cc-4d71-935e-e668f2bee0dd.webp" },
+    { icon: "🍜", name: "언덕집국수", latitude: 33.4567, longitude: 126.3098, detail: "애월 인근에서 제주식 국수로 가볍게 한 끼를 해결해요.", duration: "60분", representativeMenu: "고기국수·비빔국수", image: "https://cdn.visitkorea.or.kr/img/call?cmd=VIEW&id=251421ff-3e04-451d-926a-703bc635bc13" },
+    { icon: "🥩", name: "바다풍경정육식당", latitude: 33.4620, longitude: 126.3118, detail: "바다 가까이에서 제주 흑돼지를 합리적인 구성으로 즐겨요.", duration: "80분", representativeMenu: "흑돼지 오겹살·목살", image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=86" },
+    { icon: "☕", name: "클린 제주", latitude: 33.4652, longitude: 126.3106, detail: "애월 바다를 보며 음료와 디저트로 쉬어가는 카페예요.", duration: "60분", representativeMenu: "시그니처 음료·디저트", image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🥩", name: "작산 애월 흑돼지", latitude: 33.4701, longitude: 126.3228, detail: "숙성 흑돼지와 제주식 곁들임을 함께 맛봐요.", duration: "85분", representativeMenu: "숙성 흑돼지·김치찌개", image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🥩", name: "마초스테이크 제주직영점", latitude: 33.4509, longitude: 126.3063, detail: "곽지 해안 동선에서 스테이크 중심의 식사를 즐겨요.", duration: "80분", representativeMenu: "립아이 스테이크", image: "https://images.unsplash.com/photo-1600891964092-4316c288032e?auto=format&fit=crop&w=900&q=86" },
+    { icon: "🍽", name: "블루그라스", latitude: 33.4597, longitude: 126.3122, detail: "애월의 캐주얼 다이닝에서 다양한 메뉴를 함께 즐겨요.", duration: "75분", representativeMenu: "토리 세트·브런치", image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&w=900&q=86" },
   ],
   "서울특별시": [
     { icon: "🏯", name: "북촌한옥마을", detail: "궁궐과 가까운 전통 골목으로 동선을 다시 계산해요.", duration: "80분", travel: 25 },
@@ -2242,15 +2258,43 @@ export const getPlaceAlternatives = (destinationLocation, currentItem) => {
   const reference = Number.isFinite(currentItem?.latitude) && Number.isFinite(currentItem?.longitude)
     ? currentItem
     : destinationLocation;
+  const normalizePlaceName = (value) => String(value || "").replace(/제주특별자치도|제주도|제주시|서귀포시|\s|·/g, "");
+  const currentName = currentItem?.name || currentItem?.[2] || "";
+  const normalizedCurrentName = normalizePlaceName(currentName);
+  const preferenceText = [
+    ...(Array.isArray(destinationLocation?.tags) ? destinationLocation.tags : []),
+    currentItem?.detail,
+    currentItem?.category,
+    currentItem?.type,
+  ].filter(Boolean).join(" ");
+  const preferenceKeywords = ["바다", "해변", "자연", "산책", "카페", "맛집", "시장", "문화", "체험", "오름", "정원"]
+    .filter(keyword => preferenceText.includes(keyword));
   const localCandidates = (regionalPlaceAlternatives[region] || regionalPlaceAlternatives.default)
     .filter((place) => placeCategory(place) === category)
+    .filter((place) => {
+      const candidateName = normalizePlaceName(place.name);
+      return candidateName !== normalizedCurrentName &&
+        !candidateName.includes(normalizedCurrentName) &&
+        !normalizedCurrentName.includes(candidateName);
+    })
     .map((place) => {
       const straightDistance = exactDistanceKm(reference, place);
       const distanceKm = straightDistance == null ? null : Math.max(.8, Math.round(straightDistance * 1.24 * 10) / 10);
       const travel = distanceKm == null ? 30 : Math.max(5, Math.round((distanceKm / 34 * 60 + 4) / 5) * 5);
-      return { ...place, distanceKm, travel, routeSource: "T map API 연동 전 · 좌표 기반 예상" };
+      const candidateText = `${place.name} ${place.detail || ""}`;
+      const preferenceMatches = preferenceKeywords.filter(keyword => candidateText.includes(keyword)).length;
+      const proximityScore = distanceKm == null ? 30 : Math.max(0, 100 - distanceKm * 2.2);
+      const deterministicVariety = [...`${currentName}:${place.name}`].reduce((sum, char) => sum + char.charCodeAt(0), 0) % 13;
+      const recommendationScore = Math.round(Math.min(99, proximityScore * .72 + preferenceMatches * 10 + deterministicVariety));
+      return {
+        ...place,
+        distanceKm,
+        travel,
+        recommendationScore,
+        routeSource: `거리·취향 적합도 ${recommendationScore}점 · 좌표 기반 예상`,
+      };
     })
-    .sort((a, b) => (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
+    .sort((a, b) => b.recommendationScore - a.recommendationScore || (a.distanceKm ?? Number.POSITIVE_INFINITY) - (b.distanceKm ?? Number.POSITIVE_INFINITY));
   const generatedCandidates = recommendationTemplates[category].map(([icon, suffix, detail, duration], index) => ({
     icon,
     name: `${area} ${suffix}`,
@@ -2262,7 +2306,7 @@ export const getPlaceAlternatives = (destinationLocation, currentItem) => {
     category,
   }));
   return [...localCandidates, ...generatedCandidates]
-    .filter((place, index, list) => place.name !== (currentItem?.name || currentItem?.[2]) && list.findIndex((item) => item.name === place.name) === index)
+    .filter((place, index, list) => normalizePlaceName(place.name) !== normalizedCurrentName && list.findIndex((item) => item.name === place.name) === index)
     .slice(0, 6);
 };
 

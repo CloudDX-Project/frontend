@@ -11,6 +11,7 @@ function dateTimeToMinutes(value) {
 }
 
 function CampusTimetable({ activeDay = 0, compact = false, dates, dayPlans }) {
+  const hourHeight = compact ? 60 : 68;
   const visibleDates = compact ? [dates[activeDay]].filter(Boolean) : dates;
   const visiblePlans = compact ? [dayPlans[activeDay]].filter(Boolean) : dayPlans;
 
@@ -44,14 +45,15 @@ function CampusTimetable({ activeDay = 0, compact = false, dates, dayPlans }) {
     { length: Math.max(1, endHour - startHour + 1) },
     (_, index) => startHour + index,
   );
-  const timetableHeight = hours.length * 60;
+  const timetableHeight = hours.length * hourHeight;
+  const timetableColumns = `62px repeat(${Math.max(1, visibleDates.length)}, minmax(210px, 1fr))`;
 
   return (
     <div
       className={`campus-timetable${compact ? " mobile-timetable" : ""}`}
       aria-label={compact ? `DAY ${activeDay + 1} 시간표` : `${dates.length}일 통합 시간표`}
     >
-      <div className="timetable-top">
+      <div className="timetable-top" style={{ gridTemplateColumns: timetableColumns }}>
         <span>TIME</span>
         {visibleDates.map((date, index) => (
           <b key={date}>
@@ -60,17 +62,24 @@ function CampusTimetable({ activeDay = 0, compact = false, dates, dayPlans }) {
           </b>
         ))}
       </div>
-      <div className="timetable-content" style={{ minHeight: `${timetableHeight}px` }}>
+      <div
+        className="timetable-content"
+        style={{ minHeight: `${timetableHeight}px`, gridTemplateColumns: timetableColumns }}
+      >
         <div
           className="timetable-hours"
-          style={{ gridTemplateRows: `repeat(${hours.length}, 60px)` }}
+          style={{ gridTemplateRows: `repeat(${hours.length}, ${hourHeight}px)` }}
         >
           {hours.map((hour) => (
             <span key={hour}>{String(hour).padStart(2, "0")}:00</span>
           ))}
         </div>
         {visiblePlans.map((day, dayIndex) => (
-          <div className="timetable-day" key={day[0]}>
+          <div
+            className="timetable-day"
+            key={day[0]}
+            style={{ "--timetable-hour-height": `${hourHeight}px` }}
+          >
             {hours.map((hour) => (
               <i key={hour} />
             ))}
@@ -90,7 +99,7 @@ function CampusTimetable({ activeDay = 0, compact = false, dates, dayPlans }) {
                   ?? timeToMinutes(time)
                 : dateTimeToMinutes(metadata.startAt)
                   ?? timeToMinutes(time);
-              const top = Math.max(0, displayMinutes - startHour * 60);
+              const top = Math.max(0, ((displayMinutes - startHour * 60) / 60) * hourHeight);
               const displayClock = Number.isFinite(displayMinutes)
                 ? `${String(Math.floor(displayMinutes / 60)).padStart(2, "0")}:${String(displayMinutes % 60).padStart(2, "0")}`
                 : time;
@@ -102,10 +111,10 @@ function CampusTimetable({ activeDay = 0, compact = false, dates, dayPlans }) {
               const normalDurationMinutes = durationToMinutes(duration);
 
               const height = isArrivalAirport
-                ? 24
+                ? 28
                 : hasFlight && Number.isFinite(flightDurationMinutes) && flightDurationMinutes > 0
-                  ? Math.max(62, flightDurationMinutes)
-                  : Math.max(46, normalDurationMinutes);
+                  ? Math.max(68, Math.min(86, (flightDurationMinutes / 60) * hourHeight))
+                  : Math.max(38, Math.min(82, (normalDurationMinutes / 60) * hourHeight));
 
               const timingLabel = isArrivalAirport
                 ? `${displayClock} · 도착`

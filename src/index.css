@@ -2511,7 +2511,7 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
 .planning-panorama::before, .planning-panorama::after { position: absolute; z-index: 2; top: 0; bottom: 0; width: 18vw; content: ''; pointer-events: none; }
 .planning-panorama::before { left: 0; background: linear-gradient(90deg, rgba(237, 247, 243, .95), transparent); }
 .planning-panorama::after { right: 0; background: linear-gradient(-90deg, rgba(237, 247, 243, .95), transparent); }
-.planning-panorama-track { display: flex; width: max-content; gap: 22px; padding-left: 22px; animation: planningPanorama 32s linear infinite; }
+.planning-panorama-track { display: flex; width: max-content; gap: 22px; padding: 0 22px; animation: planningPanorama var(--panorama-duration, 90s) linear forwards; }
 .planning-panorama figure { position: relative; width: 290px; height: 188px; flex: 0 0 auto; overflow: hidden; margin: 0; border: 1px solid rgba(255,255,255,.78); border-radius: 22px; background: #dfeae5; box-shadow: 0 20px 44px rgba(22, 73, 66, .16); filter: blur(1.5px) saturate(.86); transform: translateY(-17px); animation: planningCardClarity 7s ease-in-out infinite; animation-delay: calc(var(--card-index) * -.72s); }
 .planning-panorama figure:nth-child(even) { transform: translateY(17px); }
 .planning-panorama figure img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); }
@@ -2524,7 +2524,9 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
 .planning-scan-line { position: absolute; z-index: 3; top: 50%; left: 50%; width: min(760px, 72vw); height: 250px; border: 1px solid rgba(12, 131, 119, .16); border-radius: 34px; box-shadow: 0 0 70px rgba(9, 126, 114, .12); transform: translate(-50%, -50%); pointer-events: none; }
 .planning-loader { position: relative; z-index: 4; width: min(590px, calc(100vw - 40px)); padding: 38px 40px; border-color: rgba(255,255,255,.9); background: rgba(255,255,253,.89); box-shadow: 0 28px 80px rgba(10, 60, 55, .23); backdrop-filter: blur(18px) saturate(1.08); }
 .planning-loader::before { position: absolute; top: 0; right: 42px; left: 42px; height: 3px; border-radius: 0 0 3px 3px; background: linear-gradient(90deg, transparent, #0f9285, #e88652, transparent); content: ''; }
-@keyframes planningPanorama { to { transform: translateX(calc(-50% - 11px)); } }
+.planning-place-category { position: absolute; z-index: 2; top: 13px; left: 14px; padding: 5px 9px; border: 1px solid rgba(255,255,255,.4); border-radius: 7px; background: rgba(8,43,41,.75); color: #fff; font-size: 10px; font-weight: 700; }
+.planning-preview-caption { display: block; margin-top: 14px; color: #63807a; font-size: 11px; line-height: 1.6; }
+@keyframes planningPanorama { to { transform: translateX(min(0px, calc(100vw - 100%))); } }
 @keyframes planningCardClarity { 0%, 100% { filter: blur(1.6px) saturate(.82); opacity: .62; } 45%, 60% { filter: blur(0) saturate(1.04); opacity: 1; } }
 
 @media (max-width: 760px) {
@@ -4120,4 +4122,840 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
 }
 .plan-fullscreen.mobile-preview .timetable-day article.is-arrival-airport>small{
   font-size:6px!important;
+}
+
+/* ===== Detailed plan information architecture refresh =====
+ * The left rail stays navigational, the centre remains the reading surface,
+ * and the right rail has enough room for the route map without squeezing it.
+ */
+.plan-fullscreen-body{
+  grid-template-columns:238px minmax(620px,1fr) minmax(400px,440px);
+  width:min(1720px,100%);
+}
+.full-trip-aside{padding:34px 20px;}
+.full-timetable{padding:38px clamp(28px,3vw,50px) 58px;}
+.full-budget{padding:30px 24px;}
+.plan-fullscreen.budget-mode:not(.mobile-preview) .plan-fullscreen-body{
+  grid-template-columns:238px minmax(0,1fr);
+  width:min(1500px,100%);
+}
+
+/* The rail only carries a compact total; details open in the dedicated tab. */
+.full-trip-aside .side-budget-summary{
+  margin-top:20px;
+  overflow:hidden;
+  border:1px solid #c9e0d8;
+  border-radius:13px;
+  background:#fff;
+  box-shadow:0 7px 18px rgba(20,83,74,.055);
+}
+.full-trip-aside .side-budget-summary .full-budget-top{padding:17px 15px 14px;}
+.full-trip-aside .side-budget-summary .full-budget-top span{
+  color:#6f8882;
+  font-size:9px;
+  font-weight:700;
+}
+.full-trip-aside .side-budget-summary .full-budget-top h2{
+  margin:7px 0 3px;
+  color:#086c65;
+  font-size:23px;
+  letter-spacing:-1.5px;
+}
+.full-trip-aside .side-budget-summary .full-budget-top p{font-size:9px;}
+.full-trip-aside .side-budget-summary .full-cost-toggle{
+  min-height:43px;
+  padding:11px 14px;
+  border-top-color:#dbe9e4;
+  background:linear-gradient(90deg,#f4fbf8,#fbfefd);
+  color:#08756d;
+  font-size:10px;
+}
+.full-trip-aside .side-budget-summary .full-cost-toggle:hover{
+  background:#e9f7f2;
+  color:#075d57;
+}
+
+/* Premium partner CTA: one action per bookable segment, no arrival-airport duplicate. */
+.full-timeline .itinerary-stop .stop-booking-link{
+  width:148px;
+  min-width:148px;
+  min-height:51px;
+  right:76px;
+  gap:3px;
+  padding:8px 13px;
+  border:1px solid #0b6e68;
+  border-radius:11px;
+  background:linear-gradient(135deg,#0d7f76 0%,#075a59 100%);
+  box-shadow:0 8px 18px rgba(7,91,84,.18),inset 0 1px rgba(255,255,255,.16);
+  color:#fff;
+}
+.stop-booking-link small{
+  color:#bfe8dd;
+  font:800 7px 'DM Mono',monospace;
+  letter-spacing:.55px;
+}
+.stop-booking-link span{
+  color:#fff;
+  font-size:10px;
+  font-weight:900;
+  letter-spacing:-.2px;
+}
+.stop-booking-link span em{
+  display:inline-grid;
+  width:17px;
+  height:17px;
+  margin-left:4px;
+  place-items:center;
+  border-radius:50%;
+  background:rgba(255,255,255,.15);
+  font-size:9px;
+  font-style:normal;
+}
+.full-timeline .itinerary-stop .stop-booking-link:hover{
+  border-color:#084f4d;
+  background:linear-gradient(135deg,#096f68,#063f45);
+  box-shadow:0 11px 22px rgba(7,80,75,.25),inset 0 1px rgba(255,255,255,.2);
+}
+.full-timeline .itinerary-stop:has(.stop-booking-link)>div{padding-right:170px;}
+
+/* Budget tab: natural-height cards remove the large empty areas from uneven groups. */
+.inline-budget-view{gap:16px;margin-top:22px;}
+.inline-budget-view>header{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:center;
+  gap:3px 22px;
+  padding:20px 24px;
+  border-color:#cce3dc;
+  background:linear-gradient(118deg,#eaf8f3,#fbfefc 66%,#fff8f2);
+}
+.inline-budget-view>header span,.inline-budget-view>header p{grid-column:1;}
+.inline-budget-view>header h2{
+  grid-column:2;
+  grid-row:1 / span 2;
+  margin:0;
+  font-size:30px;
+  white-space:nowrap;
+}
+.inline-cost-groups{
+  grid-template-columns:minmax(320px,.86fr) minmax(480px,1.34fr);
+  align-items:start;
+  gap:14px;
+}
+.inline-cost-column{display:grid;align-content:start;gap:14px;min-width:0;}
+.inline-cost-groups section{
+  align-self:start;
+  padding:22px 22px;
+  box-shadow:0 4px 13px rgba(19,78,70,.035);
+}
+.inline-cost-groups h3{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin:0 0 8px;
+  padding-bottom:10px;
+  border-bottom:1px solid #e8f0ed;
+}
+.inline-cost-groups h3>span{font-size:14px;}
+.inline-cost-groups h3>strong{
+  color:#0d756d;
+  font:850 13px Inter,Pretendard,sans-serif;
+  white-space:nowrap;
+}
+.inline-cost-groups .cost-group-caption{margin:0 0 9px;font-size:10px;}
+.inline-cost-groups section>p{min-height:47px;padding:11px 0;border-top:0;border-bottom:1px solid #eef3f1;}
+.inline-cost-groups section>p b{font-size:12px;}
+.inline-cost-groups section>p small{font-size:9px;line-height:1.5;}
+.inline-cost-groups section>p strong{font-size:12px;}
+.inline-cost-groups section>p:last-child{border-bottom:0;}
+
+/* Timetable: real start positions remain, while visual heights stay within a readable range. */
+.campus-timetable{
+  margin-top:22px;
+  border-color:#cfe1da;
+  box-shadow:0 7px 20px rgba(17,77,68,.045);
+}
+.timetable-top{position:sticky;z-index:6;top:0;}
+.timetable-top>*{min-height:58px;font-size:10px;}
+.timetable-day{
+  background:repeating-linear-gradient(to bottom,transparent 0,transparent calc(var(--timetable-hour-height,68px) - 1px),#e9f1ee var(--timetable-hour-height,68px));
+}
+.timetable-day>i{height:var(--timetable-hour-height,68px);}
+.timetable-day article{
+  right:8px;
+  left:8px;
+  min-height:38px;
+  align-content:start;
+  padding:8px 9px;
+  border-radius:9px;
+  box-shadow:0 4px 10px rgba(19,93,82,.09);
+}
+.timetable-day article b{font-size:10px;line-height:1.35;}
+.timetable-day article small{font-size:8px;line-height:1.3;}
+
+@media(max-width:1220px){
+  .plan-fullscreen-body{grid-template-columns:220px minmax(0,1fr) 350px;}
+  .full-timetable{padding-right:26px;padding-left:26px;}
+  .full-budget{padding:25px 18px;}
+  .inline-cost-groups{grid-template-columns:minmax(290px,.9fr) minmax(390px,1.1fr);}
+}
+@media(max-width:1020px){
+  .plan-fullscreen-body{grid-template-columns:220px minmax(0,1fr);}
+  .full-budget{grid-column:1/-1;}
+  .plan-fullscreen.budget-mode:not(.mobile-preview) .plan-fullscreen-body{grid-template-columns:220px minmax(0,1fr);}
+}
+@media(max-width:760px){
+  .plan-fullscreen-body{display:block;}
+  .inline-budget-view>header{display:block;padding:17px;}
+  .inline-budget-view>header h2{margin:6px 0 3px;font-size:25px;}
+  .inline-cost-groups{grid-template-columns:1fr;}
+  .inline-cost-column{gap:10px;}
+  .full-timeline .itinerary-stop:has(.stop-booking-link)>div{padding-right:0;}
+  .full-timeline .itinerary-stop .stop-booking-link{position:static;width:auto;min-width:145px;transform:none;}
+  .full-timeline .itinerary-stop .stop-booking-link:hover{transform:translateY(-1px);}
+}
+
+/* The phone preview lives inside a desktop viewport, so it needs its own
+ * layout contract instead of relying on viewport media queries. */
+.plan-fullscreen.mobile-preview .inline-budget-view{
+  gap:11px;
+  margin:14px 0 20px;
+}
+.plan-fullscreen.mobile-preview .inline-budget-view>header{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  gap:4px 10px;
+  padding:15px 14px;
+  border-radius:13px;
+}
+.plan-fullscreen.mobile-preview .inline-budget-view>header span,
+.plan-fullscreen.mobile-preview .inline-budget-view>header p{
+  grid-column:1;
+  font-size:8px;
+  line-height:1.45;
+}
+.plan-fullscreen.mobile-preview .inline-budget-view>header h2{
+  grid-column:2;
+  grid-row:1 / span 2;
+  align-self:center;
+  margin:0;
+  font-size:23px;
+  letter-spacing:-1.2px;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.plan-fullscreen.mobile-preview .inline-cost-column{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:10px;
+  width:100%;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups section{
+  width:100%;
+  min-width:0;
+  padding:15px 14px;
+  border-radius:12px;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups h3{
+  gap:8px;
+  margin-bottom:6px;
+  padding-bottom:9px;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups h3>span{
+  min-width:0;
+  font-size:12px;
+  line-height:1.35;
+  word-break:keep-all;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups h3>strong{
+  flex:none;
+  font-size:11px;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups .cost-group-caption{
+  display:block;
+  margin:0 0 5px;
+  font-size:8px;
+  line-height:1.5;
+  word-break:keep-all;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups section>p{
+  min-height:0;
+  gap:10px;
+  padding:9px 0;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups section>p span{min-width:0;}
+.plan-fullscreen.mobile-preview .inline-cost-groups section>p b{
+  font-size:9px;
+  line-height:1.35;
+  word-break:keep-all;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups section>p small{
+  font-size:7px;
+  line-height:1.45;
+}
+.plan-fullscreen.mobile-preview .inline-cost-groups section>p strong{
+  flex:none;
+  max-width:42%;
+  font-size:9px;
+  line-height:1.35;
+  text-align:right;
+  white-space:normal;
+}
+.plan-fullscreen.mobile-preview .cost-uncertainty{
+  margin-top:1px;
+  padding:9px 10px;
+  font-size:7px;
+  line-height:1.5;
+}
+
+/* Mobile reading hierarchy: labels stay compact, decisions and place names
+ * carry enough weight to remain legible inside the device preview. */
+.plan-fullscreen.mobile-preview .mobile-trip-overview>p{
+  color:#08776f;
+  font-size:9px;
+  font-weight:850;
+}
+.plan-fullscreen.mobile-preview .mobile-trip-overview h2{
+  color:#123f3c;
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:-1px;
+}
+.plan-fullscreen.mobile-preview .full-booking-list b{
+  color:#285d57;
+  font-size:8px;
+  font-weight:800;
+}
+.plan-fullscreen.mobile-preview .full-day-tabs small{
+  font-size:7px;
+  font-weight:850;
+}
+.plan-fullscreen.mobile-preview .full-day-tabs b{
+  color:#315c57;
+  font-size:11px;
+  font-weight:850;
+}
+.plan-fullscreen.mobile-preview .full-day-tabs button.active b{color:#08776f;}
+.plan-fullscreen.mobile-preview .full-day-title>span{
+  font-size:9px;
+  font-weight:900;
+}
+.plan-fullscreen.mobile-preview .full-day-title h1{
+  color:#123f3c;
+  font-size:25px;
+  font-weight:900;
+  line-height:1.15;
+  letter-spacing:-1.5px;
+}
+.plan-fullscreen.mobile-preview .full-day-title>p{
+  color:#637f79;
+  font-size:9px;
+  font-weight:650;
+}
+.plan-fullscreen.mobile-preview .full-day-title .view-tab,
+.plan-fullscreen.mobile-preview .full-day-title .device-preview-toggle{
+  font-size:9px!important;
+  font-weight:850!important;
+}
+.plan-fullscreen.mobile-preview .full-timeline{margin-top:18px;}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop{
+  min-height:138px;
+  padding:13px 11px;
+  border-left-width:4px;
+}
+.plan-fullscreen.mobile-preview .full-timeline time{
+  color:#2f6f68;
+  font-size:10px;
+  font-weight:850;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-meta{
+  font-size:8px;
+  font-weight:850;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-meta span{
+  font-weight:900;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-meta em{
+  color:#54756f;
+  font-weight:800;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-title-row b,
+.plan-fullscreen.mobile-preview .restaurant-detail-trigger>b{
+  color:#173f3c;
+  font-size:13px;
+  font-weight:900;
+  line-height:1.3;
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop p{
+  color:#607d77;
+  font-size:9px;
+  font-weight:600;
+  line-height:1.55;
+}
+.plan-fullscreen.mobile-preview .stop-flight-inline>span{
+  font-size:8px;
+  font-weight:900;
+}
+.plan-fullscreen.mobile-preview .stop-flight-inline>small{
+  font-size:7px;
+  font-weight:750;
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link{
+  min-height:44px;
+  padding:7px 12px;
+}
+.plan-fullscreen.mobile-preview .stop-booking-link small{font-size:7px;font-weight:900;}
+.plan-fullscreen.mobile-preview .stop-booking-link span{font-size:10px;font-weight:900;}
+
+/* Premium partner reservation card */
+.full-timeline .itinerary-stop .stop-booking-link{
+  grid-template-columns:40px minmax(0,1fr) 25px;
+  grid-template-rows:auto auto;
+  width:196px;
+  min-width:196px;
+  min-height:64px;
+  align-content:center;
+  justify-items:start;
+  column-gap:10px;
+  row-gap:2px;
+  padding:10px 11px;
+  overflow:hidden;
+  border:1px solid #cadfd8;
+  border-radius:14px;
+  background:linear-gradient(145deg,#fffdf8 0%,#f7fbf9 72%,#edf8f4 100%);
+  box-shadow:0 10px 24px rgba(17,82,74,.12),inset 0 1px 0 rgba(255,255,255,.9);
+  color:#153f3b;
+}
+.full-timeline .itinerary-stop .stop-booking-link::before{
+  grid-column:1;
+  grid-row:1 / span 2;
+  display:grid;
+  width:40px;
+  height:40px;
+  place-items:center;
+  align-self:center;
+  border-radius:12px;
+  background:#0a766e;
+  color:#fff;
+  content:"✈";
+  font-size:18px;
+  line-height:1;
+}
+.full-timeline .itinerary-stop .stop-booking-link.is-rental::before{content:"◆";font-size:14px;}
+.full-timeline .itinerary-stop .stop-booking-link::after{
+  grid-column:3;
+  grid-row:1 / span 2;
+  display:grid;
+  width:25px;
+  height:25px;
+  place-items:center;
+  align-self:center;
+  border:1px solid #d7e5e0;
+  border-radius:50%;
+  background:#fff;
+  color:#0b716a;
+  content:"↗";
+  font-size:12px;
+  font-weight:900;
+}
+.full-timeline .stop-booking-link small{
+  grid-column:2;
+  grid-row:1;
+  align-self:end;
+  color:#c45e34;
+  font:900 7px 'DM Mono',monospace;
+  letter-spacing:.8px;
+}
+.full-timeline .stop-booking-link span{
+  grid-column:2;
+  grid-row:2;
+  align-self:start;
+  color:#17443f;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:-.25px;
+}
+.full-timeline .stop-booking-link span em{display:none;}
+.full-timeline .itinerary-stop .stop-booking-link:hover{
+  border-color:#82bdb2;
+  background:linear-gradient(145deg,#fffaf3,#f0faf6);
+  box-shadow:0 14px 28px rgba(15,92,82,.18),inset 0 1px 0 #fff;
+  color:#153f3b;
+}
+.full-timeline .itinerary-stop .stop-booking-link:hover small{color:#b24d29;}
+.full-timeline .itinerary-stop .stop-booking-link:hover span{color:#103f3a;}
+.full-timeline .itinerary-stop .stop-booking-link:hover::after{background:#0a766e;color:#fff;}
+.full-timeline .itinerary-stop:has(.stop-booking-link)>div{padding-right:218px;}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link{
+  width:100%;
+  min-width:0;
+  min-height:58px;
+  grid-template-columns:36px minmax(0,1fr) 24px;
+  margin-top:7px;
+  padding:9px 10px;
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link::before{width:36px;height:36px;border-radius:10px;font-size:16px;}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link small{font-size:6px;}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link span{font-size:10px;}
+
+/* ===== iPhone 15 Pro mobile contract (393 × 852 CSS px) =====
+ * The 8px preview bezel lives outside the viewport, so the usable content
+ * remains the same size as the real device instead of shrinking to 377px. */
+.plan-fullscreen.mobile-preview{
+  --iphone-viewport-width:393px;
+  --iphone-viewport-height:852px;
+  --iphone-bezel:8px;
+}
+.plan-fullscreen.mobile-preview .plan-fullscreen-body{
+  width:calc(var(--iphone-viewport-width) + var(--iphone-bezel) * 2);
+  height:calc(var(--iphone-viewport-height) + var(--iphone-bezel) * 2);
+  min-height:calc(var(--iphone-viewport-height) + var(--iphone-bezel) * 2);
+  flex:none;
+}
+.plan-fullscreen.mobile-preview .stop-picker-backdrop,
+.plan-fullscreen.mobile-preview .route-recalculation-overlay,
+.plan-fullscreen.mobile-preview .route-result-backdrop,
+.plan-fullscreen.mobile-preview .mobile-map-expanded,
+.plan-fullscreen.mobile-preview .restaurant-detail-backdrop{
+  width:calc(var(--iphone-viewport-width) + var(--iphone-bezel) * 2);
+  height:calc(var(--iphone-viewport-height) + var(--iphone-bezel) * 2);
+  max-height:none;
+}
+
+/* Route clarity and actionable Kakao directions */
+.full-route-map>header a{
+  display:inline-flex;
+  min-height:38px;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:0 12px;
+  border:1px solid #c9ded7;
+  border-radius:10px;
+  background:#f7fcfa;
+  color:#0b7169;
+  font-size:10px;
+  font-weight:900;
+  text-decoration:none;
+}
+.full-route-map>header a:hover{border-color:#77b8ac;background:#eaf7f2;}
+.full-route-map .route-map-frame{border:1px solid #d6e5df;border-radius:14px;overflow:hidden;}
+.full-route-map .kakao-route-canvas{height:390px;min-height:390px;}
+.full-route-map .route-stop-list.route-stop-list-outside{grid-template-columns:repeat(2,minmax(0,1fr));}
+
+/* Mobile full-map is a map-first bottom-sheet layout, not a squeezed desktop panel. */
+.mobile-map-expanded{
+  grid-template-rows:64px minmax(330px,1fr) auto;
+  background:#f5f9f7;
+}
+.mobile-map-expanded>header{
+  min-height:64px;
+  padding:10px 14px;
+}
+.mobile-map-expanded>header span small{font-size:8px;font-weight:900;}
+.mobile-map-expanded>header span b{font-size:15px;font-weight:900;}
+.mobile-map-expanded>header button{
+  width:38px!important;
+  min-width:38px!important;
+  height:38px!important;
+  padding:0!important;
+  border-radius:11px!important;
+  background:#f2f8f5!important;
+}
+.mobile-map-expanded>header button>span{display:none!important;}
+.mobile-expanded-map-canvas{position:relative;min-height:330px;border-bottom:1px solid #d7e5df;}
+.mobile-map-stop-sheet{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:10px;
+  max-height:318px;
+  padding:13px 14px 15px;
+  overflow:hidden;
+  border-top:0;
+  background:#fff;
+}
+.mobile-map-sheet-head{display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.mobile-map-sheet-head>span:first-child{display:grid;gap:2px;}
+.mobile-map-sheet-head>span:first-child b{color:#1b4c47;font-size:13px;font-weight:900;}
+.mobile-map-sheet-head>span:first-child small{color:#78908b;font-size:8px;font-weight:800;}
+.mobile-map-totals{display:flex;gap:5px;}
+.mobile-map-totals b{padding:5px 7px;border-radius:7px;background:#edf7f3;color:#116f67;font:850 9px 'DM Mono',monospace;}
+.mobile-map-stop-scroll{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:6px;
+  max-height:154px;
+  overflow-y:auto;
+  overscroll-behavior:contain;
+  padding-right:2px;
+}
+.mobile-map-stop-scroll button{
+  min-height:38px;
+  margin:0;
+  padding:7px 8px;
+  border:1px solid #e0ebe7;
+  border-radius:9px;
+  background:#fbfdfc;
+}
+.mobile-map-stop-scroll button.is-active{border-color:#82bfb3;background:#edf8f4;}
+.mobile-map-stop-scroll button span{font-size:9px;font-weight:850;}
+.mobile-map-stop-scroll button small{font-size:7px;}
+.mobile-kakao-route-cta{
+  display:flex!important;
+  min-height:46px;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  margin:0!important;
+  padding:0 13px!important;
+  border-radius:12px!important;
+  background:#087b72!important;
+  color:#fff!important;
+  font-size:10px!important;
+  font-weight:900!important;
+  text-decoration:none;
+}
+.mobile-kakao-route-cta span{margin-left:auto;font-size:13px;}
+.mobile-map-actions{display:grid;grid-template-columns:minmax(0,1.45fr) minmax(0,1fr);gap:7px;}
+.mobile-kakao-navi-cta{
+  position:relative;
+  display:grid;
+  min-height:54px;
+  grid-template-columns:34px minmax(0,1fr) auto;
+  align-items:center;
+  gap:9px;
+  padding:0 13px 0 9px;
+  overflow:hidden;
+  border:1px solid #b9d8d1;
+  border-radius:14px;
+  background:linear-gradient(140deg,#fffefa 0%,#f3faf7 60%,#e7f5f0 100%);
+  box-shadow:0 9px 22px rgba(14,76,69,.12),inset 0 1px 0 #fff;
+  color:#174b46;
+  text-align:left;
+}
+.mobile-kakao-navi-cta::before{
+  position:absolute;
+  top:-26px;
+  right:-18px;
+  width:72px;
+  height:72px;
+  border-radius:50%;
+  background:rgba(18,143,132,.08);
+  content:"";
+}
+.mobile-kakao-navi-cta>svg{
+  position:relative;
+  z-index:1;
+  box-sizing:content-box;
+  padding:9px;
+  border-radius:11px;
+  background:linear-gradient(145deg,#087a71,#075d58);
+  box-shadow:0 5px 12px rgba(7,100,92,.2);
+  color:#fff;
+}
+.mobile-kakao-navi-cta>span{display:grid;gap:1px;}
+.mobile-kakao-navi-cta small{color:#bd673f;font:900 6px 'DM Mono',monospace;letter-spacing:.07em;}
+.mobile-kakao-navi-cta b{color:#164b46;font-size:10px;font-weight:900;letter-spacing:-.25px;}
+.mobile-kakao-navi-cta em{position:relative;z-index:1;color:#087970;font-size:15px;font-style:normal;font-weight:900;}
+.mobile-kakao-navi-cta:hover{border-color:#7eb9ae;background:linear-gradient(140deg,#fffaf2,#edf9f5);transform:translateY(-1px);}
+.mobile-kakao-navi-cta:disabled{cursor:not-allowed;opacity:.5;}
+.mobile-navigation-message{margin:0;color:#587972;font-size:8px;font-weight:750;text-align:center;}
+
+.plan-fullscreen.mobile-preview .mobile-map-expanded{
+  top:102px;
+  left:50%;
+  grid-template-rows:64px minmax(330px,1fr) auto;
+  width:calc(var(--iphone-viewport-width) + var(--iphone-bezel) * 2);
+  height:calc(var(--iphone-viewport-height) + var(--iphone-bezel) * 2);
+  min-height:calc(var(--iphone-viewport-height) + var(--iphone-bezel) * 2);
+  border:var(--iphone-bezel) solid #173e3b;
+  border-radius:45px;
+  box-shadow:0 28px 70px rgba(13,48,44,.27);
+  transform:translateX(-50%);
+}
+.plan-fullscreen.mobile-preview .mobile-map-expanded>header{
+  min-height:64px;
+  padding:10px 13px;
+  border-radius:35px 35px 0 0;
+}
+.plan-fullscreen.mobile-preview .mobile-map-expanded>header>button{
+  width:38px!important;
+  min-width:38px!important;
+  height:38px!important;
+  padding:0!important;
+  border-radius:11px!important;
+  box-shadow:none;
+}
+.plan-fullscreen.mobile-preview .mobile-map-expanded>header>button>span{display:none!important;}
+.plan-fullscreen.mobile-preview .mobile-map-stop-sheet{
+  max-height:318px;
+  padding:13px 14px 15px;
+  border-radius:0 0 35px 35px;
+}
+.plan-fullscreen.mobile-preview .mobile-map-stop-scroll{grid-template-columns:repeat(2,minmax(0,1fr));}
+.plan-fullscreen.mobile-preview .mobile-inline-route .route-map-frame,
+.plan-fullscreen.mobile-preview .mobile-inline-route .kakao-route-canvas{
+  height:164px;
+  min-height:164px;
+}
+.plan-fullscreen.mobile-preview .mobile-inline-route .map-expand-trigger{
+  align-items:flex-end;
+  justify-content:center;
+  padding:12px;
+  background:linear-gradient(transparent 58%,rgba(7,43,40,.72));
+  font-size:9px;
+  letter-spacing:-.1px;
+}
+
+@media(max-width:700px){
+  .full-route-map .kakao-route-canvas{height:320px;min-height:320px;}
+  .full-route-map .route-stop-list.route-stop-list-outside{grid-template-columns:1fr;}
+  .mobile-map-expanded{grid-template-rows:64px minmax(300px,1fr) auto;}
+  .mobile-map-stop-scroll{grid-template-columns:1fr 1fr;}
+  .full-timeline .itinerary-stop:has(.stop-booking-link)>div{padding-right:0;}
+  .full-timeline .itinerary-stop .stop-booking-link{
+    position:static;
+    width:100%;
+    min-width:0;
+    max-width:100%;
+    margin-top:8px;
+    transform:none;
+  }
+  .full-timeline .itinerary-stop .stop-booking-link:hover{transform:translateY(-1px);}
+}
+
+/* Mobile finishing pass: compact partner cards, connected reviews, full-height map. */
+.restaurant-review-action{display:none!important;}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link{
+  width:min(158px,100%);
+  min-width:0;
+  min-height:46px;
+  grid-template-columns:30px minmax(0,1fr) 22px;
+  column-gap:7px;
+  margin-top:6px;
+  padding:7px 8px;
+  border-radius:12px;
+  justify-self:start;
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link::before{
+  width:30px;
+  height:30px;
+  border-radius:9px;
+  font-size:14px;
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link::after{
+  width:22px;
+  height:22px;
+  font-size:10px;
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link small{font-size:5.5px;letter-spacing:.55px;}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop .stop-booking-link span{font-size:9px;}
+
+.plan-fullscreen.mobile-preview .restaurant-detail-place-links{display:none;}
+.plan-fullscreen.mobile-preview .restaurant-detail-content>header{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:end;
+  gap:8px;
+}
+.plan-fullscreen.mobile-preview .restaurant-detail-content>header>strong{
+  width:auto;
+  margin:0;
+  padding:6px 8px;
+  font-size:10px;
+}
+.plan-fullscreen.mobile-preview .restaurant-review-section{padding-bottom:18px;}
+.plan-fullscreen.mobile-preview .restaurant-review-action{
+  display:block!important;
+  width:100%;
+  margin-top:12px!important;
+}
+.plan-fullscreen.mobile-preview .restaurant-review-action a{
+  display:flex;
+  width:100%;
+  min-height:42px;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+  padding:0 10px;
+  border:1px solid #b9dcd4;
+  border-radius:10px;
+  background:#edf8f4;
+  color:#08776e;
+  font-size:9px;
+  font-weight:900;
+  text-decoration:none;
+}
+
+.plan-fullscreen.mobile-preview .mobile-map-expanded{
+  grid-template-rows:64px minmax(0,1fr) auto;
+}
+.plan-fullscreen.mobile-preview .mobile-map-expanded .mobile-expanded-map-canvas{
+  height:auto;
+  min-height:0;
+  overflow:hidden;
+}
+.plan-fullscreen.mobile-preview .mobile-map-expanded .mobile-expanded-map-canvas>.kakao-route-canvas-wrap,
+.plan-fullscreen.mobile-preview .mobile-map-expanded .mobile-expanded-map-canvas .kakao-route-canvas{
+  width:100%;
+  height:100%!important;
+  min-height:0!important;
+}
+.plan-fullscreen.mobile-preview .mobile-map-expanded .mobile-map-stop-sheet{
+  max-height:270px;
+  overflow:hidden;
+}
+.plan-fullscreen.mobile-preview .mobile-map-expanded .mobile-map-stop-scroll{
+  max-height:116px;
+}
+
+@media(max-width:700px){
+  .full-timeline .itinerary-stop .stop-booking-link{
+    width:min(166px,100%);
+    min-height:48px;
+    grid-template-columns:32px minmax(0,1fr) 22px;
+    column-gap:7px;
+    padding:7px 9px;
+    justify-self:start;
+  }
+  .full-timeline .itinerary-stop .stop-booking-link::before{width:32px;height:32px;border-radius:9px;font-size:14px;}
+  .full-timeline .itinerary-stop .stop-booking-link::after{width:22px;height:22px;font-size:10px;}
+  .restaurant-detail-place-links{display:none;}
+  .restaurant-review-action{display:block!important;width:100%;margin-top:12px!important;}
+  .restaurant-review-action a{
+    display:flex;
+    width:100%;
+    min-height:44px;
+    align-items:center;
+    justify-content:center;
+    gap:6px;
+    padding:0 10px;
+    border:1px solid #b9dcd4;
+    border-radius:10px;
+    background:#edf8f4;
+    color:#08776e;
+    font-size:10px;
+    font-weight:900;
+    text-decoration:none;
+  }
+  .mobile-map-expanded .mobile-expanded-map-canvas>.kakao-route-canvas-wrap,
+  .mobile-map-expanded .mobile-expanded-map-canvas .kakao-route-canvas{height:100%!important;min-height:0!important;}
+  .plan-fullscreen.mobile-preview .mobile-map-expanded{
+    inset:0;
+    top:0;
+    left:0;
+    width:100vw;
+    height:100dvh;
+    min-height:100dvh;
+    border:0;
+    border-radius:0;
+    box-shadow:none;
+    transform:none;
+  }
+  .plan-fullscreen.mobile-preview .mobile-map-expanded>header,
+  .plan-fullscreen.mobile-preview .mobile-map-expanded .mobile-map-stop-sheet{border-radius:0;}
 }

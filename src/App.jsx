@@ -52,6 +52,7 @@ import AirportRoutePicker from "./components/planner/AirportRoutePicker";
 import TravelPreferenceModal from "./components/planner/TravelPreferenceModal";
 import CarDetailsStep from "./components/planner/CarDetailsStep";
 import RentalComparisonModal from "./components/planner/RentalComparisonModal";
+import { buildPlanningPreview } from "./utils/planningPreview";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
 import quickAccessAi from "./assets/quick-access/premium-ai-planner.png";
@@ -401,15 +402,17 @@ function App() {
       destinationLocation?.region || ""
     ]?.filter((place) => place.image) || [];
 
-    if (regionalPlaces.length) return regionalPlaces.slice(0, 7);
-
-    return destinationExplorerItems.slice(0, 6).map((place) => ({
-      name: place.title,
-      detail: place.subtitle,
-      image: place.image,
-      icon: "⌖",
-    }));
-  }, [destinationLocation?.region]);
+    const places = [...regionalPlaces];
+    if (selectedStay?.image) places.push({
+      name: selectedStay.name, image: selectedStay.image,
+      detail: "선택한 숙소", category: "숙소", icon: "⌂",
+    });
+    if (!places.length && destinationLocation?.image) places.push({
+      name: destinationLocation.title || destinationLocation.name,
+      image: destinationLocation.image, detail: "선택한 여행지", category: "여행지",
+    });
+    return buildPlanningPreview(places);
+  }, [destinationLocation, selectedStay]);
 
   useEffect(() => {
     const handleAuthExpired = () => {
@@ -1694,10 +1697,11 @@ function App() {
       {planning && (
         <div className="planning-overlay" role="status" aria-live="polite">
           <div className="planning-panorama" aria-hidden="true">
-            <div className="planning-panorama-track">
-              {[...planningPreviewPlaces, ...planningPreviewPlaces].map((place, index) => (
-                <figure key={`${place.name}-${index}`} style={{ "--card-index": index }}>
-                  <img src={place.image} alt="" />
+            <div className="planning-panorama-track" style={{ "--panorama-duration": `${Math.max(40, planningPreviewPlaces.length * 7)}s` }}>
+              {planningPreviewPlaces.map((place, index) => (
+                <figure key={place.imageKey} style={{ "--card-index": index }}>
+                  <img src={place.image} alt="" decoding="async" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} />
+                  <span className="planning-place-category">{place.category}{place.illustrative ? " · 예시 이미지" : ""}</span>
                   <figcaption>
                     <span>{place.icon || "⌖"}</span>
                     <div>
@@ -1708,7 +1712,6 @@ function App() {
                 </figure>
               ))}
             </div>
-            <span className="planning-scan-line" />
           </div>
           <div
             className={`planning-loader ${planningMode === "stay-revision" ? "stay-revision-loader" : ""}`}
@@ -1736,6 +1739,7 @@ function App() {
                   : "항공·숙소·렌터카와 각 장소의 이동 시간을 연결하고 있어요."
                 : "잠시 후 새 일정이 화면 위에서부터 자연스럽게 완성됩니다."}
             </small>
+            <span className="planning-preview-caption">여행지 미리보기 · 음식과 장소, 숙소를 함께 살펴보세요.</span>
             <div>
               <i className={planningStage === "ready" ? "done" : ""} />
               <i className={planningStage === "ready" ? "done" : ""} />
