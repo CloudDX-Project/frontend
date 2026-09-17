@@ -3087,58 +3087,6 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
   font-size: 24px;
 }
 
-.quick-access-hotel-icon {
-  position: relative;
-  display: grid;
-  place-items: center;
-  overflow: visible;
-  width: 44px;
-  height: 44px;
-  border: 1px solid #e8d4a8;
-  border-radius: 14px;
-  background: #fff8e9;
-  color: #171c1b;
-  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .72);
-}
-
-.quick-access-hotel-icon i {
-  position: relative;
-  display: block;
-  width: 19px;
-  height: 19px;
-  margin: 0;
-  border: 1.5px solid #b8802e;
-  border-top: 0;
-  border-radius: 1px 1px 2px 2px;
-  background:
-    linear-gradient(90deg, transparent 0 3px, #272b29 3px 5px, transparent 5px 8px, #272b29 8px 10px, transparent 10px 13px, #272b29 13px 15px, transparent 15px),
-    linear-gradient(#e4bf70, #c18b39);
-  box-shadow: inset 0 -4px 0 #242826;
-}
-
-.quick-access-hotel-icon i::before {
-  position: absolute;
-  top: -6px;
-  left: -3px;
-  width: 23px;
-  height: 7px;
-  background: #242826;
-  border-bottom: 1px solid #b8802e;
-  clip-path: polygon(50% 0, 100% 100%, 0 100%);
-  content: "";
-}
-
-.quick-access-hotel-icon i::after {
-  position: absolute;
-  right: 6px;
-  bottom: 0;
-  width: 4px;
-  height: 7px;
-  border-radius: 2px 2px 0 0;
-  background: #f7e6b8;
-  content: "";
-}
-
 .quick-access button:nth-child(4) > span {
   border-color: #bddbe8;
   background: #eef8fc;
@@ -3196,19 +3144,6 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
     font-size: 15px;
   }
 
-  .quick-access-hotel-icon {
-    width: 34px;
-    height: 34px;
-    border-radius: 11px;
-  }
-
-  .quick-access-hotel-icon i {
-    width: 17px;
-    height: 18px;
-    margin-bottom: 4px;
-    transform: scale(.9);
-  }
-
   .quick-access button > span img {
     width: 23px;
     height: 23px;
@@ -3263,4 +3198,143 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
 .commerce-like svg {
   display: block;
   margin: 0;
+}
+
+/* Quick-access banner: one optically aligned raster icon family. */
+.quick-access {
+  margin-top: -60px;
+  padding-right: clamp(24px, 4vw, 64px);
+  padding-left: clamp(24px, 4vw, 64px);
+}
+
+.quick-access-inner {
+  width: min(1380px, 100%);
+  padding: 17px 22px;
+  border: 1px solid rgba(204, 220, 215, .92);
+  border-radius: 26px;
+  background: rgba(255, 255, 253, .985);
+  box-shadow: 0 22px 48px rgba(19, 61, 55, .16), 0 3px 8px rgba(19, 61, 55, .05);
+}
+
+.quick-access button {
+  grid-template-columns: 64px minmax(0, 1fr);
+  min-height: 84px;
+  column-gap: 14px;
+  padding: 9px 17px;
+  border-right-color: #dde8e4;
+}
+
+.quick-access button > span.quick-access-icon {
+  width: 62px;
+  height: 62px;
+  overflow: visible;
+  border: 0 !important;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.quick-access button > span.quick-access-icon img {
+  display: block;
+  width: 62px;
+  height: 62px;
+  object-fit: contain;
+  filter: none;
+}
+
+.quick-access button:nth-child(1) > span.quick-access-icon img {
+  transform: scale(1.08);
+}
+
+.quick-access button:nth-child(2) > span.quick-access-icon img {
+  transform: translateY(1px) scale(1.12);
+}
+
+.quick-access button:nth-child(3) > span.quick-access-icon img {
+  transform: scale(.98);
+}
+
+.quick-access button:nth-child(4) > span.quick-access-icon img {
+  transform: scale(1.02);
+}
+
+.quick-access button:nth-child(5) > span.quick-access-icon img {
+  transform: translateY(1px) scale(1.03);
+}
+
+.quick-access button:nth-child(6) > span.quick-access-icon img {
+  transform: scale(1.08);
+}
+
+.quick-access b {
+  color: #204c48;
+  font-size: 13px;
+  font-weight: 850;
+  letter-spacing: -.32px;
+}
+
+.quick-access small {
+  color: #718a84;
+  font-size: 10.5px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
+.quick-access button:hover {
+  border-radius: 16px;
+  background: #f4faf7;
+  transform: translateY(-1px);
+}
+
+@media (max-width: 1180px) {
+  .quick-access button {
+    grid-template-columns: 56px minmax(0, 1fr);
+    column-gap: 10px;
+    padding-right: 11px;
+    padding-left: 11px;
+  }
+
+  .quick-access button > span.quick-access-icon,
+  .quick-access button > span.quick-access-icon img {
+    width: 54px;
+    height: 54px;
+  }
+
+  .quick-access b {
+    font-size: 12px;
+  }
+
+  .quick-access small {
+    font-size: 9.5px;
+  }
+}
+
+@media (max-width: 760px) {
+  .quick-access {
+    margin-top: -30px;
+    padding-right: 17px;
+    padding-left: 17px;
+  }
+
+  .quick-access-inner {
+    padding: 11px;
+    border-radius: 18px;
+  }
+
+  .quick-access button {
+    grid-template-columns: 43px minmax(0, 1fr);
+    min-height: 57px;
+    column-gap: 8px;
+    padding: 8px;
+  }
+
+  .quick-access button > span.quick-access-icon,
+  .quick-access button > span.quick-access-icon img {
+    width: 42px;
+    height: 42px;
+  }
+
+  .quick-access b {
+    font-size: 10.5px;
+  }
 }

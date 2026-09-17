@@ -54,6 +54,12 @@ import CarDetailsStep from "./components/planner/CarDetailsStep";
 import RentalComparisonModal from "./components/planner/RentalComparisonModal";
 import useTripPlanner from "./hooks/useTripPlanner";
 import useMediaQuery from "./hooks/useMediaQuery";
+import quickAccessAi from "./assets/quick-access/premium-ai-planner.png";
+import quickAccessFlight from "./assets/quick-access/premium-flight.png";
+import quickAccessHotel from "./assets/quick-access/premium-hotel.png";
+import quickAccessActivity from "./assets/quick-access/premium-activity.png";
+import quickAccessMobility from "./assets/quick-access/premium-mobility.png";
+import quickAccessEsim from "./assets/quick-access/premium-esim.png";
 import {
   estimateBaggageAllowance,
   flightClockMinutes,
@@ -63,12 +69,12 @@ import {
 import "./components/planner/flight-booking-modal.css";
 
 const quickAccessIconAssets = {
-  sparkles: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/sparkles/3D/sparkles_3d.png", fallback: "✨" },
-  plane: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/airplane/3D/airplane_3d.png", fallback: "✈️" },
-  home: { src: "", fallback: "" },
-  ticket: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/admission-tickets/3D/admission_tickets_3d.png", fallback: "🎢" },
-  car: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/automobile/3D/automobile_3d.png", fallback: "🚗" },
-  smartphone: { src: "https://raw.githubusercontent.com/microsoft/fluentui-emoji/main/assets/mobile-phone/3D/mobile_phone_3d.png", fallback: "📱" },
+  sparkles: { src: quickAccessAi, fallback: "AI" },
+  plane: { src: quickAccessFlight, fallback: "항공" },
+  home: { src: quickAccessHotel, fallback: "숙소" },
+  ticket: { src: quickAccessActivity, fallback: "투어" },
+  car: { src: quickAccessMobility, fallback: "교통" },
+  smartphone: { src: quickAccessEsim, fallback: "eSIM" },
 };
 
 const flightStatusLabel = (status) => {
@@ -724,13 +730,9 @@ function App() {
                 window.requestAnimationFrame(() => document.querySelector(link.target)?.scrollIntoView({ behavior: "smooth" }));
               }}
             >
-              {link.icon === "home" ? (
-                <span className="quick-access-hotel-icon" aria-hidden="true"><i /></span>
-              ) : (
-                <span data-fallback={iconAsset.fallback}>
-                  <img src={iconAsset.src} alt="" aria-hidden="true" loading="eager" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.parentElement?.classList.add("is-fallback"); }} />
-                </span>
-              )}
+              <span className="quick-access-icon" data-fallback={iconAsset.fallback}>
+                <img src={iconAsset.src} alt="" aria-hidden="true" loading="eager" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.parentElement?.classList.add("is-fallback"); }} />
+              </span>
               <b>{link.title}</b>
               <small>{link.text}</small>
             </button>
