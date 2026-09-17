@@ -2910,22 +2910,58 @@ function useTripPlanner() {
             ,
             metadata = {},
           ]) => {
+            const backendType =
+              String(
+                metadata?.type ||
+                "",
+              ).toUpperCase();
+
+            /*
+             * 비용 상세에는 실제로 개인별 결제가 발생하는 장소만 넣는다.
+             * FLIGHT / AIRPORT / ACCOMMODATION 같은 이동·예약 이벤트는
+             * 아래의 항공권·숙소·렌터카 그룹에서 한 번만 계산하므로
+             * 일정 장소 비용에 다시 넣으면 중복 노출된다.
+             */
+            const isBackendMeal =
+              backendType === "RESTAURANT" ||
+              backendType === "CAFE";
+
+            const isBackendActivity =
+              backendType === "ATTRACTION";
+
+            const hasBackendType =
+              Boolean(backendType);
+
             if (
               !name ||
-              /항공|공항|렌터카|체크인|체크아웃|탑승 준비|출발 준비|귀가|이동 준비|편 출발$/.test(
-                name,
+              (
+                hasBackendType &&
+                !isBackendMeal &&
+                !isBackendActivity
+              ) ||
+              (
+                !hasBackendType &&
+                /항공|공항|렌터카|숙소|호텔|체크인|체크아웃|탑승 준비|출발 준비|귀가|이동 준비|편 출발$/.test(
+                  name,
+                )
               )
             ) {
               return [];
             }
 
             const isMeal =
-              /🍽|🍚|🍜|🍲|☕|🥐/.test(
-                icon ||
-                  "",
-              ) ||
-              /점심|저녁|식사|카페|간식|조식|시장/.test(
-                name,
+              isBackendMeal ||
+              (
+                !hasBackendType &&
+                (
+                  /🍽|🍚|🍜|🍲|☕|🥐/.test(
+                    icon ||
+                      "",
+                  ) ||
+                  /점심|저녁|식사|카페|간식|조식|시장/.test(
+                    name,
+                  )
+                )
               );
 
             return [
@@ -3141,7 +3177,7 @@ function useTripPlanner() {
       () => [
         {
           group:
-            "1인 이동·식사 비용",
+            "개인 교통비 · 1인 기준",
 
           rows: [
             [
@@ -3180,16 +3216,22 @@ function useTripPlanner() {
                   ]
                 : []
             ),
+          ],
+        },
 
+        {
+          group:
+            "식사·관광비 · 1인 기준",
+
+          rows: [
             ...mealRows,
-
             ...activityRows,
           ],
         },
 
         {
           group:
-            `공통 비용 · ${party}명 N/1`,
+            `공동 예약·차량비 · ${party}명 N/1`,
 
           rows: [
             ...(
@@ -3200,7 +3242,7 @@ function useTripPlanner() {
 
                       rentalFeePerPerson,
 
-                      `${selectedRental.car} · ${party}명 분할`,
+                      `${selectedRental.car} · 총 대여료를 ${party}명 분할`,
                     ],
 
                     [
@@ -3208,7 +3250,7 @@ function useTripPlanner() {
 
                       localFuelAndParkingPerPerson,
 
-                      `${destinationLabel} 일정 약 ${itineraryDistanceKm}km · ${party}명 분할`,
+                      `${destinationLabel} 일정 약 ${itineraryDistanceKm}km · 차량 공용 비용을 ${party}명 분할`,
                     ],
                   ]
                 : selectedTransportMode ===
@@ -3219,7 +3261,7 @@ function useTripPlanner() {
 
                         localFuelAndParkingPerPerson,
 
-                        `${destinationLabel} 일정 약 ${itineraryDistanceKm}km · ${party}명 분할`,
+                        `${destinationLabel} 일정 약 ${itineraryDistanceKm}km · 차량 공용 비용을 ${party}명 분할`,
                       ],
                     ]
                   : []
@@ -3237,11 +3279,11 @@ function useTripPlanner() {
                   null
                   ? `평균 1박 ${money(
                       selectedStay.priceAvg,
-                    )}원 · 객실 ${rooms}개 · ${party}명 분할`
+                    )}원 · 객실 ${rooms}개 총액을 ${party}명 분할`
                   : `${
                       selectedStay.priceText ||
                       "가격 정보 확인"
-                    } · 객실 ${rooms}개`
+                    } · 객실 ${rooms}개 · ${party}명 분할`
                 : "숙소 미선택",
             ],
           ],
@@ -3254,7 +3296,7 @@ function useTripPlanner() {
             ? [
                 {
                   group:
-                    "장소 변경 반영 · 1인",
+                    "장소 변경 차액 · 1인 기준",
 
                   rows:
                     Object.entries(
@@ -3306,7 +3348,11 @@ function useTripPlanner() {
               ]
             : []
         ),
-      ],
+      ].filter(
+        (group) =>
+          Array.isArray(group.rows) &&
+          group.rows.length > 0,
+      ),
       [
         activityRows,
         baseDayPlans,
@@ -3357,11 +3403,30 @@ function useTripPlanner() {
               groups,
               item,
             ) => {
+              const itemLabel =
+                String(
+                  item.placeName ||
+                  item.vendorName ||
+                  item.name ||
+                  item.label ||
+                  item.category ||
+                  "여행 비용",
+                );
+
+
+              const isShared =
+                item.scope === "shared" ||
+                /숙박|숙소|호텔|렌터카|주유|주차/.test(itemLabel);
+
+              const isMealOrActivity =
+                /식비|식사|카페|커피|메뉴|관광|체험|입장/.test(itemLabel);
+
               const key =
-                item.scope ===
-                "shared"
-                  ? `공통 비용 · ${party}명 N/1`
-                  : "1인 이동·식사 비용";
+                isShared
+                  ? `공동 예약·차량비 · ${party}명 N/1`
+                  : isMealOrActivity
+                    ? "식사·관광비 · 1인 기준"
+                    : "개인 교통비 · 1인 기준";
 
               groups[
                 key
@@ -3789,9 +3854,17 @@ function useTripPlanner() {
    */
   const loadFlightOptions =
     async (
-      requestedAirportCode =
-        origin,
+      leg = "outbound",
+      requestedAirportCode = origin,
     ) => {
+      const isReturn =
+        leg === "return";
+
+      const direction =
+        isReturn
+          ? "RETURN"
+          : "OUTBOUND";
+
       const requestedAirport =
         flightOriginAirports.find(
           (airport) =>
@@ -3868,6 +3941,8 @@ function useTripPlanner() {
             destination:
               arrival,
 
+            direction,
+
             startDate,
 
             startTime:
@@ -3882,69 +3957,96 @@ function useTripPlanner() {
               travelers,
           });
 
-        const normalized =
-          {
+        const fetchedOutboundFlights =
+          Array.isArray(
+            result
+              ?.outboundFlights,
+          )
+            ? result.outboundFlights.map(
+                normalizeFlightCandidate,
+              )
+            : [];
+
+        const fetchedReturnFlights =
+          Array.isArray(
+            result
+              ?.returnFlights,
+          )
+            ? result.returnFlights.map(
+                normalizeFlightCandidate,
+              )
+            : [];
+
+        setFlightSearchResult(
+          (
+            previous,
+          ) => ({
             departureAirport:
               result
+                ?.departureAirport ||
+              previous
                 ?.departureAirport ||
               "",
 
             arrivalAirport:
               result
                 ?.arrivalAirport ||
+              previous
+                ?.arrivalAirport ||
               "",
 
             outboundFlights:
-              Array.isArray(
-                result
-                  ?.outboundFlights,
-              )
-                ? result.outboundFlights.map(
-                    normalizeFlightCandidate,
-                  )
-                : [],
+              isReturn
+                ? previous
+                    ?.outboundFlights ||
+                  []
+                : fetchedOutboundFlights,
 
             returnFlights:
-              Array.isArray(
-                result
-                  ?.returnFlights,
-              )
-                ? result.returnFlights.map(
-                    normalizeFlightCandidate,
-                  )
-                : [],
-          };
-
-        setFlightSearchResult(
-          normalized,
+              isReturn
+                ? fetchedReturnFlights
+                : previous
+                    ?.returnFlights ||
+                  [],
+          }),
         );
 
-        setOrigin(
-          normalized
-            .departureAirport ||
-            origin,
-        );
+        if (
+          !isReturn
+        ) {
+          setOrigin(
+            result
+              ?.departureAirport ||
+              origin,
+          );
 
-        setFlightId(
-          "",
-        );
+          setFlightId(
+            "",
+          );
 
-        setReturnFlightId(
-          "",
-        );
+          setReturnFlightId(
+            "",
+          );
+        } else {
+          setReturnFlightId(
+            "",
+          );
+        }
 
         if (
           import.meta.env
             .DEV
         ) {
           console.log(
-            "[FLIGHT] request:",
+            `[FLIGHT] ${direction} request:`,
 
             {
               departure,
 
               destination:
                 arrival,
+
+              direction,
 
               startDate,
 
@@ -3962,16 +4064,15 @@ function useTripPlanner() {
           );
 
           console.log(
-            "[FLIGHT] response:",
+            `[FLIGHT] ${direction} response:`,
 
             result,
           );
         }
 
         if (
-          !normalized
-            .outboundFlights
-            .length
+          !isReturn &&
+          !fetchedOutboundFlights.length
         ) {
           setFlightError(
             "조회 가능한 가는 항공편이 없습니다.",
@@ -3981,9 +4082,8 @@ function useTripPlanner() {
         }
 
         if (
-          !normalized
-            .returnFlights
-            .length
+          isReturn &&
+          !fetchedReturnFlights.length
         ) {
           setFlightError(
             "조회 가능한 오는 항공편이 없습니다.",
@@ -3997,7 +4097,7 @@ function useTripPlanner() {
         error
       ) {
         console.error(
-          "[FLIGHT] API 호출 실패:",
+          `[FLIGHT] ${direction} API 호출 실패:`,
 
           error,
         );
@@ -4006,19 +4106,35 @@ function useTripPlanner() {
           error?.message ||
           "항공편을 불러오지 못했습니다.";
 
-        setFlightSearchResult({
-          departureAirport:
-            "",
+        setFlightSearchResult(
+          (
+            previous,
+          ) => ({
+            departureAirport:
+              previous
+                ?.departureAirport ||
+              "",
 
-          arrivalAirport:
-            "",
+            arrivalAirport:
+              previous
+                ?.arrivalAirport ||
+              "",
 
-          outboundFlights:
-            [],
+            outboundFlights:
+              isReturn
+                ? previous
+                    ?.outboundFlights ||
+                  []
+                : [],
 
-          returnFlights:
-            [],
-        });
+            returnFlights:
+              isReturn
+                ? []
+                : previous
+                    ?.returnFlights ||
+                  [],
+          }),
+        );
 
         setFlightError(
           nextMessage,
@@ -4035,7 +4151,6 @@ function useTripPlanner() {
         );
       }
     };
-
 
   const submitPrompt =
     () => {

@@ -2028,6 +2028,7 @@ function App() {
                 setFlightTransitionOpen(false);
                 setFlightPickerLeg("return");
                 setFlightOpen(true);
+                void loadFlightOptions("return");
               }}
             >
               오는 편 비교 시작 →
@@ -2115,7 +2116,7 @@ function App() {
                   setOrigin(airportCode);
                   setFlightId("");
                   setReturnFlightId("");
-                  void loadFlightOptions(airportCode);
+                  void loadFlightOptions(flightPickerLeg, airportCode);
                 }}
               />
               <label className="flight-sort">
@@ -2161,7 +2162,9 @@ function App() {
                   <button
                     type="button"
                     onClick={() =>
-                      void loadFlightOptions()
+                      void loadFlightOptions(
+                        flightPickerLeg,
+                      )
                     }
                   >
                     다시 조회

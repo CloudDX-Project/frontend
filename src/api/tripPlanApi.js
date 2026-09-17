@@ -9,6 +9,10 @@ const ITEM_ICON = {
   ATTRACTION: "📍",
   RESTAURANT: "🍽️",
   CAFE: "☕",
+  RENTAL: "🚗",
+  RENT_CAR: "🚗",
+  CAR_RENTAL: "🚗",
+  RENTAL_CAR: "🚗",
 };
 
 
@@ -17,6 +21,10 @@ const LOCKED_TYPES = new Set([
   "AIRPORT",
   "FLIGHT",
   "ACCOMMODATION",
+  "RENTAL",
+  "RENT_CAR",
+  "CAR_RENTAL",
+  "RENTAL_CAR",
 ]);
 
 
@@ -49,6 +57,12 @@ function estimateStayMinutes(type) {
 
     case "ATTRACTION":
       return 90;
+
+    case "RENTAL":
+    case "RENT_CAR":
+    case "CAR_RENTAL":
+    case "RENTAL_CAR":
+      return 15;
 
     default:
       return 60;
@@ -249,16 +263,30 @@ function normalizePlanEvent(
     );
 
 
-  const estimatedStayMinutes =
-    estimateStayMinutes(
-      type,
+  const categoryForStay =
+    String(event?.category || "").toUpperCase();
+
+  const isArrivalAirportForStay =
+    type === "AIRPORT" &&
+    (
+      categoryForStay.includes("ARRIVAL_AIRPORT") ||
+      String(event?.transportModeFromPrevious || "").toUpperCase() === "AIR"
     );
+
+  const estimatedStayMinutes =
+    isArrivalAirportForStay
+      ? 0
+      : estimateStayMinutes(
+          type,
+        );
 
 
   const stayMinutes =
-    backendStayMinutes ??
-    dateTimeDuration ??
-    estimatedStayMinutes;
+    isArrivalAirportForStay
+      ? 0
+      : backendStayMinutes ??
+        dateTimeDuration ??
+        estimatedStayMinutes;
 
 
   const durationLabel =
@@ -492,6 +520,32 @@ const eventId =
         event?.reason ??
         null,
 
+      flightLabel:
+        event?.uiFlight?.label ??
+        event?.flightLabel ??
+        null,
+
+      flightRoute:
+        event?.uiFlight?.route ??
+        event?.flightRoute ??
+        null,
+
+      flightDepartureAt:
+        event?.uiFlight?.departureAt ??
+        event?.flightDepartureAt ??
+        null,
+
+      flightArrivalAt:
+        event?.uiFlight?.arrivalAt ??
+        event?.flightArrivalAt ??
+        null,
+
+      flightDurationMinutes:
+        finiteRouteNumber(
+          event?.uiFlight?.durationMinutes ??
+          event?.flightDurationMinutes,
+        ),
+
 
       /*
        * 현재 TripPlan API는
@@ -544,6 +598,758 @@ const eventId =
       },
     },
   ];
+}
+
+
+
+function flightDurationMinutes(event) {
+  const direct = finiteRouteNumber(
+    event?.durationMinutes ??
+    (event?.durationSeconds == null ? null : Number(event.durationSeconds) / 60),
+  );
+
+  if (direct != null) return Math.max(0, Math.round(direct));
+
+  return dateTimeDurationMinutes(
+    event?.startAt ?? event?.startTime,
+    event?.endAt ?? event?.endTime,
+  );
+}
+
+
+function flightDisplayMeta(event, airSegment = null) {
+  /*
+   * 항공편 시간은 화면용 AI item보다 실제 TransportSegment(AIR)를 우선한다.
+   * TripPlan item 시간이 오래된 값이어도 선택한 항공편의 실제 출/도착 시각이
+   * 카드와 시간표에 동일하게 노출되도록 한다.
+   */
+  return {
+    label: String(event?.name || "항공편").trim(),
+    route: event?.category ?? null,
+    departureAt: airSegment?.departureAt ?? event?.startAt ?? event?.startTime ?? null,
+    arrivalAt: airSegment?.arrivalAt ?? event?.endAt ?? event?.endTime ?? null,
+    durationMinutes:
+      finiteRouteNumber(airSegment?.durationMinutes) ??
+      flightDurationMinutes(event),
+  };
+}
+
+
+function daySourceSegments(day) {
+  if (Array.isArray(day?.transportSegments)) return day.transportSegments;
+  if (Array.isArray(day?.segments)) return day.segments;
+  return [];
+}
+
+
+function normalizedDisplayName(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ")
+    .toLowerCase();
+}
+
+
+function isAirportDisplayName(value) {
+  return /공항|airport/i.test(String(value || ""));
+}
+
+
+function routeDurationMinutes(startAt, endAt) {
+  const start = routeDateTimeMillis(startAt);
+  const end = routeDateTimeMillis(endAt);
+
+  if (start == null || end == null || end < start) {
+    return 0;
+  }
+
+  return Math.max(0, Math.round((end - start) / 60000));
+}
+
+
+function insertRentalTransferCards(events, day, selectedRental) {
+  const source = Array.isArray(events) ? [...events] : [];
+
+  if (!selectedRental) {
+    return source;
+  }
+
+  const rentalName =
+    String(selectedRental?.company || "").trim() ||
+    "렌터카";
+
+  const rentalKey = normalizedDisplayName(rentalName);
+  const alreadyHasRental = source.some((event) => {
+    const type = String(event?.type || "").toUpperCase();
+    const category = String(event?.category || "").toUpperCase();
+    const eventName = normalizedDisplayName(event?.name);
+
+    return (
+      /RENTAL|RENT_CAR|CAR_RENTAL/.test(type) ||
+      /RENTAL|RENT_CAR|CAR_RENTAL/.test(category) ||
+      (rentalKey && eventName === rentalKey)
+    );
+  });
+
+  if (alreadyHasRental) {
+    return source;
+  }
+
+  const segments = daySourceSegments(day)
+    .slice()
+    .sort((a, b) => Number(a?.sequence ?? 0) - Number(b?.sequence ?? 0));
+
+  const additions = [];
+
+  const pickupShuttle = segments.find((segment) => {
+    if (String(segment?.mode || "").toUpperCase() !== "SHUTTLE") return false;
+    return isAirportDisplayName(segment?.departureName) && !isAirportDisplayName(segment?.arrivalName);
+  });
+
+  if (pickupShuttle) {
+    const pickupName =
+      String(pickupShuttle?.arrivalName || "").trim() ||
+      rentalName;
+    const pickupKey = normalizedDisplayName(pickupName);
+    const followingSegment = segments.find(
+      (segment) =>
+        Number(segment?.sequence ?? 0) > Number(pickupShuttle?.sequence ?? 0) &&
+        normalizedDisplayName(segment?.departureName) === pickupKey,
+    );
+
+    const startAt = pickupShuttle?.arrivalAt ?? null;
+    const endAt = followingSegment?.departureAt ?? startAt;
+
+    additions.push({
+      order: Number(pickupShuttle?.sequence ?? 0) + 0.5,
+      type: "RENTAL_CAR",
+      placeId: null,
+      referenceId: selectedRental?.id ?? null,
+      name: pickupName,
+      category: "RENTAL_PICKUP",
+      latitude: selectedRental?.latitude ?? pickupShuttle?.arrivalLatitude ?? null,
+      longitude: selectedRental?.longitude ?? pickupShuttle?.arrivalLongitude ?? null,
+      startAt,
+      endAt,
+      stayMinutes: routeDurationMinutes(startAt, endAt),
+      transportModeFromPrevious: "SHUTTLE",
+      reason: [
+        selectedRental?.car,
+        "렌터카를 인수하고 현지 이동을 시작합니다.",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      isLocked: true,
+    });
+  }
+
+  const returnShuttle = segments.find((segment) => {
+    if (String(segment?.mode || "").toUpperCase() !== "SHUTTLE") return false;
+    return !isAirportDisplayName(segment?.departureName) && isAirportDisplayName(segment?.arrivalName);
+  });
+
+  if (returnShuttle) {
+    const returnName =
+      String(returnShuttle?.departureName || "").trim() ||
+      rentalName;
+    const returnKey = normalizedDisplayName(returnName);
+    const previousSegment = [...segments]
+      .reverse()
+      .find(
+        (segment) =>
+          Number(segment?.sequence ?? 0) < Number(returnShuttle?.sequence ?? 0) &&
+          normalizedDisplayName(segment?.arrivalName) === returnKey,
+      );
+
+    const startAt = previousSegment?.arrivalAt ?? returnShuttle?.departureAt ?? null;
+    const endAt = returnShuttle?.departureAt ?? startAt;
+
+    additions.push({
+      order: Number(returnShuttle?.sequence ?? 0) - 0.5,
+      type: "RENTAL_CAR",
+      placeId: null,
+      referenceId: selectedRental?.id ?? null,
+      name: returnName,
+      category: "RENTAL_RETURN",
+      latitude: selectedRental?.latitude ?? returnShuttle?.departureLatitude ?? null,
+      longitude: selectedRental?.longitude ?? returnShuttle?.departureLongitude ?? null,
+      startAt,
+      endAt,
+      stayMinutes: routeDurationMinutes(startAt, endAt),
+      transportModeFromPrevious: previousSegment?.mode ?? "RENTAL_CAR",
+      reason: [
+        selectedRental?.car,
+        "렌터카를 반납하고 공항 셔틀로 이동합니다.",
+      ]
+        .filter(Boolean)
+        .join(" · "),
+      isLocked: true,
+    });
+  }
+
+  // 구형 응답처럼 transportSegments가 plan payload에 없더라도 첫날 공항 도착과
+  // 선택한 렌터카 정보가 있으면 최소한 인수 카드는 보여준다. 실제 segment가
+  // 있는 경우에는 위의 실제 arrivalAt이 항상 우선한다.
+  if (!additions.length) {
+    const arrivalAirport = source.find((event) => {
+      const type = String(event?.type || "").toUpperCase();
+      const category = String(event?.category || "").toUpperCase();
+      return type === "AIRPORT" && category === "ARRIVAL_AIRPORT";
+    });
+
+    const shuttleMinutes = Number(selectedRental?.estimatedShuttleMinutes);
+    if (arrivalAirport?.startAt && Number.isFinite(shuttleMinutes) && shuttleMinutes >= 0) {
+      const startAt = addMinutesToLocalDateTime(arrivalAirport.startAt, shuttleMinutes);
+      additions.push({
+        order: Number(arrivalAirport?.order ?? 0) + 0.5,
+        type: "RENTAL_CAR",
+        placeId: null,
+        referenceId: selectedRental?.id ?? null,
+        name: rentalName,
+        category: "RENTAL_PICKUP",
+        latitude: selectedRental?.latitude ?? null,
+        longitude: selectedRental?.longitude ?? null,
+        startAt,
+        endAt: startAt,
+        stayMinutes: 0,
+        transportModeFromPrevious: "SHUTTLE",
+        reason: [
+          selectedRental?.car,
+          "렌터카를 인수하고 현지 이동을 시작합니다.",
+        ]
+          .filter(Boolean)
+          .join(" · "),
+        isLocked: true,
+      });
+    }
+  }
+
+  return [...source, ...additions]
+    .map((event, index) => ({ event, index }))
+    .sort((a, b) => {
+      const aMillis = routeDateTimeMillis(a.event?.startAt ?? a.event?.startTime);
+      const bMillis = routeDateTimeMillis(b.event?.startAt ?? b.event?.startTime);
+
+      if (aMillis != null && bMillis != null && aMillis !== bMillis) {
+        return aMillis - bMillis;
+      }
+
+      if (aMillis != null && bMillis == null) return -1;
+      if (aMillis == null && bMillis != null) return 1;
+
+      const aOrder = Number(a.event?.order ?? a.index);
+      const bOrder = Number(b.event?.order ?? b.index);
+      return aOrder - bOrder;
+    })
+    .map(({ event }) => event);
+}
+
+
+function findAirSegmentForFlight(day, flightEvent) {
+  const flightStart = flightEvent?.startAt ?? flightEvent?.startTime ?? null;
+  const flightEnd = flightEvent?.endAt ?? flightEvent?.endTime ?? null;
+
+  const airSegments = daySourceSegments(day).filter(
+    (segment) => String(segment?.mode || "").toUpperCase() === "AIR",
+  );
+
+  return (
+    airSegments.find(
+      (segment) =>
+        (!flightStart || segment?.departureAt === flightStart) &&
+        (!flightEnd || segment?.arrivalAt === flightEnd),
+    ) || airSegments[0] || null
+  );
+}
+
+
+/**
+ * 화면에서는 항공편을 독립 카드로 노출하지 않는다.
+ *
+ * - 가는 편: 출발 공항 카드 안에 항공편명을 넣는다.
+ * - 오는 편: 도착 공항 카드 안에 항공편명을 넣는다.
+ *   현재 백엔드가 오는 편 도착 공항 item을 별도로 주지 않아도
+ *   AIR TransportSegment의 arrival 정보를 이용해 화면용 공항 item을 만든다.
+ *
+ * TransportSegment의 AIR 데이터 자체는 그대로 유지되므로
+ * 지도/비용/이동시간 계산에는 영향이 없다.
+ */
+
+function routeDateTimeMillis(value) {
+  if (!value) {
+    return null;
+  }
+
+  const millis = new Date(value).getTime();
+  return Number.isFinite(millis) ? millis : null;
+}
+
+
+function laterRouteDateTime(...values) {
+  let selected = null;
+  let selectedMillis = null;
+
+  values.forEach((value) => {
+    const millis = routeDateTimeMillis(value);
+
+    if (millis == null) {
+      return;
+    }
+
+    if (selectedMillis == null || millis > selectedMillis) {
+      selected = value;
+      selectedMillis = millis;
+    }
+  });
+
+  return selected;
+}
+
+
+function normalizeRoutePlaceName(value) {
+  return String(value || "")
+    .replace(/\s+/g, "")
+    .replace(/[()（）]/g, "")
+    .toLowerCase();
+}
+
+
+function addMinutesToLocalDateTime(value, minutes) {
+  const match = String(value || "").match(
+    /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})(?::(\d{2}))?/,
+  );
+
+  if (!match || !Number.isFinite(Number(minutes))) {
+    return value ?? null;
+  }
+
+  const [, year, month, day, hour, minute, second = "00"] = match;
+  const millis = Date.UTC(
+    Number(year),
+    Number(month) - 1,
+    Number(day),
+    Number(hour),
+    Number(minute),
+    Number(second),
+  ) + Number(minutes) * 60000;
+
+  const date = new Date(millis);
+  const pad = (number) => String(number).padStart(2, "0");
+
+  return (
+    `${date.getUTCFullYear()}-${pad(date.getUTCMonth() + 1)}-${pad(date.getUTCDate())}` +
+    `T${pad(date.getUTCHours())}:${pad(date.getUTCMinutes())}:${pad(date.getUTCSeconds())}`
+  );
+}
+
+
+function displayEventStayMinutes(event) {
+  const raw =
+    event?.stayMinutes ??
+    event?.durationMinutes ??
+    (
+      event?.durationSeconds == null
+        ? null
+        : Number(event.durationSeconds) / 60
+    );
+
+  if (raw != null && Number.isFinite(Number(raw))) {
+    return Math.max(0, Number(raw));
+  }
+
+  return null;
+}
+
+
+/**
+ * AI가 만든 item 시각과 실제 Routing 시각이 충돌할 수 있다.
+ * 예: 제주공항 도착 08:40인데 첫 관광지도 08:40으로 남아 있는 경우.
+ *
+ * 화면용 일정에서는 각 장소로 들어오는 TransportSegment.arrivalAt을
+ * 최소 시작시각으로 사용해, 공항/항공/렌터카 이동시간을 무시한 카드 겹침을 막는다.
+ * 백엔드 원본 데이터는 변경하지 않는다.
+ */
+function alignDisplayEventsToRoute(events, day) {
+  const source = Array.isArray(events) ? events : [];
+  const segments = (
+    Array.isArray(day?.transportSegments)
+      ? day.transportSegments
+      : Array.isArray(day?.segments)
+        ? day.segments
+        : []
+  )
+    .slice()
+    .sort(
+      (a, b) =>
+        Number(a?.sequence ?? 0) -
+        Number(b?.sequence ?? 0),
+    );
+
+  let segmentCursor = 0;
+  let previousLogicalEndAt = null;
+
+  return source.map((event) => {
+    const type = String(event?.type || "").toUpperCase();
+    const category = String(event?.category || "").toUpperCase();
+    const isArrivalAirport = category.includes("ARRIVAL_AIRPORT");
+    const isReturnArrivalAirport = category.includes("RETURN_ARRIVAL_AIRPORT");
+    const hasFlight = Boolean(event?.uiFlight?.label || event?.flightLabel);
+
+    let routeArrivalAt = null;
+
+    // 실제 방문 장소는 해당 장소로 들어오는 routing segment를 찾는다.
+    // 가는 편 도착공항은 AIR segment의 arrivalAt 자체가 기준이므로 제외하지만,
+    // 마지막 날 RETURN_DEPARTURE_AIRPORT는 렌터카/셔틀 segment의 실제 도착시각을
+    // 사용해야 한다.
+    const isFixedDayAnchor =
+      type === "ACCOMMODATION" &&
+      (category === "DAY_START" || category === "CHECK_OUT");
+
+    if (
+      type !== "FLIGHT" &&
+      type !== "DEPARTURE" &&
+      !isArrivalAirport &&
+      !isFixedDayAnchor
+    ) {
+      const targetName = normalizeRoutePlaceName(event?.name);
+
+      for (let index = segmentCursor; index < segments.length; index += 1) {
+        const segment = segments[index];
+        const arrivalName = normalizeRoutePlaceName(segment?.arrivalName);
+
+        if (targetName && arrivalName === targetName) {
+          routeArrivalAt = segment?.arrivalAt ?? null;
+          segmentCursor = index + 1;
+          break;
+        }
+      }
+    }
+
+    let startAt =
+      event?.startAt ??
+      event?.startTime ??
+      null;
+
+    if (hasFlight && isReturnArrivalAirport && event?.uiFlight?.arrivalAt) {
+      startAt = event.uiFlight.arrivalAt;
+    } else if (hasFlight && event?.uiFlight?.departureAt) {
+      startAt = event.uiFlight.departureAt;
+    } else if (isArrivalAirport && event?.startAt) {
+      startAt = event.startAt;
+    } else {
+      startAt = laterRouteDateTime(
+        startAt,
+        routeArrivalAt,
+        previousLogicalEndAt,
+      ) ?? startAt;
+    }
+
+    let logicalEndAt = null;
+
+    // 출발공항 카드는 시간표에서 비행시간 전체를 차지한다.
+    if (hasFlight && event?.uiFlight?.arrivalAt) {
+      logicalEndAt = event.uiFlight.arrivalAt;
+    } else if (isArrivalAirport) {
+      // 도착공항은 '도착 시각'을 나타내는 milestone이라 체류시간을 만들지 않는다.
+      logicalEndAt = startAt;
+    } else {
+      const explicitEndAt = event?.endAt ?? event?.endTime ?? null;
+      const explicitEndMillis = routeDateTimeMillis(explicitEndAt);
+      const startMillis = routeDateTimeMillis(startAt);
+
+      if (
+        startMillis != null &&
+        explicitEndMillis != null &&
+        explicitEndMillis >= startMillis
+      ) {
+        logicalEndAt = explicitEndAt;
+      } else {
+        const stayMinutes = displayEventStayMinutes(event);
+
+        if (startMillis != null && stayMinutes != null) {
+          logicalEndAt = addMinutesToLocalDateTime(
+            startAt,
+            stayMinutes,
+          );
+        }
+      }
+    }
+
+    if (
+      logicalEndAt &&
+      (
+        previousLogicalEndAt == null ||
+        routeDateTimeMillis(logicalEndAt) > routeDateTimeMillis(previousLogicalEndAt)
+      )
+    ) {
+      previousLogicalEndAt = logicalEndAt;
+    }
+
+    return {
+      ...event,
+      startAt,
+      // 화면 정렬에 필요한 경우에만 endAt을 보정한다.
+      endAt:
+        isArrivalAirport
+          ? startAt
+          : logicalEndAt ?? event?.endAt ?? null,
+    };
+  });
+}
+
+
+function mergeFlightCardsForDisplay(events, day) {
+  const source = Array.isArray(events) ? events : [];
+  const result = [];
+
+  for (let index = 0; index < source.length; index += 1) {
+    const event = source[index];
+
+    if (String(event?.type || "").toUpperCase() !== "FLIGHT") {
+      result.push(event);
+      continue;
+    }
+
+    const previous = result[result.length - 1] ?? null;
+    const next = source[index + 1] ?? null;
+    const airSegment = findAirSegmentForFlight(day, event);
+    const flight = flightDisplayMeta(event, airSegment);
+    const previousCategory = String(previous?.category || "").toUpperCase();
+
+    // 가는 편: 김포국제공항 같은 출발 공항 카드에 항공편 정보를 합친다.
+    if (
+      String(previous?.type || "").toUpperCase() === "AIRPORT" &&
+      previousCategory === "DEPARTURE_AIRPORT"
+    ) {
+      result[result.length - 1] = {
+        ...previous,
+        // 출발 공항 자체도 실제 선택 항공편 출발 시각을 기준으로 맞춘다.
+        startAt: flight.departureAt ?? previous?.startAt ?? null,
+        endAt: previous?.endAt ?? flight.departureAt ?? null,
+        uiFlight: flight,
+      };
+
+      /*
+       * 바로 뒤의 제주국제공항 같은 도착 공항 item은 기존 AI item의 시간이 아니라
+       * AIR segment의 실제 arrivalAt을 사용한다. 기존 item을 다음 반복에서 다시
+       * 처리하지 않도록 여기서 같이 push하고 index를 넘긴다.
+       */
+      if (String(next?.type || "").toUpperCase() === "AIRPORT") {
+        result.push({
+          ...next,
+          startAt: flight.arrivalAt ?? next?.startAt ?? null,
+          endAt: flight.arrivalAt ?? next?.endAt ?? null,
+          stayMinutes: 0,
+          durationMinutes: 0,
+          durationSeconds: null,
+          transportModeFromPrevious: "AIR",
+        });
+        index += 1;
+      }
+
+      continue;
+    }
+
+    // 백엔드가 향후 오는 편 도착 공항 item을 제공하면 그 카드에 바로 합친다.
+    if (String(next?.type || "").toUpperCase() === "AIRPORT") {
+      result.push({
+        ...next,
+        uiFlight: flight,
+      });
+      index += 1;
+      continue;
+    }
+
+    // 현재 응답처럼 오는 편 FLIGHT 뒤에 도착 공항 item이 없으면
+    // AIR segment의 arrivalName/좌표를 이용해 화면용 김포공항 카드를 만든다.
+    result.push({
+      ...event,
+      type: "AIRPORT",
+      referenceId: event?.referenceId ?? airSegment?.id ?? null,
+      name: airSegment?.arrivalName || "도착 공항",
+      category: "RETURN_ARRIVAL_AIRPORT",
+      latitude: airSegment?.arrivalLatitude ?? null,
+      longitude: airSegment?.arrivalLongitude ?? null,
+      // 도착 공항 카드는 AIR TransportSegment의 실제 도착 시각에만 배치한다.
+      // FLIGHT item의 체류시간/AI 일정시간을 그대로 물려받으면 시간표에서 90분짜리
+      // 공항 카드가 생기므로 명시적으로 0분 처리한다.
+      startAt: flight.arrivalAt ?? event?.endAt ?? event?.endTime ?? null,
+      endAt: flight.arrivalAt ?? event?.endAt ?? event?.endTime ?? null,
+      stayMinutes: 0,
+      durationMinutes: 0,
+      durationSeconds: null,
+      travelMinutes: null,
+      transportModeFromPrevious: "AIR",
+      reason: "오는 편 항공편으로 도착 공항까지 이동합니다.",
+      isLocked: true,
+      uiFlight: flight,
+    });
+  }
+
+  return result;
+}
+
+
+function finiteRouteNumber(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  const parsed = Number(value);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+
+function normalizeRoutePoint(point) {
+  if (!point || typeof point !== "object") {
+    return null;
+  }
+
+  const latitude = finiteRouteNumber(
+    point.latitude ?? point.lat ?? point.y,
+  );
+
+  const longitude = finiteRouteNumber(
+    point.longitude ?? point.lng ?? point.lon ?? point.x,
+  );
+
+  if (latitude == null || longitude == null) {
+    return null;
+  }
+
+  return {
+    latitude,
+    longitude,
+  };
+}
+
+
+function normalizeTransportSegment(segment, segmentIndex) {
+  if (!segment || typeof segment !== "object") {
+    return null;
+  }
+
+  const path = Array.isArray(segment.path)
+    ? segment.path
+        .map(normalizeRoutePoint)
+        .filter(Boolean)
+    : [];
+
+  return {
+    id:
+      segment.id ??
+      `segment-${segmentIndex + 1}`,
+
+    sequence:
+      finiteRouteNumber(segment.sequence) ??
+      segmentIndex + 1,
+
+    mode:
+      segment.mode ??
+      null,
+
+    departureName:
+      segment.departureName ??
+      "",
+
+    arrivalName:
+      segment.arrivalName ??
+      "",
+
+    departureLatitude:
+      finiteRouteNumber(
+        segment.departureLatitude,
+      ),
+
+    departureLongitude:
+      finiteRouteNumber(
+        segment.departureLongitude,
+      ),
+
+    arrivalLatitude:
+      finiteRouteNumber(
+        segment.arrivalLatitude,
+      ),
+
+    arrivalLongitude:
+      finiteRouteNumber(
+        segment.arrivalLongitude,
+      ),
+
+    departureAt:
+      segment.departureAt ??
+      null,
+
+    arrivalAt:
+      segment.arrivalAt ??
+      null,
+
+    distanceKm:
+      finiteRouteNumber(
+        segment.distanceKm,
+      ),
+
+    durationMinutes:
+      finiteRouteNumber(
+        segment.durationMinutes,
+      ),
+
+    cost:
+      finiteRouteNumber(
+        segment.cost,
+      ),
+
+    routeProvider:
+      segment.routeProvider ??
+      null,
+
+    path,
+  };
+}
+
+
+function normalizeDayRoute(day, dayIndex) {
+  const sourceSegments =
+    Array.isArray(day?.transportSegments)
+      ? day.transportSegments
+      : Array.isArray(day?.segments)
+        ? day.segments
+        : [];
+
+  const segments = sourceSegments
+    .map(normalizeTransportSegment)
+    .filter(Boolean)
+    .sort((a, b) => a.sequence - b.sequence);
+
+  if (!segments.length) {
+    return null;
+  }
+
+  const providers = [
+    ...new Set(
+      segments
+        .map((segment) => segment.routeProvider)
+        .filter(Boolean),
+    ),
+  ];
+
+  return {
+    dayIndex,
+    dayNumber:
+      day?.dayNumber ??
+      dayIndex + 1,
+    date:
+      day?.date ??
+      null,
+    provider:
+      providers.length === 1
+        ? providers[0]
+        : providers.includes("KAKAO_MOBILITY")
+          ? "KAKAO_MOBILITY"
+          : providers[0] ?? null,
+    providers,
+    segments,
+  };
 }
 
 
@@ -611,7 +1417,7 @@ export function normalizeTripPlanResponse(
         }
 
 
-        const events =
+        const sourceEvents =
           Array.isArray(
             day?.items,
           )
@@ -621,6 +1427,31 @@ export function normalizeTripPlanResponse(
                 )
               ? day.events
               : [];
+
+        // 렌터카 업체도 일정 카드로 다시 노출한다.
+        // SHUTTLE / RENTAL_CAR TransportSegment는 기존대로 경로 계산에 사용하고,
+        // sourceEvents에 존재하는 렌터카 업체 item은 시간표/상세 일정에도 표시한다.
+        const displayEvents =
+          sourceEvents;
+
+        const mergedEvents =
+          mergeFlightCardsForDisplay(
+            displayEvents,
+            day,
+          );
+
+        const eventsWithRental =
+          insertRentalTransferCards(
+            mergedEvents,
+            day,
+            root?.selectedRental ?? null,
+          );
+
+        const events =
+          alignDisplayEventsToRoute(
+            eventsWithRental,
+            day,
+          );
 
 
         const dayNumber =
@@ -744,19 +1575,29 @@ export function normalizeTripPlanResponse(
 
 
     /*
-     * 아직 backend TripPlan 응답에 없음.
+     * backend days[].transportSegments를
+     * 지도 UI용 routeResults로 변환한다.
      *
-     * 빈 값으로 두면 기존 UI fallback을 사용.
+     * 별도 길찾기 API를 프론트에서 다시 호출하지 않고
+     * Plan 생성 시 백엔드가 계산한 Kakao Mobility path를 그대로 사용한다.
      */
     routes:
-      [],
+      sourceDays
+        .map(
+          (day, dayIndex) =>
+            normalizeDayRoute(
+              day,
+              dayIndex,
+            ),
+        )
+        .filter(Boolean),
 
     costEstimate:
       null,
 
 
     source:
-      "trip-plan-v1",
+      "trip-plan",
   };
 }
 

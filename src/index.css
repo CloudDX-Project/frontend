@@ -3338,3 +3338,786 @@ main:has(.plan-fullscreen) > .scroll-to-top{display:none}
     font-size: 10.5px;
   }
 }
+/* Kakao Maps 기반 실제 주행 경로 */
+.kakao-route-canvas-wrap{position:relative;width:100%;height:100%;min-height:inherit;background:#eaf2ee}.kakao-route-canvas{width:100%;height:348px;min-height:348px;background:linear-gradient(135deg,#e8f2ee,#dfece7)}.kakao-map-state{position:absolute;inset:0;z-index:6;display:grid;place-content:center;gap:6px;padding:24px;background:rgba(241,248,245,.92);color:#496f69;font-size:10px;font-weight:800;text-align:center}.kakao-map-state.is-error{background:rgba(255,249,246,.94);color:#8b513d}.kakao-map-state b{color:#6f3e2f;font-size:12px}.kakao-map-state span{max-width:280px;font-size:9px;font-weight:700;line-height:1.5}.kakao-route-marker{position:relative;display:grid;width:28px;height:34px;place-items:start center;filter:drop-shadow(0 4px 7px rgba(14,69,63,.22));transform:translateY(-2px)}.kakao-route-marker::after{position:absolute;bottom:1px;left:50%;width:9px;height:9px;border-radius:2px;background:#0b766d;content:"";transform:translateX(-50%) rotate(45deg)}.kakao-route-marker-number{position:relative;z-index:2;display:grid;width:26px;height:26px;place-items:center;border:2px solid #fff;border-radius:50%;background:#0b766d;color:#fff;font:900 9px 'DM Mono',monospace}.kakao-route-marker-label{position:absolute;z-index:3;bottom:35px;left:50%;max-width:180px;padding:6px 8px;border:1px solid rgba(190,219,208,.95);border-radius:7px;background:rgba(255,255,255,.96);box-shadow:0 5px 14px rgba(14,69,63,.12);color:#245b56;font-size:9px;font-weight:800;line-height:1.25;opacity:0;pointer-events:none;transform:translate(-50%,4px);transition:.15s ease;white-space:nowrap}.kakao-route-marker:hover .kakao-route-marker-label{opacity:1;transform:translate(-50%,0)}.route-stop-list em{padding:2px 3px;color:#6d8882;font-size:8px;font-style:normal;font-weight:800}.route-map-status{position:absolute;z-index:3;top:12px;right:12px;display:flex;align-items:center;gap:5px;max-width:calc(100% - 116px);padding:7px 9px;border:1px solid rgba(255,255,255,.9);border-radius:7px;background:rgba(255,255,255,.93);box-shadow:0 2px 9px rgba(17,72,65,.12);color:#54756f;backdrop-filter:blur(6px)}.route-map-status strong{color:#0b766d;font:850 8px 'DM Mono',monospace;white-space:nowrap}.route-map-status span{font:800 8px 'DM Mono',monospace;white-space:nowrap}.route-map-status small{color:#b6633e;font-size:8px;font-weight:800;white-space:nowrap}.route-map-context{position:absolute;z-index:2;left:12px;bottom:11px;max-width:54%;padding:6px 8px;border-radius:6px;background:rgba(255,255,255,.88);color:#67827c!important;font-size:8px!important;font-weight:700;line-height:1.35;pointer-events:none}.route-map-frame>.map-expand-trigger{z-index:4}.mobile-expanded-map-canvas>.kakao-route-canvas-wrap,.mobile-expanded-map-canvas .kakao-route-canvas{width:100%;height:100%;min-height:100%}.mobile-expanded-map-canvas .map-zoom-controls{z-index:8}.mobile-map-stop-sheet>a{display:block;margin-top:9px;color:#13736a;font-size:9px;font-weight:850;text-decoration:none}
+@media (max-width:1220px){.kakao-route-canvas{height:300px;min-height:300px}}
+@media (max-width:1020px){.kakao-route-canvas{height:390px;min-height:390px}}
+@media (max-width:700px){.kakao-route-canvas{height:300px;min-height:300px}.route-map-status{max-width:calc(100% - 96px);padding:6px 7px}.route-map-status small{display:none}}
+.plan-fullscreen.mobile-preview .mobile-inline-route .kakao-route-canvas{height:120px;min-height:120px}.plan-fullscreen.mobile-preview .mobile-inline-route .route-map-status,.plan-fullscreen.mobile-preview .mobile-inline-route .route-map-context{display:none}.plan-fullscreen.mobile-preview .mobile-expanded-map-canvas>.kakao-route-canvas-wrap,.plan-fullscreen.mobile-preview .mobile-expanded-map-canvas .kakao-route-canvas{height:100%;min-height:100%}
+
+/* Kakao route segment interaction */
+.kakao-route-marker{appearance:none;padding:0;border:0;background:transparent;cursor:pointer;--route-marker-color:#0b766d}
+.kakao-route-marker::after{background:var(--route-marker-color)}
+.kakao-route-marker-number{background:var(--route-marker-color)}
+.kakao-route-marker:focus-visible{outline:2px solid #173e3b;outline-offset:3px;border-radius:50%}
+.route-stop-list{pointer-events:auto}
+.route-stop-list button{display:flex;width:100%;align-items:center;gap:5px;padding:1px 2px;border:0;border-radius:5px;background:transparent;color:#245b56;font:700 9px/1.25 inherit;text-align:left;cursor:pointer;transition:background .15s ease,transform .15s ease}
+.route-stop-list button:hover,.route-stop-list button.is-active{background:rgba(224,240,234,.95);transform:translateX(1px)}
+.route-stop-list button i{display:grid;width:15px;height:15px;flex:0 0 auto;place-items:center;border-radius:50%;color:#fff;font:800 8px 'DM Mono',monospace;font-style:normal}
+.route-map-status{flex-wrap:wrap;justify-content:flex-end;max-width:min(74%,520px)}
+.route-map-status strong{max-width:240px;overflow:hidden;text-overflow:ellipsis}
+.route-map-status.is-segment{border-color:rgba(200,220,214,.98);box-shadow:0 4px 14px rgba(17,72,65,.16)}
+.route-status-reset{padding:3px 6px;border:1px solid #c9ddd7;border-radius:5px;background:#f4faf7;color:#4a706a;font-size:8px;font-weight:850;cursor:pointer}
+.route-status-reset:hover{background:#eaf5f1;color:#1f645d}
+.mobile-map-stop-sheet button{display:grid;width:100%;grid-template-columns:24px minmax(0,1fr) auto;align-items:center;gap:7px;margin-top:5px;padding:7px 8px;border:1px solid transparent;border-radius:7px;background:transparent;color:#315f5a;text-align:left;cursor:pointer}
+.mobile-map-stop-sheet button:hover,.mobile-map-stop-sheet button.is-active{border-color:#c7ded6;background:#eef7f3}
+.mobile-map-stop-sheet button i{display:grid;width:20px;height:20px;place-items:center;border-radius:50%;color:#fff;font:800 8px 'DM Mono',monospace;font-style:normal}
+.mobile-map-stop-sheet button span{overflow:hidden;font-size:9px;font-weight:800;white-space:nowrap;text-overflow:ellipsis}
+.mobile-map-stop-sheet button small{color:#66857e;font:800 8px 'DM Mono',monospace}
+@media (max-width:700px){.route-map-status{max-width:calc(100% - 88px)}.route-map-status strong{max-width:150px}.route-status-reset{display:none}}
+
+
+/* Route map overlay cleanup: keep the actual route visible first. */
+.route-map-frame {
+  isolation: isolate;
+}
+
+.route-map-top-left {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  max-width: calc(100% - 210px);
+}
+
+.route-map-top-left > b {
+  display: inline-flex;
+  align-items: center;
+  min-height: 29px;
+  padding: 7px 9px;
+  border: 1px solid rgba(255,255,255,.88);
+  border-radius: 7px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 2px 9px rgba(17,72,65,.12);
+  color: #0b766d;
+  font: 800 9px 'DM Mono', monospace;
+  white-space: nowrap;
+  pointer-events: none;
+  backdrop-filter: blur(6px);
+}
+
+.route-map-frame > b {
+  display: none;
+}
+
+.route-stop-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 29px;
+  padding: 6px 8px;
+  border: 1px solid rgba(190,219,208,.96);
+  border-radius: 7px;
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 2px 9px rgba(17,72,65,.11);
+  color: #316b65;
+  font-size: 8px;
+  font-weight: 850;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.route-stop-toggle:hover,
+.route-stop-toggle.is-open {
+  border-color: #8fc7bb;
+  background: #edf8f4;
+  color: #0b766d;
+}
+
+.route-stop-list {
+  z-index: 6;
+  right: auto;
+  bottom: auto;
+  top: 51px;
+  left: 12px;
+  width: min(286px, calc(100% - 24px));
+  max-width: min(286px, calc(100% - 24px));
+  max-height: calc(100% - 66px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 9px;
+  border-color: rgba(190,219,208,.92);
+  background: rgba(255,255,255,.96);
+  box-shadow: 0 10px 26px rgba(13,72,65,.18);
+  backdrop-filter: blur(9px);
+}
+
+.route-stop-list button {
+  min-height: 26px;
+  padding: 4px 5px;
+}
+
+.route-stop-list button + button {
+  margin-top: 2px;
+}
+
+.route-map-status {
+  z-index: 5;
+}
+
+.route-map-context-outside {
+  position: static;
+  z-index: auto;
+  display: block;
+  max-width: 100%;
+  margin-top: 1px;
+  padding: 0 2px;
+  border-radius: 0;
+  background: transparent;
+  color: #7e9790 !important;
+  font-size: 8px !important;
+  font-weight: 700;
+  line-height: 1.45;
+  pointer-events: none;
+}
+
+@media (max-width: 700px) {
+  .route-map-top-left {
+    top: 10px;
+    left: 10px;
+    max-width: calc(100% - 104px);
+  }
+
+  .route-map-top-left > b {
+    display: none;
+  }
+
+  .route-stop-toggle {
+    min-height: 28px;
+    padding: 6px 8px;
+  }
+
+  .route-stop-list {
+    top: 45px;
+    left: 10px;
+    width: min(260px, calc(100% - 20px));
+    max-width: min(260px, calc(100% - 20px));
+    max-height: calc(100% - 58px);
+  }
+}
+
+.plan-fullscreen.mobile-preview .mobile-inline-route .route-map-context-outside {
+  display: none;
+}
+
+/* Route map information below the map: keep marker/path visibility unobstructed. */
+.route-map-frame > .route-map-top-left,
+.route-map-frame > .route-map-status,
+.route-map-frame > .route-stop-list {
+  display: none !important;
+}
+
+.route-map-below-panel {
+  display: grid;
+  gap: 9px;
+  margin-top: 8px;
+}
+
+.route-map-below-panel .route-map-context-outside {
+  margin: 0;
+  padding: 0 2px;
+}
+
+.route-map-status.route-map-status-outside {
+  position: static;
+  z-index: auto;
+  width: 100%;
+  max-width: none;
+  min-height: 38px;
+  justify-content: flex-start;
+  gap: 7px;
+  padding: 9px 11px;
+  border: 1px solid #d5e6df;
+  border-radius: 9px;
+  background: #f8fcfa;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.route-map-status.route-map-status-outside strong {
+  max-width: min(360px, 58%);
+  color: #0b766d;
+  overflow: hidden;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-map-status.route-map-status-outside span {
+  color: #4f706a;
+  font-size: 9px;
+}
+
+.route-map-status.route-map-status-outside small {
+  margin-left: auto;
+}
+
+.route-stop-section {
+  display: grid;
+  gap: 7px;
+  padding: 10px 11px 11px;
+  border: 1px solid #d5e6df;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.route-stop-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.route-stop-section-head b {
+  color: #245f5a;
+  font-size: 10px;
+}
+
+.route-stop-section-head span {
+  color: #7b948e;
+  font: 800 8px 'DM Mono', monospace;
+}
+
+.route-stop-list.route-stop-list-outside {
+  position: static;
+  z-index: auto;
+  display: grid;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px 7px;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.route-stop-list.route-stop-list-outside button {
+  display: grid;
+  min-height: 31px;
+  grid-template-columns: 18px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 7px;
+  border: 1px solid #e2ede8;
+  border-radius: 7px;
+  background: #fbfdfc;
+  transform: none;
+}
+
+.route-stop-list.route-stop-list-outside button:hover,
+.route-stop-list.route-stop-list-outside button.is-active {
+  border-color: #b8d8ce;
+  background: #eef8f4;
+  transform: none;
+}
+
+.route-stop-list.route-stop-list-outside button i {
+  width: 18px;
+  height: 18px;
+  font-size: 8px;
+}
+
+.route-stop-list.route-stop-list-outside button span {
+  min-width: 0;
+  overflow: hidden;
+  color: #315f5a;
+  font-size: 9px;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-stop-list.route-stop-list-outside button em {
+  padding: 0;
+  color: #78918a;
+  font: 800 8px 'DM Mono', monospace;
+  white-space: nowrap;
+}
+
+.route-stop-more {
+  grid-column: 1 / -1;
+  padding: 3px 2px !important;
+  color: #78918a !important;
+}
+
+@media (max-width: 700px) {
+  .route-map-status.route-map-status-outside {
+    max-width: none;
+    min-height: 36px;
+    padding: 8px 9px;
+  }
+
+  .route-map-status.route-map-status-outside strong {
+    max-width: 100%;
+    flex: 1 1 100%;
+  }
+
+  .route-map-status.route-map-status-outside small {
+    margin-left: 0;
+  }
+
+  .route-stop-list.route-stop-list-outside {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Keep the tiny phone preview compact; full-screen mobile map still has its own stop sheet. */
+.plan-fullscreen.mobile-preview .mobile-inline-route .route-map-below-panel {
+  display: none;
+}
+
+/* Route map bottom information layout: keep the map itself clean and make labels readable. */
+.route-map-context.route-map-context-outside {
+  margin-top: 9px;
+  padding: 0 2px;
+  color: #617d76 !important;
+  font-size: 11px !important;
+  font-weight: 750;
+  line-height: 1.5;
+}
+
+.route-map-below-panel {
+  display: grid;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.route-map-status.route-map-status-outside {
+  position: static;
+  width: 100%;
+  max-width: none;
+  min-height: 44px;
+  justify-content: flex-start;
+  gap: 8px;
+  padding: 10px 12px;
+  border: 1px solid #d5e6df;
+  border-radius: 10px;
+  background: #f8fcfa;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.route-map-status.route-map-status-outside strong {
+  max-width: min(420px, 62%);
+  overflow: hidden;
+  color: #0b766d;
+  font-size: 11px;
+  font-weight: 850;
+  line-height: 1.35;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.route-map-status.route-map-status-outside span {
+  color: #476b64;
+  font-size: 10.5px;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.route-map-status.route-map-status-outside small {
+  margin-left: auto;
+  color: #b6633e;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.route-map-status.route-map-status-outside .route-status-reset {
+  flex: 0 0 auto;
+  min-height: 28px;
+  padding: 5px 9px;
+  font-size: 10px;
+}
+
+.route-stop-section {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid #d5e6df;
+  border-radius: 11px;
+  background: #fff;
+}
+
+.route-stop-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.route-stop-section-head b {
+  color: #245f5a;
+  font-size: 12.5px;
+  font-weight: 850;
+}
+
+.route-stop-section-head span {
+  color: #76908a;
+  font: 800 10px 'DM Mono', monospace;
+}
+
+.route-stop-list.route-stop-list-outside {
+  position: static;
+  display: grid;
+  width: 100%;
+  max-width: none;
+  max-height: none;
+  grid-template-columns: 1fr;
+  gap: 7px;
+  overflow: visible;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.route-stop-list.route-stop-list-outside button {
+  display: grid;
+  width: 100%;
+  min-height: 40px;
+  grid-template-columns: 24px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 9px;
+  padding: 8px 10px;
+  border: 1px solid #e1ece7;
+  border-radius: 9px;
+  background: #fbfdfc;
+  text-align: left;
+  transform: none;
+}
+
+.route-stop-list.route-stop-list-outside button:hover,
+.route-stop-list.route-stop-list-outside button.is-active {
+  border-color: #afd4c9;
+  background: #eef8f4;
+  transform: none;
+}
+
+.route-stop-list.route-stop-list-outside button i {
+  display: grid;
+  width: 24px;
+  height: 24px;
+  place-items: center;
+  border-radius: 50%;
+  color: #fff;
+  font: 850 10px 'DM Mono', monospace;
+  font-style: normal;
+}
+
+.route-stop-list.route-stop-list-outside button span {
+  min-width: 0;
+  color: #294f4b;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+}
+
+.route-stop-list.route-stop-list-outside button em {
+  padding: 0;
+  color: #718b85;
+  font: 800 10px 'DM Mono', monospace;
+  font-style: normal;
+  white-space: nowrap;
+}
+
+@media (max-width: 700px) {
+  .route-map-context.route-map-context-outside {
+    font-size: 10.5px !important;
+  }
+
+  .route-map-status.route-map-status-outside {
+    min-height: 42px;
+    padding: 9px 10px;
+  }
+
+  .route-map-status.route-map-status-outside strong {
+    max-width: 100%;
+    flex: 1 1 100%;
+    font-size: 10.5px;
+    white-space: normal;
+  }
+
+  .route-map-status.route-map-status-outside span {
+    font-size: 10px;
+  }
+
+  .route-map-status.route-map-status-outside small {
+    margin-left: 0;
+  }
+
+  .route-stop-section {
+    padding: 10px;
+  }
+
+  .route-stop-section-head b {
+    font-size: 12px;
+  }
+
+  .route-stop-list.route-stop-list-outside button {
+    min-height: 39px;
+    padding: 8px 9px;
+  }
+
+  .route-stop-list.route-stop-list-outside button span {
+    font-size: 11.5px;
+  }
+}
+
+/* ===== Budget placement + clearer cost ownership ===== */
+.side-budget-summary{
+  margin-top:18px;
+  border-color:#cfe2db;
+  background:#fff;
+}
+.full-trip-aside .side-budget-summary .full-budget-top{
+  padding:16px 15px 13px;
+}
+.full-trip-aside .side-budget-summary .full-budget-top span{
+  display:block;
+  font-size:9px;
+  line-height:1.45;
+}
+.full-trip-aside .side-budget-summary .full-budget-top h2{
+  margin:6px 0 3px;
+  font-size:22px;
+  letter-spacing:-1.3px;
+}
+.full-trip-aside .side-budget-summary .full-budget-top p{
+  font-size:9px;
+  line-height:1.45;
+}
+.full-trip-aside .side-budget-summary .full-cost-toggle{
+  padding:11px 14px;
+  font-size:10px;
+}
+.full-trip-aside .side-budget-summary .full-cost-groups{
+  display:grid;
+  grid-template-columns:1fr;
+  gap:16px;
+  margin:0 12px;
+  padding:16px 0 18px;
+}
+.full-trip-aside .side-budget-summary .full-cost-groups section{
+  gap:6px;
+  min-width:0;
+}
+.full-trip-aside .side-budget-summary .full-cost-groups h3{
+  margin:0;
+  font-size:11px;
+  line-height:1.35;
+}
+.cost-group-caption{
+  display:block;
+  margin:2px 0 5px;
+  color:#829791;
+  font-size:8px;
+  line-height:1.5;
+}
+.full-trip-aside .side-budget-summary .full-cost-groups p{
+  display:grid;
+  grid-template-columns:minmax(0,1fr);
+  gap:5px;
+  padding:8px 0;
+  border-top:1px solid #edf2f0;
+}
+.full-trip-aside .side-budget-summary .full-cost-groups p>span{
+  gap:2px;
+}
+.full-trip-aside .side-budget-summary .full-cost-groups p>span b{
+  font-size:10px;
+  line-height:1.35;
+}
+.full-trip-aside .side-budget-summary .full-cost-groups p>span small{
+  font-size:8px;
+  line-height:1.45;
+}
+.full-trip-aside .side-budget-summary .full-cost-groups p>strong{
+  justify-self:start;
+  font-size:10px;
+  line-height:1.3;
+}
+.full-trip-aside .side-budget-summary .cost-uncertainty{
+  margin-top:2px;
+  padding:8px;
+  font-size:8px;
+}
+
+/* 오른쪽 컬럼은 경로 지도 중심으로 사용 */
+.full-budget{
+  align-content:start;
+}
+.full-budget>.full-budget-note{
+  margin-top:16px;
+}
+
+/* 경비 탭에서도 각 그룹의 성격을 먼저 읽을 수 있게 */
+.inline-cost-groups .cost-group-caption{
+  margin:-7px 0 9px;
+  font-size:9px;
+}
+
+@media(max-width:1020px){
+  .side-budget-summary{
+    margin-top:14px;
+  }
+}
+
+@media(max-width:700px){
+  .side-budget-summary{
+    margin-top:14px;
+  }
+  .full-trip-aside .side-budget-summary .full-cost-groups{
+    margin:0 14px;
+  }
+}
+
+.plan-fullscreen.mobile-preview .side-budget-summary{
+  display:none;
+}
+
+/* Flight cards are visually folded into their airport cards. */
+.stop-flight-inline{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:5px 9px;
+  width:fit-content;
+  margin-top:7px;
+  padding:6px 9px;
+  border:1px solid #cfe6df;
+  border-radius:8px;
+  background:#f3faf7;
+  color:#176f67;
+}
+.stop-flight-inline>span{
+  font-size:10px;
+  font-weight:850;
+  line-height:1.2;
+}
+.stop-flight-inline>small{
+  color:#6c8982!important;
+  font:750 8px 'DM Mono',monospace!important;
+}
+.timetable-day article .timetable-flight-label{
+  grid-column:2;
+  overflow:hidden;
+  color:#14766e;
+  font-size:8px;
+  font-style:normal;
+  font-weight:850;
+  line-height:1.25;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.plan-fullscreen.mobile-preview .stop-flight-inline{
+  gap:3px 6px;
+  margin-top:4px;
+  padding:4px 6px;
+}
+.plan-fullscreen.mobile-preview .stop-flight-inline>span{
+  font-size:8px;
+}
+.plan-fullscreen.mobile-preview .stop-flight-inline>small{
+  font-size:7px!important;
+}
+.plan-fullscreen.mobile-preview .timetable-day article .timetable-flight-label{
+  font-size:7px;
+}
+
+/* ===== Flight airport timetable cleanup =====
+ * 공항 카드 안에서 공항명 / 항공편명 / 실제 비행시간을 각각 한 줄로 고정한다.
+ * 좁은 DAY 컬럼에서 항공편명과 시간이 붙어 깨져 보이는 현상을 방지한다.
+ */
+.timetable-day article.has-flight{
+  grid-template-rows:auto auto auto;
+  align-content:start;
+  row-gap:2px;
+  min-height:62px;
+}
+.timetable-day article.has-flight>span{
+  grid-column:1;
+  grid-row:1 / span 3;
+  align-self:start;
+}
+.timetable-day article.has-flight>b,
+.timetable-day article.has-flight>.timetable-flight-label,
+.timetable-day article.has-flight>small{
+  grid-column:2;
+  min-width:0;
+}
+.timetable-day article .timetable-flight-label{
+  display:block;
+  overflow:hidden;
+  color:#14766e;
+  font-size:8px;
+  font-style:normal;
+  font-weight:850;
+  line-height:1.25;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.timetable-day article>small{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+.plan-fullscreen.mobile-preview .timetable-day article.has-flight{
+  min-height:58px;
+}
+
+/* ===== Timetable airport-arrival collision fix =====
+ * 도착 공항은 체류 일정이 아니라 시각 milestone으로 한 줄만 사용한다.
+ * 바로 뒤 실제 방문 일정과 겹치지 않도록 매우 얇은 카드로 표시한다.
+ */
+.timetable-day article.is-arrival-airport{
+  min-height:24px!important;
+  padding:3px 6px!important;
+  grid-template-columns:18px minmax(0,1fr) auto!important;
+  grid-template-rows:1fr!important;
+  column-gap:5px!important;
+  row-gap:0!important;
+  align-items:center!important;
+}
+.timetable-day article.is-arrival-airport>span{
+  grid-column:1!important;
+  grid-row:1!important;
+  align-self:center!important;
+  font-size:12px!important;
+  line-height:1!important;
+}
+.timetable-day article.is-arrival-airport>b{
+  grid-column:2!important;
+  grid-row:1!important;
+  font-size:9px!important;
+  line-height:1.1!important;
+}
+.timetable-day article.is-arrival-airport>small{
+  grid-column:3!important;
+  grid-row:1!important;
+  font-size:7px!important;
+  line-height:1!important;
+  white-space:nowrap!important;
+}
+.plan-fullscreen.mobile-preview .timetable-day article.is-arrival-airport{
+  min-height:22px!important;
+  padding:3px 5px!important;
+  grid-template-columns:16px minmax(0,1fr) auto!important;
+}
+.plan-fullscreen.mobile-preview .timetable-day article.is-arrival-airport>b{
+  font-size:8px!important;
+}
+.plan-fullscreen.mobile-preview .timetable-day article.is-arrival-airport>small{
+  font-size:6px!important;
+}

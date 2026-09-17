@@ -1,8 +1,9 @@
-import { apiClient } from "./apiClient";
+import { apiClient } from "./apiClient.js";
 
 export async function searchFlights({
   departure,
   destination,
+  direction,
   startDate,
   startTime = "00:00",
   endDate,
@@ -16,6 +17,7 @@ export async function searchFlights({
     body: {
       departure,
       destination,
+      direction,
       startDate,
       startTime,
       endDate,
@@ -24,7 +26,6 @@ export async function searchFlights({
     },
 
     signal,
-
     timeoutMs: 60000,
   });
 }
