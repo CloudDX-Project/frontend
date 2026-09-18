@@ -1353,6 +1353,178 @@ function normalizeDayRoute(day, dayIndex) {
 }
 
 
+const minutesFromClock = (value, fallback = 9 * 60) => {
+  const match = String(value || "").match(/^(\d{2}):(\d{2})$/);
+  if (!match) return fallback;
+  return Number(match[1]) * 60 + Number(match[2]);
+};
+
+const clockFromMinutes = (value) => {
+  const safe = Math.max(0, Math.min(23 * 60 + 59, Math.round(value)));
+  return `${String(Math.floor(safe / 60)).padStart(2, "0")}:${String(safe % 60).padStart(2, "0")}`;
+};
+
+const durationFromTuple = (event) => {
+  const metadata = event?.[6] || {};
+  const direct = Number(metadata.stayMinutes);
+  if (Number.isFinite(direct) && direct >= 0) return direct;
+  const parsed = Number.parseInt(String(event?.[4] || ""), 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 60;
+};
+
+const isDinnerEvent = (event) => {
+  const metadata = event?.[6] || {};
+  const type = String(metadata.type || "").toUpperCase();
+  const category = String(metadata.category || "").toUpperCase();
+  const name = String(event?.[2] || "");
+  const start = minutesFromClock(event?.[0], -1);
+  return (type === "RESTAURANT" || /DINNER|EVENING_MEAL/.test(category) || /저녁/.test(name))
+    && start >= 17 * 60 + 15
+    && start <= 21 * 60;
+};
+
+const isHardTransportAnchor = (event) => {
+  const metadata = event?.[6] || {};
+  const type = String(metadata.type || "").toUpperCase();
+  const category = String(metadata.category || "").toUpperCase();
+  const name = String(event?.[2] || "");
+  return ["DEPARTURE", "AIRPORT", "FLIGHT", "RENTAL", "RENT_CAR", "CAR_RENTAL", "RENTAL_CAR"].includes(type)
+    || /ARRIVAL_AIRPORT|DEPARTURE_AIRPORT/.test(category)
+    || /공항|항공|탑승|렌터카/.test(name);
+};
+
+/** Frontend-only display refinement: keep fixed travel anchors, reduce dead time, and fill a missing dinner slot. */
+function refineDisplayedSchedule(dayPlans = []) {
+  if (!Array.isArray(dayPlans)) return [];
+
+  return dayPlans.map((day, dayIndex) => {
+    const source = Array.isArray(day?.[2]) ? day[2] : [];
+    if (!source.length) return day;
+
+    const events = source.map((event) => [
+      ...event.slice(0, 6),
+      {
+        ...(event[6] || {}),
+        isLocked: dayIndex === 0 && isHardTransportAnchor(event)
+          ? true
+          : Boolean(event?.[6]?.isLocked),
+      },
+    ]);
+
+    let cursor = dayIndex === 1 ? 9 * 60 : minutesFromClock(events[0]?.[0], 9 * 60);
+    let sawMovable = false;
+
+    for (let index = 0; index < events.length; index += 1) {
+      const event = events[index];
+      const metadata = event[6] || {};
+      const original = minutesFromClock(event[0], cursor);
+      const hardAnchor = dayIndex === 0 && isHardTransportAnchor(event);
+      const fixed = hardAnchor || Boolean(metadata.isLocked);
+      let start;
+
+      const eventType = String(metadata.type || "").toUpperCase();
+      const eventCategory = String(metadata.category || "").toUpperCase();
+      const isBreakfast = eventType === "RESTAURANT" && original < 10 * 60 + 30;
+      const isIntendedDinner = eventType === "RESTAURANT" && original >= 17 * 60 + 15;
+
+      if (fixed) {
+        start = Math.max(cursor, original);
+      } else if (dayIndex === 1 && isBreakfast) {
+        // 둘째 날 조식은 너무 이른 7~8시 대신 9시 전후로 늦춘다.
+        start = Math.max(9 * 60, cursor, Math.min(original, 9 * 60 + 30));
+        sawMovable = true;
+      } else if (isIntendedDinner || /DINNER|EVENING_MEAL/.test(eventCategory)) {
+        // 저녁 식사는 공백 압축 때문에 오후 이른 시간으로 끌려오지 않게 식사 시간대를 지킨다.
+        start = Math.max(cursor, 17 * 60 + 30, Math.min(original, 19 * 60 + 30));
+        sawMovable = true;
+      } else if (!sawMovable && dayIndex === 1) {
+        start = Math.max(10 * 60, cursor, original);
+        sawMovable = true;
+      } else {
+        start = Math.max(cursor, Math.min(original, cursor + 45));
+        sawMovable = true;
+      }
+
+      event[0] = clockFromMinutes(start);
+      const date = String(metadata.startAt || "").match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+      const stay = durationFromTuple(event);
+      event[6] = {
+        ...metadata,
+        displayScheduleAdjusted: true,
+        startAt: date ? `${date}T${clockFromMinutes(start)}:00` : metadata.startAt,
+        endAt: date ? `${date}T${clockFromMinutes(start + stay)}:00` : metadata.endAt,
+      };
+      cursor = start + stay + Math.max(0, Number(event[5]) || Number(metadata.travelMinutes) || 0);
+    }
+
+    // 카페 바로 다음이 저녁인데 사이가 과도하게 비면 카페를 오후로 옮겨 흐름을 촘촘하게 만든다.
+    const dinnerIndex = events.findIndex(isDinnerEvent);
+    if (dinnerIndex > 0) {
+      const dinner = events[dinnerIndex];
+      const previous = events[dinnerIndex - 1];
+      const previousType = String(previous?.[6]?.type || "").toUpperCase();
+      const dinnerStart = minutesFromClock(dinner?.[0], 18 * 60);
+      const previousStart = minutesFromClock(previous?.[0], 0);
+      const previousStay = durationFromTuple(previous);
+      const currentGap = dinnerStart - (previousStart + previousStay);
+
+      if (previousType === "CAFE" && !previous?.[6]?.isLocked && currentGap > 120) {
+        const eventBefore = events[dinnerIndex - 2];
+        const earliest = eventBefore
+          ? minutesFromClock(eventBefore[0], 0) + durationFromTuple(eventBefore) + Math.max(0, Number(eventBefore[5]) || 0)
+          : previousStart;
+        const shifted = Math.max(earliest, dinnerStart - previousStay - 60);
+        previous[0] = clockFromMinutes(shifted);
+        const date = String(previous?.[6]?.startAt || "").match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+        previous[6] = {
+          ...(previous[6] || {}),
+          startAt: date ? `${date}T${clockFromMinutes(shifted)}:00` : previous?.[6]?.startAt,
+          endAt: date ? `${date}T${clockFromMinutes(shifted + previousStay)}:00` : previous?.[6]?.endAt,
+          displayScheduleAdjusted: true,
+        };
+      }
+    }
+
+    const isLastDay = dayIndex === dayPlans.length - 1;
+    const hasDinner = events.some(isDinnerEvent);
+    const lateFlight = [...events].reverse().find((event) => {
+      const type = String(event?.[6]?.type || "").toUpperCase();
+      return ["FLIGHT", "AIRPORT"].includes(type) && minutesFromClock(event?.[0], 24 * 60) >= 17 * 60;
+    });
+    const eveningDeadline = lateFlight ? minutesFromClock(lateFlight[0], 24 * 60) - 90 : 21 * 60;
+
+    if (!hasDinner && (!isLastDay || eveningDeadline >= 19 * 60)) {
+      const dinnerStart = Math.max(18 * 60, Math.min(cursor, 19 * 60));
+      if (dinnerStart + 60 <= eveningDeadline) {
+        const date = String(events[0]?.[6]?.startAt || "").match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+        events.push([
+          clockFromMinutes(dinnerStart),
+          "🍽️",
+          "저녁 식사",
+          "선호 음식과 현재 동선을 반영한 저녁 식사 시간이에요. 장소 변경에서 원하는 맛집으로 바꿀 수 있습니다.",
+          "60분",
+          20,
+          {
+            id: `frontend-dinner-day-${dayIndex + 1}`,
+            type: "RESTAURANT",
+            category: "DINNER",
+            order: events.length + 1,
+            startAt: date ? `${date}T${clockFromMinutes(dinnerStart)}:00` : null,
+            endAt: date ? `${date}T${clockFromMinutes(dinnerStart + 60)}:00` : null,
+            stayMinutes: 60,
+            travelMinutes: 20,
+            isLocked: false,
+            syntheticMeal: true,
+            estimated: { startTime: true, stayMinutes: false, travelMinutes: true, price: true },
+          },
+        ]);
+      }
+    }
+
+    return [day[0], day[1], events];
+  });
+}
+
 /**
  * 백엔드 TripPlanResponse
  *
@@ -1381,7 +1553,7 @@ export function normalizeTripPlanResponse(
         : [];
 
 
-  const dayPlans =
+  const normalizedDayPlans =
     sourceDays.map(
       (
         day,
@@ -1496,6 +1668,9 @@ export function normalizeTripPlanResponse(
     );
 
 
+  const dayPlans = refineDisplayedSchedule(normalizedDayPlans);
+
+
   return {
     /*
      * 기존 frontend가 id를 사용하므로
@@ -1593,7 +1768,7 @@ export function normalizeTripPlanResponse(
         .filter(Boolean),
 
     costEstimate:
-      null,
+      root?.costEstimate ?? null,
 
 
     source:

@@ -1,8 +1,9 @@
 /**
- * 화면에서는 이 파일만 import하면 된다.
- * 예: import { travelApi } from './api';
+ * TripBuddy frontend API entry point.
+ * 최신 Spring backend에서 실제 사용하는 API만 노출한다.
+ * 과거 /api/offers, /api/journey-options, /api/routing/route 계열은 더 이상 export하지 않는다.
+ * 렌터카 및 일부 가격은 제휴 API가 없어 frontend mock/예상값을 유지한다.
  */
-
 export {
   apiClient,
   ApiClientError,
@@ -13,67 +14,11 @@ export {
   removeAccessToken,
 } from "./apiClient";
 
-export {
-  login,
-  logout,
-  isLoggedIn,
-} from "./authApi";
-
-export {
-  locationApi,
-  createLocationApi,
-} from "./locationApi";
-
-export {
-  routingApi,
-  createRoutingApi,
-} from "./routingApi";
-
-export {
-  journeyApi,
-  createJourneyApi,
-} from "./journeyApi";
-
-export {
-  contentApi,
-  createContentApi,
-} from "./contentApi";
-
-export {
-  bookingApi,
-  createBookingApi,
-} from "./bookingApi";
-
-export {
-  costApi,
-  createCostApi,
-  calculateMockCostEstimate,
-} from "./costApi";
-
-export {
-  fuelApi,
-  createFuelApi,
-} from "./fuelApi";
-
-export {
-  API_ENDPOINTS,
-  API_SOURCE_LABELS,
-} from "./contracts";
-
-import { locationApi } from "./locationApi";
-import { routingApi } from "./routingApi";
-import { journeyApi } from "./journeyApi";
-import { contentApi } from "./contentApi";
-import { bookingApi } from "./bookingApi";
-import { costApi } from "./costApi";
-import { fuelApi } from "./fuelApi";
-
-export const travelApi = Object.freeze({
-  locations: locationApi,
-  routing: routingApi,
-  journey: journeyApi,
-  content: contentApi,
-  booking: bookingApi,
-  costs: costApi,
-  fuel: fuelApi,
-});
+export { login, logout, isLoggedIn } from "./authApi";
+export { createTrip, getMyTrips, getTrip } from "./tripApi";
+export { searchFlights } from "./flightApi";
+export { recommendAccommodations } from "./accommodationApi";
+export { getCalendarWeather } from "./weatherApi";
+export { getAttractionDetail } from "./attractionApi";
+export { contentApi, createContentApi } from "./contentApi";
+export { normalizeTripPlanResponse, requestTripPlan, requestTripPlanRevision } from "./tripPlanApi";

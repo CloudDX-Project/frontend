@@ -43,6 +43,35 @@ import {
 import { getPlaceCostEstimate } from "../utils/placeCostEstimates";
 
 
+const TRIP_COST_SNAPSHOT_KEY = "tripbuddy-trip-cost-snapshots-v1";
+
+const readTripCostSnapshots = () => {
+  if (typeof window === "undefined") return {};
+  try {
+    const parsed = JSON.parse(window.localStorage.getItem(TRIP_COST_SNAPSHOT_KEY) || "{}");
+    return parsed && typeof parsed === "object" ? parsed : {};
+  } catch {
+    return {};
+  }
+};
+
+const saveTripCostSnapshot = (tripId, snapshot) => {
+  if (typeof window === "undefined" || !tripId) return;
+  try {
+    const current = readTripCostSnapshots();
+    window.localStorage.setItem(
+      TRIP_COST_SNAPSHOT_KEY,
+      JSON.stringify({ ...current, [String(tripId)]: snapshot }),
+    );
+  } catch {
+    // 로컬 저장소 오류는 여행 생성 자체를 막지 않는다.
+  }
+};
+
+const getTripCostSnapshot = (tripId) =>
+  tripId ? readTripCostSnapshots()[String(tripId)] || null : null;
+
+
 const flightTimeLabel = (flight) => {
   if (
     !flight?.departureTime ||
@@ -3572,6 +3601,45 @@ function useTripPlanner() {
     total;
 
 
+  // Backend가 보존하지 않는 시연용 숙소/렌터카 가격을 tripId별로 저장한다.
+  // 내 예약에서 다시 열 때 동일 스냅샷을 복원해 총액 0원 문제를 방지한다.
+  useEffect(() => {
+    const tripId = backendPlan?.tripId || backendPlan?.id;
+    if (!tripId || !Number.isFinite(Number(total)) || Number(total) <= 0) return;
+
+    const costItems = costDetails.flatMap((group) =>
+      (group.rows || []).map(([name, value, note]) => ({
+        name,
+        perPerson: Number(value) || 0,
+        note: note || "",
+        scope: /공동 예약·차량비/.test(group.group || "") ? "shared" : "personal",
+      })),
+    );
+
+    saveTripCostSnapshot(tripId, {
+      savedAt: new Date().toISOString(),
+      totalPerPerson: Number(total) || 0,
+      peopleCount: party,
+      costEstimate: {
+        perPerson: Number(total) || 0,
+        total: (Number(total) || 0) * party,
+        items: costItems,
+      },
+      stay: selectedStay ? {
+        id: selectedStay.id,
+        priceAvg: selectedStay.priceAvg,
+        priceText: selectedStay.priceText,
+      } : null,
+      rental: selectedRental ? {
+        id: selectedRental.id,
+        price: selectedRental.price,
+        company: selectedRental.company,
+        car: selectedRental.car,
+      } : null,
+    });
+  }, [backendPlan?.tripId, backendPlan?.id, total, party, costDetails, selectedStay, selectedRental]);
+
+
   const notify =
     (
       text,
@@ -5776,9 +5844,9 @@ function useTripPlanner() {
         stay,
       });
 
-      setBudgetConfirmationOpen(
-        true,
-      );
+      // 숙소 선택 직후에는 식비/취향이 아직 확정되지 않으므로 중간 예산 팝업을 띄우지 않는다.
+      setPreferenceModalOpen(true);
+      notify("숙소까지 반영했어요. 이제 여행 테마와 선호 음식을 선택해 주세요.");
     };
 
 
@@ -6185,10 +6253,28 @@ function useTripPlanner() {
       return;
     }
 
+    // 잠긴 공항/항공/렌터카/숙소는 자기 자신만 고정되는 카드가 아니라
+    // 실제 이동 흐름을 지키는 경계(anchor)다. 자유 일정은 이 경계를 넘을 수 없다.
+    const lockedIndexes = events.flatMap((event, index) =>
+      event[6]?.isLocked ? [index] : []);
+    const previousLocked = [...lockedIndexes].reverse().find((index) => index < sourceIndex);
+    const nextLocked = lockedIndexes.find((index) => index > sourceIndex);
+    const segmentStart = previousLocked == null ? 0 : previousLocked + 1;
+    const segmentEnd = nextLocked == null ? events.length - 1 : nextLocked - 1;
+
+    if (destinationIndex < segmentStart || destinationIndex > segmentEnd) {
+      notify(
+        dayIndex === 0
+          ? "첫째 날의 공항·항공·렌터카 순서는 실제 이동 흐름 때문에 고정되어 있어요."
+          : "고정된 교통·숙소 일정을 넘어서는 순서 변경은 할 수 없어요.",
+      );
+      return;
+    }
+
     const movableSlots = events.flatMap((event, index) =>
-      event[6]?.isLocked ? [] : [index]);
+      !event[6]?.isLocked && index >= segmentStart && index <= segmentEnd ? [index] : []);
     const sourceRank = movableSlots.indexOf(sourceIndex);
-    if (sourceRank < 0) return;
+    if (sourceRank < 0 || movableSlots.length < 2) return;
 
     const destinationRank = Math.max(
       0,
@@ -6207,11 +6293,9 @@ function useTripPlanner() {
     const [movedId] = movableIds.splice(sourceRank, 1);
     movableIds.splice(destinationRank, 0, movedId);
 
-    let movableCursor = 0;
+    const replacements = new Map(movableSlots.map((slot, rank) => [slot, movableIds[rank]]));
     const order = events.map((event, eventIndex) =>
-      event[6]?.isLocked
-        ? planEventKey(event, dayIndex, eventIndex)
-        : movableIds[movableCursor++],
+      replacements.get(eventIndex) || planEventKey(event, dayIndex, eventIndex),
     ).filter(Boolean);
 
     setPlanOrders((current) => ({ ...current, [dayIndex]: order }));
@@ -6224,7 +6308,7 @@ function useTripPlanner() {
       eventIds: order,
     });
 
-    notify("일정 순서와 지도 동선을 다시 계산했어요.");
+    notify("같은 이동 구간 안에서 일정 순서와 시간을 다시 계산했어요.");
   };
 
 
@@ -6965,6 +7049,8 @@ function useTripPlanner() {
       return false;
     }
 
+    const savedCostSnapshot = getTripCostSnapshot(savedTrip.id);
+
     const nextDestination = {
       id: `saved-destination-${savedTrip.id}`,
       countryCode: "KR",
@@ -7015,7 +7101,11 @@ function useTripPlanner() {
     setLocalTransport(
       LOCAL_TRANSPORT_FROM_BACKEND[savedTrip.localTransportMode] || "TRANSIT",
     );
-    setRestoredRental(savedTrip.selectedRental || null);
+    setRestoredRental(
+      savedTrip.selectedRental
+        ? { ...savedTrip.selectedRental, ...(savedCostSnapshot?.rental || {}) }
+        : savedCostSnapshot?.rental || null,
+    );
 
     const accommodation = savedTrip.selectedAccommodation;
     if (accommodation?.accommodationId != null) {
@@ -7029,8 +7119,8 @@ function useTripPlanner() {
         longitude: accommodation.longitude,
         checkInTime: accommodation.checkInTime,
         checkOutTime: accommodation.checkOutTime,
-        priceAvg: null,
-        priceText: "저장된 예약",
+        priceAvg: savedCostSnapshot?.stay?.priceAvg ?? null,
+        priceText: savedCostSnapshot?.stay?.priceText || "저장된 예약",
         image: jejuCoastPhoto,
         isMock: false,
       };
@@ -7065,6 +7155,7 @@ function useTripPlanner() {
       selectedRental: savedTrip.selectedRental,
       outboundFlight: savedTrip.outboundFlight,
       returnFlight: savedTrip.returnFlight,
+      costEstimate: savedCostSnapshot?.costEstimate ?? null,
       days: savedTrip.days || [],
     });
 
@@ -7284,6 +7375,7 @@ function useTripPlanner() {
 
     planning,
 
+    quickEditTarget,
     setQuickEditTarget,
 
     planningStage,
