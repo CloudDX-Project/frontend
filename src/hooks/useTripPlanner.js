@@ -6087,7 +6087,7 @@ function useTripPlanner() {
       if (
           isMockModeEnabled() ||
           !backendPlanRef.current?.id ||
-          backendPlanRef.current?.source === "trip-plan-v1"
+          backendPlanRef.current?.source?.startsWith("trip-plan")
         ) {
           return;
         }

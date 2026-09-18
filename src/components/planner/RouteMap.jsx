@@ -3,6 +3,7 @@ import { CarFront, Maximize2, Minus, Navigation, Plus, X } from "lucide-react";
 import { locationLabel } from "../../data/mockData";
 import { loadKakaoMapsSdk } from "../../lib/kakaoMap";
 import { loadKakaoNaviSdk, startKakaoNavigation } from "../../lib/kakaoNavi";
+import { apiClient } from "../../api/apiClient";
 
 const ROUTE_SEGMENT_COLORS = [
   "#0b766d",
@@ -468,7 +469,7 @@ function mapsSafeRemoveListener(target, eventName, handler) {
   kakaoEvent.removeListener(target, eventName, handler);
 }
 
-function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, routeResults = [], compact = false, hideHeader = false, visible = true }) {
+function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, routeResults = [], localTransport = "RENTAL", compact = false, hideHeader = false, visible = true }) {
   const [expanded, setExpanded] = useState(false);
   const [selectedSegmentIndex, setSelectedSegmentIndex] = useState(null);
   const [navigationMessage, setNavigationMessage] = useState("");
@@ -476,6 +477,36 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
   const selectedDay = dayPlans[activeDay] || dayPlans[0];
   const destinationContext = locationLabel(destinationLocation, "대한민국");
   const originContext = locationLabel(originLocation, "출발지");
+  const [editedRoute, setEditedRoute] = useState(null);
+  const editedStopsKey = selectedDay?.[2]?.some((event) => event?.[6]?.locallyReordered)
+    ? JSON.stringify(stopsFromDayPlan(selectedDay)) : "";
+  useEffect(() => {
+    if (!editedStopsKey) return undefined;
+    const controller = new AbortController();
+    const stops = JSON.parse(editedStopsKey);
+    if (!["RENTAL", "CAR", "TAXI"].includes(localTransport)) {
+      setEditedRoute({ key: editedStopsKey, segments: [] });
+      return () => controller.abort();
+    }
+    Promise.all(stops.slice(0, -1).map(async (from, index) => {
+      const to = stops[index + 1];
+      const response = await apiClient.request("/api/routes/driving", {
+        method: "POST", signal: controller.signal,
+        body: { originLatitude: from.latitude, originLongitude: from.longitude,
+          destinationLatitude: to.latitude, destinationLongitude: to.longitude },
+      });
+      const result = response?.data ?? response;
+      return { ...result, mode: "CAR", departureName: from.name, arrivalName: to.name,
+        departureLatitude: from.latitude, departureLongitude: from.longitude,
+        arrivalLatitude: to.latitude, arrivalLongitude: to.longitude };
+    })).then((segments) => {
+      if (!controller.signal.aborted) setEditedRoute({ key: editedStopsKey, segments });
+    }).catch(() => {
+      // Never display the previous order as though it were the updated route.
+      if (!controller.signal.aborted) setEditedRoute({ key: editedStopsKey, segments: [] });
+    });
+    return () => controller.abort();
+  }, [editedStopsKey, localTransport]);
 
   const providerRoute = useMemo(
     () => routeResults.find((item) => item?.dayIndex === activeDay) ?? routeResults[activeDay] ?? null,
@@ -483,8 +514,10 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
   );
 
   const segments = useMemo(
-    () => Array.isArray(providerRoute?.segments) ? providerRoute.segments : [],
-    [providerRoute],
+    () => editedStopsKey
+      ? (editedRoute?.key === editedStopsKey ? editedRoute.segments : [])
+      : Array.isArray(providerRoute?.segments) ? providerRoute.segments : [],
+    [providerRoute, editedStopsKey, editedRoute],
   );
 
   const coloredSegments = useMemo(() => {

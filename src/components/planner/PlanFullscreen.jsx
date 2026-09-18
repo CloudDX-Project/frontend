@@ -441,6 +441,7 @@ function PlanFullscreen({
                 destinationLocation={destinationLocation}
                 originLocation={originLocation}
                 routeResults={routeResults}
+                localTransport={localTransport}
                 compact
                 hideHeader
               />
@@ -642,6 +643,7 @@ function PlanFullscreen({
             destinationLocation={destinationLocation}
             originLocation={originLocation}
             routeResults={routeResults}
+            localTransport={localTransport}
             compact={mobilePreview || isMobile}
             visible={scheduleView !== "budget"}
           />

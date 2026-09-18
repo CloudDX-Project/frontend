@@ -52,6 +52,11 @@ export const recalculateDayTimeline = (day, localTransport = "RENTAL") => {
       : null;
     const start = fixedClock == null ? cursor : fixedClock;
     const next = [clock(start), ...event.slice(1)];
+    // Display helpers prefer API timestamps, so keep them in sync with edits.
+    const date = String(metadata.startAt || "").match(/^\d{4}-\d{2}-\d{2}/)?.[0];
+    next[6] = { ...metadata, locallyReordered: true,
+      startAt: date ? `${date}T${clock(start)}:00` : null,
+      endAt: date ? `${date}T${clock(start + durationMinutes(event[4]))}:00` : null };
     cursor = start + durationMinutes(event[4]) + Math.max(0, Number(event[5]) || 0);
     return next;
   });
