@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Heart, ImageOff, Star } from "lucide-react";
 import { eSimProducts, money, saleStays, tourProducts, transportPasses } from "../data/mockData";
 import "./commerce-showcase.css";
@@ -21,7 +21,6 @@ function InfiniteProductRow({
   const [moving, setMoving] = useState(true);
   const [localPaused, setLocalPaused] = useState(false);
   const [likedIds, setLikedIds] = useState(() => new Set());
-  const lastSynchronizedTick = useRef(synchronizedTick ?? 0);
   const paused = synchronizedPaused ?? localPaused;
   const setPaused = onSynchronizedPause ?? setLocalPaused;
 
@@ -36,19 +35,8 @@ function InfiniteProductRow({
 
   useEffect(() => {
     if (synchronizedTick == null || synchronizedTick === 0 || items.length <= visible) return;
-    const elapsedTicks = Math.max(0, synchronizedTick - lastSynchronizedTick.current);
-    lastSynchronizedTick.current = synchronizedTick;
-    if (!elapsedTicks) return;
-    setIndex((current) => {
-      if (elapsedTicks > 1 || current >= items.length) {
-        setMoving(false);
-        const synchronizedIndex = synchronizedTick % items.length;
-        window.requestAnimationFrame(() => setMoving(true));
-        return synchronizedIndex;
-      }
-      setMoving(true);
-      return current + 1;
-    });
+    setMoving(true);
+    setIndex((current) => current >= items.length ? current : current + 1);
   }, [items.length, synchronizedTick, visible]);
 
   const finishMove = () => {
@@ -79,7 +67,7 @@ function InfiniteProductRow({
         >
           {clones.map((item, itemIndex) => (
             <article className="commerce-card" key={`${item.id}-${itemIndex}`} aria-hidden={itemIndex >= items.length ? "true" : undefined}>
-              <img src={item.image} alt={`${item.location} ${item.title}`} loading="eager" decoding="async" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.nextElementSibling?.removeAttribute("hidden"); }} />
+              <img src={item.image} alt={`${item.location} ${item.title}`} loading="lazy" decoding="async" onError={(event) => { event.currentTarget.hidden = true; event.currentTarget.nextElementSibling?.removeAttribute("hidden"); }} />
               <span className="commerce-image-fallback" hidden><ImageOff size={28} aria-hidden="true" /><small>이미지를 불러오지 못했어요</small></span>
               <span className="commerce-shade" aria-hidden="true" />
               <em>{item.tag}</em>
@@ -100,28 +88,20 @@ function InfiniteProductRow({
 
 export default function CommerceShowcase() {
   const [primaryTick, setPrimaryTick] = useState(0);
-  const rotationStartedAt = useRef(Date.now());
+  const [primaryPaused, setPrimaryPaused] = useState(false);
 
   useEffect(() => {
-    const synchronizeRotation = () => {
-      setPrimaryTick(Math.floor((Date.now() - rotationStartedAt.current) / 3000));
-    };
-    const timer = window.setInterval(synchronizeRotation, 1000);
-    window.addEventListener("focus", synchronizeRotation);
-    document.addEventListener("visibilitychange", synchronizeRotation);
-    return () => {
-      window.clearInterval(timer);
-      window.removeEventListener("focus", synchronizeRotation);
-      document.removeEventListener("visibilitychange", synchronizeRotation);
-    };
-  }, []);
+    if (primaryPaused) return undefined;
+    const timer = window.setInterval(() => setPrimaryTick((current) => current + 1), 3000);
+    return () => window.clearInterval(timer);
+  }, [primaryPaused]);
 
   return (
     <section className="commerce-showcase" aria-label="여행 상품 추천">
-      <InfiniteProductRow id="commerce-tours" eyebrow="TRENDING EXPERIENCES · 12" title="사진만 봐도 떠나고 싶은 투어 & 액티비티" description="세계 곳곳의 버킷리스트 경험을 3초마다 새롭게 만나보세요." linkLabel="투어" items={tourProducts} synchronizedTick={primaryTick} synchronizedPaused={false} />
-      <InfiniteProductRow id="commerce-stays" eyebrow="LIMITED STAY DEALS" title="예산 방어 필수! 마감 임박 타임세일 숙소" description="여행의 분위기와 예산을 모두 지키는 인기 숙소를 모았어요." linkLabel="숙소" items={saleStays} horizontal synchronizedTick={primaryTick} synchronizedPaused={false} />
-      <InfiniteProductRow id="commerce-passes" eyebrow="MOVE SMARTER" title="도시와 도시를 가볍게 잇는 교통패스" description="기차부터 현지 대중교통까지, 이동 횟수와 동선에 맞춰 비교하세요." linkLabel="교통패스" items={transportPasses} synchronizedTick={primaryTick} synchronizedPaused={false} />
-      <InfiniteProductRow id="commerce-esim" eyebrow="STAY CONNECTED" title="도착하는 순간 바로 연결되는 글로벌 eSIM" description="여행지 사진과 함께 데이터 용량·사용 지역을 빠르게 비교하세요." linkLabel="eSIM" items={eSimProducts} synchronizedTick={primaryTick} synchronizedPaused={false} />
+      <InfiniteProductRow id="commerce-tours" eyebrow="TRENDING EXPERIENCES · 12" title="사진만 봐도 떠나고 싶은 투어 & 액티비티" description="세계 곳곳의 버킷리스트 경험을 3초마다 새롭게 만나보세요." linkLabel="투어" items={tourProducts} synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
+      <InfiniteProductRow id="commerce-stays" eyebrow="LIMITED STAY DEALS" title="예산 방어 필수! 마감 임박 타임세일 숙소" description="여행의 분위기와 예산을 모두 지키는 인기 숙소를 모았어요." linkLabel="숙소" items={saleStays} horizontal synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
+      <InfiniteProductRow id="commerce-passes" eyebrow="MOVE SMARTER" title="도시와 도시를 가볍게 잇는 교통패스" description="기차부터 현지 대중교통까지, 이동 횟수와 동선에 맞춰 비교하세요." linkLabel="교통패스" items={transportPasses} synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
+      <InfiniteProductRow id="commerce-esim" eyebrow="STAY CONNECTED" title="도착하는 순간 바로 연결되는 글로벌 eSIM" description="여행지 사진과 함께 데이터 용량·사용 지역을 빠르게 비교하세요." linkLabel="eSIM" items={eSimProducts} synchronizedTick={primaryTick} synchronizedPaused={primaryPaused} onSynchronizedPause={setPrimaryPaused} />
     </section>
   );
 }

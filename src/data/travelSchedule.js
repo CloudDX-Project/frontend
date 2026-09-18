@@ -15,6 +15,7 @@ const clock = (value) => {
   return `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
 };
 
+<<<<<<< HEAD
 const durationMinutes = (value) => Math.max(0, Number.parseInt(value, 10) || 0);
 const radians = (value) => value * Math.PI / 180;
 const roadDistanceKm = (from, to) => {
@@ -62,6 +63,8 @@ export const recalculateDayTimeline = (day, localTransport = "RENTAL") => {
   });
   return [day[0], day[1], scheduled];
 };
+=======
+>>>>>>> ffb9c8ce54a4e1473325b839895893d3351f430c
 export const parseTicketLeg = (value) => {
   if (typeof value !== "string") return null;
   const times = value.match(/\b\d{2}:\d{2}\b/g);

@@ -23,7 +23,7 @@
   background:
     radial-gradient(circle at 96% 0%, rgba(214, 244, 234, 0.88), transparent 27%),
     linear-gradient(135deg, #fffefa 0%, #fbfdfb 58%, #f3fbf7 100%);
-  box-shadow: 0 28px 72px rgba(4, 51, 47, 0.22);
+  box-shadow: 0 32px 85px rgba(4, 51, 47, 0.35);
   color: #154f4a;
   animation: destination-modal-in 240ms cubic-bezier(.2, .8, .2, 1) both;
 }

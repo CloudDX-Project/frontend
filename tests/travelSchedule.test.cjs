@@ -2,7 +2,7 @@ const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const vm = require('node:vm');
-const { resolveTripSchedule, parseTicketLeg, safeTime, makeDemoTicketOptions, normalizeTypedTime, recalculateDayTimeline } = require('../src/data/travelSchedule.js');
+const { resolveTripSchedule, parseTicketLeg, safeTime, makeDemoTicketOptions, normalizeTypedTime } = require('../src/data/travelSchedule.js');
 const { koreanRegions } = require('../src/data/locationCatalog.js');
 // The catalog imports a JPEG for Vite; evaluate its pure planning exports with an asset stub.
 const catalog = fs.readFileSync(require.resolve('../src/data/mockData.js'), 'utf8').replace(/^import .*;\r?\n/gm, '').replace(/export const /g, 'const ');
@@ -38,18 +38,6 @@ test('four typed time digits are normalized to HH:mm', () => {
   assert.equal(normalizeTypedTime('1830'), '18:30');
   assert.equal(normalizeTypedTime('09:30'), '09:30');
   assert.equal(normalizeTypedTime('7'), '7');
-});
-test('drag reorder recalculates every following time from route distance', () => {
-  const day = ['테스트', '동선', [
-    ['10:00', '📍', 'A', '', '60분', 10, { latitude: 33.46, longitude: 126.31 }],
-    ['11:10', '📍', 'B', '', '30분', 10, { latitude: 33.39, longitude: 126.24 }],
-    ['11:50', '📍', 'C', '', '40분', 0, { latitude: 33.37, longitude: 126.36 }],
-  ]];
-  const result = recalculateDayTimeline(day, 'RENTAL');
-  assert.equal(result[2][0][0], '10:00');
-  assert.ok(minutes(result[2][1][0]) > minutes('11:10'));
-  assert.ok(minutes(result[2][2][0]) > minutes(result[2][1][0]));
-  assert.notEqual(result[2][0][5], 10);
 });
 test('all demo KTX and bus options have valid independent outbound and return legs', () => {
   for (const mode of ['KTX', 'BUS']) for (const offer of makeDemoTicketOptions(mode, 500)) {
