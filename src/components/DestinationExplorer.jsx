@@ -45,7 +45,7 @@ export const TRENDING_DESTINATIONS = [
 
 // WGS84 대표 지점. 차량 접근 지점은 경로 API에서 별도 보정합니다.
 // 대표 이미지는 제주관광공사 Visit Jeju의 실제 명소 사진을 사용합니다.
-export const JEJU_DESTINATIONS = [
+const JEJU_DESTINATION_CATALOG = [
   {
     "id": "jeju-spot-1",
     "name": "동문시장",
@@ -152,6 +152,46 @@ export const JEJU_DESTINATIONS = [
     "image": "https://api.cdn.visitjeju.net/photomng/imgpath/202410/21/1690de57-e791-4712-84e9-3963a82de0f1.webp"
   }
 ];
+
+// Lead with Jeju's most scenic landscapes; keep the market available lower down.
+const JEJU_DESTINATION_PRIORITY = [
+  "성산일출봉",
+  "한담해안산책로",
+  "협재해수욕장",
+  "카멜리아힐",
+  "애월 카페 거리",
+  "산방산·용머리 해안",
+  "함덕해수욕장",
+  "오설록 티 뮤지엄",
+  "새별오름",
+  "금능해변",
+  "천제연폭포",
+  "주상절리대",
+  "중문색달해수욕장",
+  "곽지해수욕장",
+  "동문시장",
+];
+
+const jejuPriorityIndex = new Map(JEJU_DESTINATION_PRIORITY.map((name, index) => [name, index]));
+
+export const JEJU_DESTINATIONS = [...JEJU_DESTINATION_CATALOG].sort(
+  (left, right) =>
+    (jejuPriorityIndex.get(left.name) ?? Number.MAX_SAFE_INTEGER)
+    - (jejuPriorityIndex.get(right.name) ?? Number.MAX_SAFE_INTEGER),
+);
+
+let jejuPreloadImages = [];
+
+export function preloadJejuDestinationImages() {
+  if (typeof window === "undefined" || jejuPreloadImages.length) return;
+  jejuPreloadImages = JEJU_DESTINATIONS.map(({ image }) => {
+    const preload = new Image();
+    preload.decoding = "async";
+    preload.fetchPriority = "low";
+    preload.src = image;
+    return preload;
+  });
+}
 
 export const toSpotDestination = (destination, spot, index) => ({
   ...destination,
@@ -423,7 +463,7 @@ export default function DestinationExplorer({
             <div className={detailDestination.id === "destination-jeju" ? "destination-detail-grid destination-jeju-grid" : "destination-detail-grid"}>
               {(detailDestination.id === "destination-jeju" ? JEJU_DESTINATIONS : detailDestination.subSpots).map((spot, index) => (
                 <button key={spot.name} type="button" className="destination-spot-card" onClick={() => selectSubSpot(detailDestination, spot, index)}>
-                  <span className="destination-spot-image"><img src={spot.image} alt="" loading="lazy" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /></span>
+                  <span className="destination-spot-image"><img src={spot.image} alt="" loading={index < 6 ? "eager" : "lazy"} fetchPriority={index < 3 ? "high" : "auto"} decoding="async" onError={(event) => { event.currentTarget.style.visibility = "hidden"; }} /></span>
                   <span className="destination-spot-caption"><b>{spot.name}</b><ArrowRight size={17} aria-hidden="true" /></span>
                 </button>
               ))}

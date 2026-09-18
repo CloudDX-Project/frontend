@@ -10,9 +10,9 @@ export const heroSlides = [
     src: "https://images.unsplash.com/photo-1570077188670-e3a8d69ac5ff?auto=format&fit=crop&w=2200&q=90",
   },
   {
-    id: "cappadocia",
-    label: "튀르키예 카파도키아",
-    src: "https://images.unsplash.com/photo-1527838832700-5059252407fa?auto=format&fit=crop&w=2200&q=90",
+    id: "zhangjiajie",
+    label: "중국 장가계",
+    src: "https://unsplash.com/photos/CRvaC071ZXo/download?force=true&w=2400",
   },
   {
     id: "kyoto",
@@ -20,9 +20,9 @@ export const heroSlides = [
     src: "https://images.unsplash.com/photo-1493976040374-85c8e12f0c0e?auto=format&fit=crop&w=2200&q=90",
   },
   {
-    id: "maldives",
-    label: "몰디브 오버워터",
-    src: "https://images.unsplash.com/photo-1514282401047-d79a71a590e8?auto=format&fit=crop&w=2200&q=90",
+    id: "borabora",
+    label: "프렌치폴리네시아 보라보라",
+    src: "https://unsplash.com/photos/TOvYrc0D9y4/download?force=true&w=2400",
   },
   {
     id: "venice",
@@ -30,9 +30,9 @@ export const heroSlides = [
     src: "https://images.unsplash.com/photo-1514890547357-a9ee288728e0?auto=format&fit=crop&w=2200&q=90",
   },
   {
-    id: "lauterbrunnen",
-    label: "스위스 라우터브루넨",
-    src: "https://images.unsplash.com/photo-1530122037265-a5f1f91d3b99?auto=format&fit=crop&w=2200&q=90",
+    id: "niagara",
+    label: "캐나다 나이아가라 폭포",
+    src: "https://images.unsplash.com/photo-1598402453861-4fbcbf6ced3b?auto=format&fit=max&w=3600&q=95",
   },
 ];
 
@@ -41,7 +41,7 @@ export const images = {
   jeju:
     "https://tong.visitkorea.or.kr/cms/resource/56/3114756_image2_1.jpg",
   fukuoka:
-    "https://unsplash.com/photos/XNhdYWw_xcg/download?force=true&w=1600",
+    "https://unsplash.com/photos/7KsDG_v_v7g/download?force=true&w=1600",
   bangkok:
     "https://api.tourismthailand.org/upload/live/content_article/1124-17204.png",
   newyork:
@@ -60,7 +60,7 @@ export const destinations = [
     id: "fukuoka",
     title: "후쿠오카",
     city: "Fukuoka, Japan",
-    tag: "후쿠오카 타워와 도심의 야경",
+    tag: "텐진 야타이와 붉은 초롱의 밤",
     image: images.fukuoka,
   },
   {
@@ -2179,7 +2179,7 @@ export const regionalPlaceAlternatives = {
     { icon: "📸", name: "새별오름", latitude: 33.3663, longitude: 126.3578, detail: "애월 중산간의 억새와 탁 트인 전망을 감상해요.", duration: "95분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202410/21/dd078476-3958-40e8-ab31-c3599ef97bcc.webp" },
     { icon: "🌿", name: "오설록 티 뮤지엄", latitude: 33.3059, longitude: 126.2895, detail: "서부 녹차밭과 전시 공간을 함께 둘러봐요.", duration: "90분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202110/20/003f420c-6efe-41e9-93b7-00fe6ac5e83b.webp" },
     { icon: "🌺", name: "카멜리아힐", latitude: 33.2897, longitude: 126.3701, detail: "계절 꽃과 정원 산책을 중심으로 일정을 구성해요.", duration: "95분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202410/15/fb2d2739-5e8e-4a87-9d1d-0281d95efeb7.webp" },
-    { icon: "📸", name: "성산일출봉", latitude: 33.4581, longitude: 126.9426, detail: "동부 대표 명소를 중심으로 이동 동선을 다시 계산해요.", duration: "100분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202409/20/c8bf6191-832c-4605-a948-96f07f6112d2.webp" },
+    { icon: "📸", name: "성산일출봉", latitude: 33.4613627, longitude: 126.9349424, detail: "동부 대표 명소를 중심으로 이동 동선을 다시 계산해요.", duration: "100분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202409/20/c8bf6191-832c-4605-a948-96f07f6112d2.webp" },
     { icon: "🛍", name: "동문시장", latitude: 33.5116, longitude: 126.5260, detail: "제주 원도심의 시장 먹거리와 기념품을 함께 둘러봐요.", duration: "80분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202410/16/bdf6c336-fde3-4312-92be-7db8f3a37fbc.webp" },
     { icon: "🌊", name: "함덕해수욕장", latitude: 33.5431, longitude: 126.6692, detail: "맑고 얕은 바다와 서우봉 산책을 한 동선으로 즐겨요.", duration: "90분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202408/20/a397a498-7bc9-4730-963a-cfa29ccffe7d.webp" },
     { icon: "🌅", name: "한담해안산책로", latitude: 33.4626, longitude: 126.3108, detail: "현무암 해안과 애월 바다를 따라 여유롭게 걸어요.", duration: "70분", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202110/28/6a66021a-e571-4ebb-8ddd-2f42ceb46c9c.webp" },
@@ -2194,7 +2194,7 @@ export const regionalPlaceAlternatives = {
     { icon: "🍽", name: "애월돈가스집", latitude: 33.4641, longitude: 126.3090, detail: "제주산 흑돼지로 만든 든든한 돈가스를 맛봐요.", duration: "70분", representativeMenu: "흑돼지 왕돈가스", image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=900&q=86" },
     { icon: "🍱", name: "제주김만복 애월점", latitude: 33.4720, longitude: 126.3500, detail: "이동 중 가볍게 즐기기 좋은 제주식 김밥을 추천해요.", duration: "55분", representativeMenu: "전복김밥·오징어무침", image: "https://images.unsplash.com/photo-1553621042-f6e147245754?auto=format&fit=crop&w=900&q=86" },
     { icon: "🍜", name: "이춘옥 원조고등어쌈밥", latitude: 33.4838, longitude: 126.3774, detail: "애월 해안도로에서 즐기는 제주식 고등어 한 상이에요.", duration: "75분", representativeMenu: "고등어쌈밥·고등어조림", image: "https://images.unsplash.com/photo-1515003197210-e0cd71810b5f?auto=format&fit=crop&w=900&q=86" },
-    { icon: "🍚", name: "꽃밥", latitude: 33.4722, longitude: 126.3547, detail: "제주 식재료를 담은 정갈한 한식 한 상을 즐겨요.", duration: "70분", representativeMenu: "꽃밥정식·산채들깨수제비", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202305/19/3aa4cf3f-d1a8-4f65-b515-75fd764a2c93.webp" },
+    { icon: "🍚", name: "꽃밥", latitude: 33.4515541, longitude: 126.3085195, detail: "제주 식재료를 담은 정갈한 한식 한 상을 즐겨요.", duration: "70분", representativeMenu: "꽃밥정식·삼색들깨수제비", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202305/19/3aa4cf3f-d1a8-4f65-b515-75fd764a2c93.webp" },
     { icon: "🥩", name: "애월회관", latitude: 33.4668, longitude: 126.3209, detail: "애월 해안권에서 제주 흑돼지를 즐기는 저녁 동선이에요.", duration: "80분", representativeMenu: "흑오겹살·흑목살", image: "https://api.cdn.visitjeju.net/photomng/imgpath/202511/18/242c4d62-e6cc-4d71-935e-e668f2bee0dd.webp" },
     { icon: "🍜", name: "언덕집국수", latitude: 33.4567, longitude: 126.3098, detail: "애월 인근에서 제주식 국수로 가볍게 한 끼를 해결해요.", duration: "60분", representativeMenu: "고기국수·비빔국수", image: "https://cdn.visitkorea.or.kr/img/call?cmd=VIEW&id=251421ff-3e04-451d-926a-703bc635bc13" },
     { icon: "🥩", name: "바다풍경정육식당", latitude: 33.4620, longitude: 126.3118, detail: "바다 가까이에서 제주 흑돼지를 합리적인 구성으로 즐겨요.", duration: "80분", representativeMenu: "흑돼지 오겹살·목살", image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&w=900&q=86" },
@@ -2307,7 +2307,7 @@ export const getPlaceAlternatives = (destinationLocation, currentItem) => {
   }));
   return [...localCandidates, ...generatedCandidates]
     .filter((place, index, list) => normalizePlaceName(place.name) !== normalizedCurrentName && list.findIndex((item) => item.name === place.name) === index)
-    .slice(0, 6);
+    .slice(0, 9);
 };
 
 export const stayChangeSummaryFor = (change) => {

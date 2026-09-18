@@ -554,6 +554,13 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
   }, [activeDay]);
 
   useEffect(() => {
+    if (!navigationMessage) return undefined;
+
+    const timeoutId = window.setTimeout(() => setNavigationMessage(""), 2800);
+    return () => window.clearTimeout(timeoutId);
+  }, [navigationMessage]);
+
+  useEffect(() => {
     let active = true;
 
     loadKakaoNaviSdk()
@@ -605,60 +612,65 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
 
   const openMapUrl = buildKakaoDirectionsLink(route.stops, "car");
 
-  const navigationDestination = useMemo(() => {
+  const navigationPlan = useMemo(() => {
     if (selectedSegment) {
       const arrival = segmentPoint(selectedSegment, "arrival");
       if (arrival) {
         return {
-          name: selectedSegment.arrivalName || "다음 여행지",
-          ...arrival,
+          destination: {
+            name: selectedSegment.arrivalName || "다음 여행지",
+            ...arrival,
+          },
+          viaPoints: [],
+          stopCount: 1,
         };
       }
     }
 
-    return route.stops[1] || route.stops[0] || null;
+    const upcomingStops = route.stops
+      .slice(route.stops.length > 1 ? 1 : 0)
+      .map((stop) => ({ ...stop, ...pointFrom(stop) }))
+      .filter((stop) => pointFrom(stop))
+      .slice(0, 4);
+
+    return {
+      destination: upcomingStops.at(-1) || null,
+      viaPoints: upcomingStops.slice(0, -1),
+      stopCount: upcomingStops.length,
+    };
   }, [route.stops, selectedSegment]);
 
-  const navigationFallbackUrl = useMemo(() => {
-    if (selectedSegment) {
-      const departure = segmentPoint(selectedSegment, "departure");
-      const arrival = segmentPoint(selectedSegment, "arrival");
-      if (departure && arrival) {
-        return buildKakaoDirectionsLink([
-          { name: selectedSegment.departureName || "출발", ...departure },
-          { name: selectedSegment.arrivalName || "도착", ...arrival },
-        ], "car");
-      }
-    }
+  const mobileDevice = typeof navigator !== "undefined" && (
+    navigator.userAgentData?.mobile === true ||
+    /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")
+  );
 
-    return buildKakaoDirectionsLink(route.stops.slice(0, 2), "car");
-  }, [route.stops, selectedSegment]);
-
-  const handleNavigationStart = () => {
-    if (!navigationDestination) {
+  const handleNavigationStart = async () => {
+    if (!navigationPlan.destination) {
       setNavigationMessage("내비게이션을 시작할 장소 좌표가 없어요.");
       return;
     }
 
-    const mobileDevice = typeof navigator !== "undefined" && (
-      navigator.userAgentData?.mobile === true ||
-      /Android|iPhone|iPad|iPod/i.test(navigator.userAgent || "")
-    );
-
-    if (mobileDevice && navigationReady) {
-      try {
-        startKakaoNavigation(navigationDestination);
-        setNavigationMessage(`${navigationDestination.name} 카카오내비를 실행했습니다.`);
-        return;
-      } catch (error) {
-        setNavigationMessage(error?.message || "카카오내비 앱을 열지 못해 카카오맵으로 연결합니다.");
-      }
+    if (!mobileDevice) {
+      setNavigationMessage("실주행 음성 안내는 실제 휴대폰에서 카카오내비 앱으로 실행됩니다.");
+      return;
     }
 
-    window.open(navigationFallbackUrl, "_blank", "noopener,noreferrer");
-    setNavigationMessage(mobileDevice
-      ? "카카오내비 준비 전이라 선택 구간의 카카오맵 길찾기를 열었습니다."
-      : "PC 프리뷰에서는 선택 구간의 카카오맵 길찾기를 열었습니다. 실제 모바일에서는 내비가 실행됩니다.");
+    try {
+      if (!navigationReady) {
+        await loadKakaoNaviSdk();
+        setNavigationReady(true);
+      }
+      startKakaoNavigation(navigationPlan.destination, navigationPlan.viaPoints);
+      setNavigationMessage(
+        navigationPlan.stopCount > 1
+          ? `다음 ${navigationPlan.stopCount}개 장소의 실주행 안내를 시작합니다.`
+          : `${navigationPlan.destination.name} 실주행 안내를 시작합니다.`,
+      );
+    } catch (error) {
+      setNavigationMessage(`${error?.message || "카카오내비 앱을 열지 못했습니다."} 카카오맵 경로를 엽니다.`);
+      window.location.assign(openMapUrl);
+    }
   };
 
   const routeForStopIndex = (stopIndex) => {
@@ -776,7 +788,11 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
       {compact && expanded && (
         <div className="mobile-map-expanded" role="dialog" aria-modal="true" aria-label={`DAY ${activeDay + 1} 전체 경로 지도`}>
           <header>
-            <span><small>DAY {activeDay + 1} ROUTE</small><b>{route.label}</b></span>
+            <span>
+              <small><em>DAY {activeDay + 1}</em> ROUTE OVERVIEW</small>
+              <b>{route.label}</b>
+              <i>{route.stops.length}개 장소 · {totalDistanceKm.toFixed(1)}km · {Math.round(totalDurationMinutes)}분</i>
+            </span>
             <button type="button" onClick={() => setExpanded(false)} aria-label="전체 지도 닫기">
               <X size={19} /><span>닫기</span>
             </button>
@@ -822,9 +838,17 @@ function RouteMap({ activeDay, dayPlans, destinationLocation, originLocation, ro
               })}
             </div>
             <div className="mobile-map-actions">
-              <button type="button" className="mobile-kakao-navi-cta" onClick={handleNavigationStart} disabled={!navigationDestination}>
+              <button
+                type="button"
+                className={`mobile-kakao-navi-cta${mobileDevice ? "" : " is-mobile-handoff"}`}
+                onClick={handleNavigationStart}
+                disabled={!navigationPlan.destination}
+              >
                 <CarFront size={16} />
-                <span><small>{selectedSegment ? "SELECTED ROUTE" : "NEXT DESTINATION"}</small><b>내비게이션 시작</b></span>
+                <span>
+                  <small>{mobileDevice ? (selectedSegment ? "선택 구간 길안내" : `다음 ${navigationPlan.stopCount}곳 연속 안내`) : "휴대폰 카카오내비 연동"}</small>
+                  <b>실주행 내비게이션</b>
+                </span>
                 <em>→</em>
               </button>
               <a className="mobile-kakao-route-cta" href={openMapUrl} target="_blank" rel="noreferrer noopener">
