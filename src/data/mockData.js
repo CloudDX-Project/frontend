@@ -2408,6 +2408,12 @@ export const applyPlanEdits = (plans, edits) => {
             bookingUrl: replacement.bookingUrl ?? event[6]?.bookingUrl ?? null,
             latitude: replacement.latitude ?? event[6]?.latitude ?? null,
             longitude: replacement.longitude ?? event[6]?.longitude ?? null,
+            type: replacement.type ?? event[6]?.type ?? null,
+            placeId: replacement.placeId ?? event[6]?.placeId ?? null,
+            replacement:
+              replacement.placeId && replacement.type
+                ? { type: replacement.type, placeId: Number(replacement.placeId) }
+                : event[6]?.replacement ?? null,
             isGeographical: true,
           },
         ];

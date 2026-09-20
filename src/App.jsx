@@ -373,6 +373,8 @@ function App() {
     openIndependentBooking,
     changePlanStop,
     reorderDayPlan,
+    resolvePlanStop,
+    savePlanChanges,
     itineraryEventCost,
     generate,
     openSavedTrip,
@@ -1770,6 +1772,8 @@ function App() {
           eventCost={itineraryEventCost}
           money={money}
           onChangeStop={changePlanStop}
+          onResolveStop={resolvePlanStop}
+          onSavePlan={savePlanChanges}
           onReorderStops={reorderDayPlan}
           onOpenStay={() => setStayOpen(true)}
           onOpenStayComparison={() => setStayChangePromptOpen(true)}

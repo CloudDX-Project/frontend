@@ -99,6 +99,8 @@ function PlanFullscreen({
   eventCost,
   money,
   onChangeStop,
+  onResolveStop,
+  onSavePlan,
   onOpenStay,
   onOpenStayComparison,
   onReorderStops,
@@ -129,6 +131,7 @@ function PlanFullscreen({
   const [utilityMessage, setUtilityMessage] = useState("");
   const [mobilePreview, setMobilePreview] = useState(false);
   const [orderRecalculating, setOrderRecalculating] = useState(false);
+  const [planSaving, setPlanSaving] = useState(false);
   const [restaurantDetail, setRestaurantDetail] = useState(null);
   const [attractionDetailTarget, setAttractionDetailTarget] = useState(null);
   const [restaurantDetailType, setRestaurantDetailType] = useState("RESTAURANT");
@@ -170,8 +173,11 @@ function PlanFullscreen({
     setUtilityMessage(message);
     window.setTimeout(() => setUtilityMessage(""), 2600);
   };
-  const savePlan = () => {
+  const savePlan = async () => {
+    if (planSaving) return;
+    setPlanSaving(true);
     try {
+      const result = await onSavePlan?.();
       window.localStorage.setItem(
         "eolmagil-saved-itinerary",
         JSON.stringify({
@@ -182,9 +188,15 @@ function PlanFullscreen({
           savedAt: new Date().toISOString(),
         }),
       );
-      showUtilityMessage("이 일정이 이 기기에 저장되었습니다.");
-    } catch {
-      showUtilityMessage("이 브라우저에서는 일정 저장을 완료할 수 없어요.");
+      showUtilityMessage(
+        result?.persisted
+          ? "변경된 일정과 경로를 서버에 저장했습니다."
+          : "이 일정이 이 기기에 저장되었습니다.",
+      );
+    } catch (error) {
+      showUtilityMessage(error?.message || "일정 저장을 완료할 수 없어요.");
+    } finally {
+      setPlanSaving(false);
     }
   };
   const sharePlan = async () => {
@@ -210,25 +222,23 @@ function PlanFullscreen({
         showUtilityMessage("공유를 완료하지 못했어요. 다시 시도해 주세요.");
     }
   };
-  const applyPlaceChange = (place) => {
+  const applyPlaceChange = async (place) => {
     if (!placePicker) return;
-    const beforeName = placePicker.name;
-    const beforeCost = eventCost(beforeName);
-    const afterCost = eventCost(place.name);
-    const delta = afterCost - beforeCost;
-    const update = {
-      from: beforeName,
-      to: place.name,
-      travel: place.travel,
-      delta,
-    };
-    setPlacePicker(null);
-    setRouteRecalculation(update);
-    window.setTimeout(() => {
-      onChangeStop(activeDay, placePicker.eventId, place);
-      setRouteRecalculation(null);
+    try {
+      const resolved = await onResolveStop?.(place, placePicker.item) || place;
+      const update = {
+        from: placePicker.name,
+        to: resolved.name,
+        travel: resolved.travel,
+        delta: eventCost(resolved.name) - eventCost(placePicker.name),
+      };
+      onChangeStop(activeDay, placePicker.eventId, resolved);
+      setPlacePicker(null);
       setRouteResult(update);
-    }, 1900);
+      showUtilityMessage("장소를 변경했습니다. 저장하면 실제 경로를 계산합니다.");
+    } catch (error) {
+      showUtilityMessage(error?.message || "장소를 변경하지 못했습니다.");
+    }
   };
   const handleDragEnd = ({ source, destination }) => {
     if (!destination || source.index === destination.index || orderRecalculating) return;
@@ -296,8 +306,8 @@ function PlanFullscreen({
           </b>
         </div>
         <div className="plan-header-actions">
-          <button type="button" onClick={savePlan}>
-            저장
+          <button type="button" onClick={savePlan} disabled={planSaving}>
+            {planSaving ? "저장 중…" : "저장"}
           </button>
           <button type="button" onClick={sharePlan}>
             공유
@@ -762,7 +772,7 @@ function PlanFullscreen({
               어디로 가볼까요?
             </h3>
             <span>
-              장소를 고르면 이후 이동 시간, 지도 경로와 1인 예상 경비를 함께
+              장소를 고른 뒤 저장하면 이동 시간, 지도 경로와 1인 예상 경비를 함께
               다시 계산해요.
             </span>
             <div className="route-place-options">

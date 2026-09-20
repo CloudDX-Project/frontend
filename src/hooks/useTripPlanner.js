@@ -4,10 +4,10 @@ import { isMockModeEnabled } from "../api/apiClient";
 import { recommendAccommodations } from "../api/accommodationApi";
 import { searchFlights } from "../api/flightApi";
 import { createTrip } from "../api/tripApi";
+import { loadPlanEditor, savePlanEditor, searchPlanPlaces } from "../api/planEditorApi.js";
 import {
   normalizeTripPlanResponse,
   requestTripPlan,
-  requestTripPlanRevision,
 } from "../api/tripPlanApi";
 import {
   makeDemoTicketOptions,
@@ -18,7 +18,6 @@ import {
   destinationCoordinatesByName,
   jejuRegionCoordinates,
   koreanRegions,
-  toApiLocation,
 } from "../data/locationCatalog";
 import jejuCoastPhoto from "../assets/jeju-main-hero.jpeg";
 import {
@@ -41,6 +40,7 @@ import {
   transportName,
 } from "../data/mockData";
 import { getPlaceCostEstimate } from "../utils/placeCostEstimates";
+import { buildPlanEditRequest } from "../utils/planEditPayload.js";
 
 
 const TRIP_COST_SNAPSHOT_KEY = "tripbuddy-trip-cost-snapshots-v1";
@@ -1642,18 +1642,6 @@ function useTripPlanner() {
   const backendPlanRef =
     useRef(
       null,
-    );
-
-
-  const revisionRequestRef =
-    useRef(
-      0,
-    );
-
-
-  const revisionQueueRef =
-    useRef(
-      Promise.resolve(),
     );
 
 
@@ -6083,93 +6071,6 @@ function useTripPlanner() {
     };
 
 
-  const syncPlanRevision =
-    async (
-      operation,
-    ) => {
-      if (
-          isMockModeEnabled() ||
-          !backendPlanRef.current?.id ||
-          backendPlanRef.current?.source?.startsWith("trip-plan")
-        ) {
-          return;
-        }
-
-      const requestId =
-        ++revisionRequestRef.current;
-
-      revisionQueueRef.current =
-        revisionQueueRef.current
-          .catch(
-            () =>
-              undefined,
-          )
-          .then(
-            async () => {
-              const currentPlan =
-                backendPlanRef.current;
-
-              if (
-                !currentPlan?.id
-              ) {
-                return;
-              }
-
-              try {
-                const nextPlan =
-                  await requestTripPlanRevision(
-                    currentPlan.id,
-
-                    {
-                      ...operation,
-
-                      baseRevisionId:
-                        currentPlan.revisionId ??
-                        operation.baseRevisionId ??
-                        null,
-                    },
-                  );
-
-                backendPlanRef.current =
-                  nextPlan;
-
-                setBackendPlan(
-                  nextPlan,
-                );
-
-                if (
-                  requestId ===
-                  revisionRequestRef.current
-                ) {
-                  setPlanEdits(
-                    {},
-                  );
-
-                  setPlanOrders(
-                    {},
-                  );
-
-                }
-              } catch (
-                error
-              ) {
-                if (
-                  requestId ===
-                  revisionRequestRef.current
-                ) {
-                  notify(
-                    error?.message ||
-                      "변경된 일정의 경로와 경비를 다시 계산하지 못했어요.",
-                  );
-                }
-              }
-            },
-          );
-
-      await revisionQueueRef.current;
-    };
-
-
   const changePlanStop =
     (
       dayIndex,
@@ -6219,26 +6120,8 @@ function useTripPlanner() {
           1,
       );
 
-      void syncPlanRevision({
-        type:
-          "REPLACE_STOP",
-
-        baseRevisionId:
-          backendPlan
-            ?.revisionId ??
-          null,
-
-        dayIndex,
-        eventId,
-
-        place:
-          toApiLocation(
-            place,
-          ),
-      });
-
       notify(
-        `${place.name} 기준으로 이동 동선과 경비를 다시 계산했어요.`,
+        `${place.name}(으)로 변경했습니다. 저장하면 실제 경로와 시간을 계산해요.`,
       );
     };
 
@@ -6301,14 +6184,59 @@ function useTripPlanner() {
     setPlanOrders((current) => ({ ...current, [dayIndex]: order }));
     setPlanRevision((current) => current + 1);
 
-    void syncPlanRevision({
-      type: "REORDER_STOPS",
-      baseRevisionId: backendPlan?.revisionId ?? null,
-      dayIndex,
-      eventIds: order,
-    });
+    notify("순서를 변경했습니다. 저장하면 실제 이동시간과 경로를 다시 계산해요.");
+  };
 
-    notify("같은 이동 구간 안에서 일정 순서와 시간을 다시 계산했어요.");
+
+  const resolvePlanStop = async (place, currentItem = {}) => {
+    const currentPlan = backendPlanRef.current;
+    if (isMockModeEnabled() || !currentPlan?.id) return place;
+
+    const type = String(currentItem.type || "").toUpperCase();
+    if (!["ATTRACTION", "RESTAURANT", "CAFE"].includes(type)) {
+      throw new Error("관광지·식당·카페 일정만 장소를 변경할 수 있습니다.");
+    }
+
+    const matches = await searchPlanPlaces(currentPlan.id, type, place.name);
+    const normalize = (value) => String(value || "").replace(/\s|·/g, "").toLowerCase();
+    const exact = matches.find((candidate) => normalize(candidate.name) === normalize(place.name));
+    const selected = exact || matches[0];
+
+    if (!selected) {
+      throw new Error("데이터베이스에서 해당 장소를 찾지 못했습니다. 다른 장소를 선택해 주세요.");
+    }
+
+    return {
+      ...place,
+      ...selected,
+      icon: place.icon,
+      duration: place.duration,
+      travel: place.travel,
+      type,
+      placeId: selected.placeId,
+    };
+  };
+
+
+  const savePlanChanges = async () => {
+    const currentPlan = backendPlanRef.current;
+    const changed = Object.keys(planEdits).length > 0 || Object.keys(planOrders).length > 0;
+
+    if (isMockModeEnabled() || !currentPlan?.id || !changed) {
+      return { persisted: false, unchanged: !changed };
+    }
+
+    const snapshot = await loadPlanEditor(currentPlan.id);
+    const request = buildPlanEditRequest(snapshot, dayPlans);
+    const saved = await savePlanEditor(currentPlan.id, request);
+    const normalized = normalizeTripPlanResponse(saved.plan);
+
+    backendPlanRef.current = normalized;
+    setBackendPlan(normalized);
+    setPlanEdits({});
+    setPlanOrders({});
+    setPlanRevision((current) => current + 1);
+    return { persisted: true };
   };
 
 
@@ -7489,6 +7417,10 @@ function useTripPlanner() {
     changePlanStop,
 
     reorderDayPlan,
+
+    resolvePlanStop,
+
+    savePlanChanges,
 
     itineraryEventCost,
 
