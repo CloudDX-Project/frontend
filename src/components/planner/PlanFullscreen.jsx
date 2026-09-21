@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
-import { ExternalLink, MapPin, Monitor, Smartphone, Star, X } from "lucide-react";
+import { ExternalLink, MapPin, Minus, Monitor, Plus, Smartphone, Star, X } from "lucide-react";
 import { contentApi } from "../../api/contentApi";
 import { dateLabel, getPlaceAlternatives, locationLabel, timeLabel } from "../../data/mockData";
 import TransitionIcon from "../common/TransitionIcon";
@@ -79,7 +79,7 @@ function CostGroupCard({ group, money, travelers }) {
             <strong>
               {hasKnownPrice
                 ? `${approximate ? "약 " : ""}1인 ${money(numericValue)}원`
-                : explicitlyFree ? "무료" : "가격 확인 필요"}
+                : explicitlyFree ? "무료" : `약 1인 ${money(15000)}원`}
             </strong>
           </p>
         );
@@ -99,6 +99,8 @@ function PlanFullscreen({
   eventCost,
   money,
   onChangeStop,
+  onAddStop,
+  onRemoveStop,
   onResolveStop,
   onSavePlan,
   onOpenStay,
@@ -132,9 +134,12 @@ function PlanFullscreen({
   const [mobilePreview, setMobilePreview] = useState(false);
   const [orderRecalculating, setOrderRecalculating] = useState(false);
   const [planSaving, setPlanSaving] = useState(false);
+  const [stopComposer, setStopComposer] = useState(null);
+  const [stopComposerSaving, setStopComposerSaving] = useState(false);
   const [restaurantDetail, setRestaurantDetail] = useState(null);
   const [attractionDetailTarget, setAttractionDetailTarget] = useState(null);
   const [restaurantDetailType, setRestaurantDetailType] = useState("RESTAURANT");
+  const [restaurantHeroFailed, setRestaurantHeroFailed] = useState(false);
   const [restaurantLoading, setRestaurantLoading] = useState(false);
   const [restaurantError, setRestaurantError] = useState("");
   const placeOptions = getPlaceAlternatives(destinationLocation, placePicker?.item);
@@ -248,12 +253,27 @@ function PlanFullscreen({
       window.setTimeout(() => setOrderRecalculating(false), 450);
     }, 750);
   };
+  const submitAddedStop = async (event) => {
+    event.preventDefault();
+    if (!stopComposer || stopComposerSaving) return;
+    setStopComposerSaving(true);
+    try {
+      await onAddStop?.(activeDay, stopComposer.afterEventId, stopComposer);
+      setStopComposer(null);
+      showUtilityMessage("새 일정을 추가하고 뒤 시간을 다시 맞췄습니다.");
+    } catch (error) {
+      showUtilityMessage(error?.message || "일정을 추가하지 못했습니다.");
+    } finally {
+      setStopComposerSaving(false);
+    }
+  };
   const openRestaurantDetail = async ({ name, metadata = {}, placeType = "RESTAURANT" }) => {
     const normalizedPlaceType = placeType === "CAFE" ? "CAFE" : "RESTAURANT";
     setRestaurantDetailType(normalizedPlaceType);
     setRestaurantDetail({ name });
     setRestaurantLoading(true);
     setRestaurantError("");
+    setRestaurantHeroFailed(false);
 
     const request = {
       placeId: metadata.placeId || metadata.externalId || metadata.referenceId || metadata.id,
@@ -528,6 +548,39 @@ function PlanFullscreen({
                     }}
                     className={`itinerary-stop${metadata.isLocked ? "" : " is-draggable"}${dragSnapshot.isDragging ? " is-dragging" : ""}`}
                   >
+                    <div className="stop-block-actions" onPointerDown={(event) => event.stopPropagation()}>
+                      {!metadata.isLocked && (
+                        <button
+                          type="button"
+                          className="is-remove"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onRemoveStop?.(activeDay, eventId);
+                          }}
+                          aria-label={`${name} 일정 삭제`}
+                          title="이 일정 삭제"
+                        >
+                          <Minus size={14} aria-hidden="true" />
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="is-add"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          setStopComposer({
+                            afterEventId: eventId,
+                            name: "",
+                            type: "ATTRACTION",
+                            stayMinutes: 60,
+                          });
+                        }}
+                        aria-label={`${name} 다음에 일정 추가`}
+                        title="이 다음에 일정 추가"
+                      >
+                        <Plus size={14} aria-hidden="true" />
+                      </button>
+                    </div>
                     <time>{displayTime}</time>
                     <span>{icon}</span>
                     <div>
@@ -669,6 +722,7 @@ function PlanFullscreen({
       {attractionDetailTarget && (
         <AttractionDetailModal key={String(attractionDetailTarget.id)}
           attractionId={attractionDetailTarget.id} name={attractionDetailTarget.name}
+          compact={mobilePreview}
           onClose={() => setAttractionDetailTarget(null)} />
       )}
       {restaurantDetail && (
@@ -683,11 +737,12 @@ function PlanFullscreen({
               <div className="restaurant-detail-error"><h3>{restaurantDetail.name}</h3><p>{restaurantError}</p><button type="button" onClick={() => setRestaurantDetail(null)}>닫기</button></div>
             ) : (
               <>
-                <div className="restaurant-detail-hero">
-                  <img
+                <div className={`restaurant-detail-hero${restaurantHeroFailed || !(restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]) ? " is-fallback" : ""}`}>
+                  {!restaurantHeroFailed && (restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]) && <img
                     src={restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]}
                     alt={`${restaurantDetail.name} 대표 이미지`}
-                  />
+                    onError={() => setRestaurantHeroFailed(true)}
+                  />}
                   <span>{restaurantDetail.category || (restaurantDetailType === "CAFE" ? "추천 카페" : "추천 식당")}</span>
                 </div>
                 <div className="restaurant-detail-content">
@@ -747,6 +802,46 @@ function PlanFullscreen({
               </>
             )}
           </section>
+        </div>
+      )}
+      {stopComposer && (
+        <div className="stop-composer-backdrop" role="presentation" onMouseDown={(event) => {
+          if (event.target === event.currentTarget) setStopComposer(null);
+        }}>
+          <form className="stop-composer-modal" role="dialog" aria-modal="true" aria-label="일정 추가" onSubmit={submitAddedStop}>
+            <button type="button" className="modal-close" onClick={() => setStopComposer(null)} aria-label="일정 추가 닫기">
+              <X size={18} aria-hidden="true" />
+            </button>
+            <p>✦ TripBuddy · SCHEDULE EDIT</p>
+            <h3>이 다음에 어떤 일정을<br />추가할까요?</h3>
+            <span>장소를 찾은 뒤 이후 시간과 지도 동선을 함께 다시 맞춥니다.</span>
+            <label>
+              <b>장소 이름</b>
+              <input autoFocus value={stopComposer.name} onChange={(event) => setStopComposer((current) => ({ ...current, name: event.target.value }))} placeholder="예: 애월 해안도로" />
+            </label>
+            <div className="stop-composer-grid">
+              <label>
+                <b>일정 종류</b>
+                <select value={stopComposer.type} onChange={(event) => setStopComposer((current) => ({ ...current, type: event.target.value }))}>
+                  <option value="ATTRACTION">관광지</option>
+                  <option value="RESTAURANT">식당</option>
+                  <option value="CAFE">카페</option>
+                </select>
+              </label>
+              <label>
+                <b>머무는 시간</b>
+                <select value={stopComposer.stayMinutes} onChange={(event) => setStopComposer((current) => ({ ...current, stayMinutes: Number(event.target.value) }))}>
+                  <option value={30}>30분</option>
+                  <option value={60}>1시간</option>
+                  <option value={90}>1시간 30분</option>
+                  <option value={120}>2시간</option>
+                </select>
+              </label>
+            </div>
+            <button type="submit" className="stop-composer-submit" disabled={stopComposerSaving || !stopComposer.name.trim()}>
+              {stopComposerSaving ? "장소 찾는 중…" : "이 위치에 일정 추가"}
+            </button>
+          </form>
         </div>
       )}
       {placePicker && (

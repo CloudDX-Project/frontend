@@ -41,6 +41,7 @@ import {
 } from "../data/mockData";
 import { getPlaceCostEstimate } from "../utils/placeCostEstimates";
 import { buildPlanEditRequest } from "../utils/planEditPayload.js";
+import { isAirportRouteSegment } from "../utils/routeFilters.js";
 
 
 const TRIP_COST_SNAPSHOT_KEY = "tripbuddy-trip-cost-snapshots-v1";
@@ -273,6 +274,52 @@ const applyPlanOrders = (plans, orders, localTransport) =>
         ...day[2].filter((event, eventIndex) =>
           !known.has(planEventKey(event, dayIndex, eventIndex))),
       ],
+    ], localTransport);
+  });
+
+
+const applyPlanCustomizations = (plans, customizations, localTransport) =>
+  plans.map((day, dayIndex) => {
+    const customization = customizations[dayIndex];
+    const removed = new Set(customization?.removed || []);
+    const additions = Array.isArray(customization?.additions)
+      ? customization.additions
+      : [];
+
+    if (!removed.size && !additions.length) return day;
+
+    const additionsByAnchor = new Map();
+    additions.forEach((addition) => {
+      const anchorId = addition.afterId || "__start__";
+      additionsByAnchor.set(anchorId, [
+        ...(additionsByAnchor.get(anchorId) || []),
+        addition.event,
+      ]);
+    });
+
+    const rows = [...(additionsByAnchor.get("__start__") || [])];
+    const knownAnchors = new Set();
+
+    day[2].forEach((event, eventIndex) => {
+      const eventId = planEventKey(event, dayIndex, eventIndex);
+      knownAnchors.add(eventId);
+      if (!removed.has(eventId)) rows.push(event);
+      rows.push(...(additionsByAnchor.get(eventId) || []));
+    });
+
+    additions.forEach((addition) => {
+      if (addition.afterId && !knownAnchors.has(addition.afterId)) {
+        rows.push(addition.event);
+      }
+    });
+
+    return recalculateDayTimeline([
+      day[0],
+      day[1],
+      rows.map((event) => [
+        ...event.slice(0, 6),
+        { ...(event[6] || {}), locallyReordered: true },
+      ]),
     ], localTransport);
   });
 
@@ -1631,6 +1678,13 @@ function useTripPlanner() {
 
 
   const [
+    planCustomizations,
+    setPlanCustomizations,
+  ] =
+    useState({});
+
+
+  const [
     backendPlan,
     setBackendPlan,
   ] =
@@ -2295,18 +2349,23 @@ function useTripPlanner() {
   const dayPlans =
     useMemo(
       () =>
-        applyPlanOrders(
-          applyPlanEdits(
-            baseDayPlans,
-            planEdits,
+        applyPlanCustomizations(
+          applyPlanOrders(
+            applyPlanEdits(
+              baseDayPlans,
+              planEdits,
+            ),
+            planOrders,
+            localTransport,
           ),
-          planOrders,
+          planCustomizations,
           localTransport,
         ),
       [
         baseDayPlans,
         planEdits,
         planOrders,
+        planCustomizations,
         localTransport,
       ],
     );
@@ -2751,7 +2810,7 @@ function useTripPlanner() {
   const routedItineraryDistanceKm =
     (backendPlan?.routes || [])
       .flatMap((route) => route?.segments || [])
-      .filter((segment) => String(segment?.mode || "").toUpperCase() !== "AIR")
+      .filter((segment) => !isAirportRouteSegment(segment))
       .reduce((sum, segment) => {
         const distance = Number(segment?.distanceKm);
         return sum + (Number.isFinite(distance) && distance > 0 ? distance : 0);
@@ -3429,9 +3488,11 @@ function useTripPlanner() {
     const likelyMeal = itineraryMatch?.type === "meal" ||
       /RESTAURANT|CAFE|FOOD|MEAL/.test(itemType) ||
       /식비|식사|카페|커피|메뉴/.test(itemLabel);
-    const fallback = likelyMeal
-      ? getPlaceCostEstimate(itemLabel, { type: /CAFE/.test(itemType) ? "CAFE" : "RESTAURANT" })
-      : { price: 0, source: "" };
+    const fallback = getPlaceCostEstimate(itemLabel, {
+      type: likelyMeal
+        ? /CAFE/.test(itemType) ? "CAFE" : "RESTAURANT"
+        : itemType,
+    });
     const value = rawValue > 0 ? rawValue : matchedValue > 0 ? matchedValue : fallback.price;
 
     return {
@@ -3442,7 +3503,7 @@ function useTripPlanner() {
       value,
       note: rawValue > 0
         ? item.note || (item.approximate ? "백엔드 예상 견적" : "백엔드 확정 견적")
-        : itineraryMatch?.row?.[2] || (fallback.price > 0 ? `${fallback.source} · 1인 예상` : item.note || "현장 확인"),
+        : itineraryMatch?.row?.[2] || `${fallback.source} · 1인 예상`,
     };
   };
 
@@ -4355,6 +4416,8 @@ function useTripPlanner() {
       setPlanOrders(
         {},
       );
+
+      setPlanCustomizations({});
 
       setBackendPlan(
         null,
@@ -5272,6 +5335,7 @@ function useTripPlanner() {
         setManualTimeConfirmed(false);
         setPlanEdits({});
         setPlanOrders({});
+        setPlanCustomizations({});
         setShowPlan(false);
         setPlanViewOpen(false);
         setLocalTransport("");
@@ -5791,6 +5855,8 @@ function useTripPlanner() {
         {},
       );
 
+      setPlanCustomizations({});
+
       setStayOpen(
         false,
       );
@@ -6188,6 +6254,92 @@ function useTripPlanner() {
   };
 
 
+  const removePlanStop = (dayIndex, eventId) => {
+    const event = dayPlans[dayIndex]?.[2]?.find((item, eventIndex) =>
+      planEventKey(item, dayIndex, eventIndex) === eventId);
+
+    if (!event) return;
+    if (event[6]?.isLocked) {
+      notify("항공·공항·렌터카·숙소처럼 예약과 연결된 일정은 삭제할 수 없어요.");
+      return;
+    }
+
+    setPlanCustomizations((current) => {
+      const day = current[dayIndex] || {};
+      return {
+        ...current,
+        [dayIndex]: {
+          ...day,
+          removed: [...new Set([...(day.removed || []), eventId])],
+        },
+      };
+    });
+    setPlanRevision((current) => current + 1);
+    notify(`${event[2]} 일정을 제외하고 뒤 시간을 다시 맞췄어요.`);
+  };
+
+
+  const addPlanStop = async (dayIndex, afterEventId, draft = {}) => {
+    const name = String(draft.name || "").trim();
+    const type = String(draft.type || "ATTRACTION").toUpperCase();
+    const stayMinutes = Math.max(20, Math.min(240, Number(draft.stayMinutes) || 60));
+
+    if (!name) throw new Error("추가할 장소 이름을 입력해 주세요.");
+
+    let resolved = { name, type };
+    const currentPlan = backendPlanRef.current;
+    if (!isMockModeEnabled() && currentPlan?.id) {
+      const matches = await searchPlanPlaces(currentPlan.id, type, name);
+      const normalize = (value) => String(value || "").replace(/\s|·/g, "").toLowerCase();
+      resolved = matches.find((candidate) => normalize(candidate.name) === normalize(name))
+        || matches[0]
+        || resolved;
+    }
+
+    const id = `custom-${dayIndex + 1}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const icon = type === "RESTAURANT" ? "🍽️" : type === "CAFE" ? "☕" : "📍";
+    const event = [
+      "09:00",
+      icon,
+      resolved.name || name,
+      resolved.description || resolved.detail || "직접 추가한 일정입니다.",
+      `${stayMinutes}분`,
+      15,
+      {
+        id,
+        type,
+        category: type,
+        placeId: resolved.placeId ?? null,
+        latitude: resolved.latitude ?? null,
+        longitude: resolved.longitude ?? null,
+        stayMinutes,
+        travelMinutes: 15,
+        isLocked: false,
+        isGeographical: true,
+        customAdded: true,
+        locallyReordered: true,
+      },
+    ];
+
+    setPlanCustomizations((current) => {
+      const day = current[dayIndex] || {};
+      return {
+        ...current,
+        [dayIndex]: {
+          ...day,
+          additions: [
+            ...(day.additions || []),
+            { afterId: afterEventId || null, event },
+          ],
+        },
+      };
+    });
+    setPlanRevision((current) => current + 1);
+    notify(`${resolved.name || name} 일정을 추가하고 뒤 시간을 다시 맞췄어요.`);
+    return event;
+  };
+
+
   const resolvePlanStop = async (place, currentItem = {}) => {
     const currentPlan = backendPlanRef.current;
     if (isMockModeEnabled() || !currentPlan?.id) return place;
@@ -6220,10 +6372,17 @@ function useTripPlanner() {
 
   const savePlanChanges = async () => {
     const currentPlan = backendPlanRef.current;
-    const changed = Object.keys(planEdits).length > 0 || Object.keys(planOrders).length > 0;
+    const hasCustomChanges = Object.keys(planCustomizations).length > 0;
+    const changed = Object.keys(planEdits).length > 0 || Object.keys(planOrders).length > 0 || hasCustomChanges;
 
     if (isMockModeEnabled() || !currentPlan?.id || !changed) {
       return { persisted: false, unchanged: !changed };
+    }
+
+    // 현재 backend 편집 계약은 기존 장소의 순서/교체만 지원한다.
+    // 직접 추가·삭제한 블록은 로컬 저장으로 보존하고 서버 원본을 임의로 변형하지 않는다.
+    if (hasCustomChanges) {
+      return { persisted: false, localOnly: true };
     }
 
     const snapshot = await loadPlanEditor(currentPlan.id);
@@ -6235,6 +6394,7 @@ function useTripPlanner() {
     setBackendPlan(normalized);
     setPlanEdits({});
     setPlanOrders({});
+    setPlanCustomizations({});
     setPlanRevision((current) => current + 1);
     return { persisted: true };
   };
@@ -6933,6 +7093,7 @@ function useTripPlanner() {
 
 
     setPlanOrders({});
+    setPlanCustomizations({});
 
     if (mode === "stay-revision") {
       setStayChangePromptOpen(true);
@@ -7091,6 +7252,7 @@ function useTripPlanner() {
     setBackendPlan(restoredPlan);
     setPlanEdits({});
     setPlanOrders({});
+    setPlanCustomizations({});
     setActiveDay(0);
     setPlanningStage("ready");
     setShowPlan(true);
@@ -7415,6 +7577,10 @@ function useTripPlanner() {
     openIndependentBooking,
 
     changePlanStop,
+
+    addPlanStop,
+
+    removePlanStop,
 
     reorderDayPlan,
 
