@@ -626,16 +626,15 @@ function PlanFullscreen({
                         <em>{eventType} · {displayStay}</em>
                       </small>
                       <div className="stop-title-row">
-                        {isDiningPlace ? (
-                          <div className="stop-place-heading">
-                            <b>{name}</b>
-                            {costLabel && <em className="dining-price"><small>예상 식사비</small><strong>{costLabel}</strong></em>}
-                          </div>
-                        ) : hasAttractionDetail ? (
-                          <div className="stop-place-heading">
-                            <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
-                          </div>
-                        ) : <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>}
+                        <div className="stop-place-heading">
+                          <b>{name}</b>
+                          {costLabel && (
+                            <em className="stop-price-summary">
+                              <small>{isRentalStop ? "렌터카 총액" : isDiningPlace ? "예상 식비" : "예상 금액"}</small>
+                              <strong>{costLabel}</strong>
+                            </em>
+                          )}
+                        </div>
                         {hasPartnerBooking && liveBookingUrl ? (
                           <a
                             className={`stop-booking-link ${isRentalStop ? "is-rental" : "is-flight"}`}
@@ -668,7 +667,10 @@ function PlanFullscreen({
                       )}
                       <p>{detail}</p>
                       {!metadata.isLocked && (
-                        <div className="stop-card-actions" onPointerDown={(event) => event.stopPropagation()}>
+                        <div
+                          className={`stop-card-actions${isDiningPlace || hasAttractionDetail ? " has-detail" : ""}`}
+                          onPointerDown={(event) => event.stopPropagation()}
+                        >
                           {isDiningPlace && (
                             <button
                               type="button"

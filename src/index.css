@@ -5775,6 +5775,147 @@ footer .footer-legal {
 .plan-fullscreen.mobile-preview .stop-block-actions{top:7px;right:7px;gap:4px}
 .plan-fullscreen.mobile-preview .stop-block-actions button{width:25px;height:25px;border-radius:7px}
 
+/* 모바일 편집 레이어: 기존 기기 프레임 안에서 한 장의 화면처럼 열립니다. */
+.plan-fullscreen.mobile-preview .stop-picker-backdrop,
+.plan-fullscreen.mobile-preview .restaurant-detail-backdrop,
+.plan-fullscreen.mobile-preview .stop-composer-backdrop{
+  padding:0;
+  border:0;
+  border-radius:36px;
+  background:#fffdf9;
+  box-shadow:none;
+  backdrop-filter:none;
+}
+.plan-fullscreen.mobile-preview .stop-picker-modal,
+.plan-fullscreen.mobile-preview .restaurant-detail-modal,
+.plan-fullscreen.mobile-preview .stop-composer-modal{
+  border:0;
+  border-radius:36px;
+  box-shadow:none;
+}
+/* 장소 변경은 큰 사진을 먼저 보고 고를 수 있도록 세로형 카드로 구성합니다. */
+.plan-fullscreen.mobile-preview .stop-picker-modal{
+  padding:24px 15px 18px;
+  scrollbar-gutter:stable;
+}
+.plan-fullscreen.mobile-preview .route-place-options{
+  grid-template-columns:1fr;
+  gap:12px;
+}
+.plan-fullscreen.mobile-preview .route-place-options>button{
+  display:block;
+  min-height:0;
+  overflow:hidden;
+  border-radius:12px;
+}
+.plan-fullscreen.mobile-preview .route-place-options>button>img,
+.plan-fullscreen.mobile-preview .route-place-photo-fallback{
+  display:block;
+  width:100%;
+  height:158px;
+  min-height:158px;
+  padding:0;
+  object-fit:cover;
+  object-position:center;
+}
+.plan-fullscreen.mobile-preview .route-place-options>button>span{
+  min-height:88px;
+  gap:6px;
+  padding:12px 13px 13px;
+}
+.plan-fullscreen.mobile-preview .route-place-options>button b{
+  padding-right:40px;
+  font-size:12px;
+  line-height:1.3;
+}
+.plan-fullscreen.mobile-preview .route-place-options>button small,
+.plan-fullscreen.mobile-preview .route-place-options>button>span>em{
+  font-size:8px;
+  line-height:1.45;
+}
+.plan-fullscreen.mobile-preview .route-place-options>button i{
+  top:9px;
+  right:9px;
+  width:31px;
+  height:31px;
+  border-width:1px;
+  border-radius:9px;
+  font-size:14px;
+}
+
+/* 식당 상세 이미지는 원본 구도를 보존하고 메뉴 행의 줄맞춤을 안정화합니다. */
+.plan-fullscreen.mobile-preview .restaurant-detail-hero{
+  height:210px;
+  min-height:210px;
+}
+.plan-fullscreen.mobile-preview .restaurant-detail-hero img{
+  width:100%;
+  height:100%;
+  object-fit:contain;
+  object-position:center;
+}
+.plan-fullscreen.mobile-preview .restaurant-detail-content{
+  padding:20px 16px 24px;
+}
+.plan-fullscreen.mobile-preview .restaurant-menu-list article{
+  display:grid;
+  grid-template-columns:minmax(0,1fr) auto;
+  align-items:start;
+  gap:5px 12px;
+  padding:12px 0;
+}
+.plan-fullscreen.mobile-preview .restaurant-menu-list article>div{
+  min-width:0;
+}
+.plan-fullscreen.mobile-preview .restaurant-menu-list article b,
+.plan-fullscreen.mobile-preview .restaurant-menu-list article p{
+  margin:0;
+  line-height:1.5;
+  overflow-wrap:anywhere;
+  word-break:keep-all;
+}
+.plan-fullscreen.mobile-preview .restaurant-menu-list article>strong{
+  align-self:start;
+  padding-top:1px;
+  font-size:9px;
+  white-space:nowrap;
+}
+
+/* 작은 화면에서는 금액을 제목을 보조하는 크기로 낮춥니다. */
+.plan-fullscreen.mobile-preview .full-timeline .stop-price-summary{
+  min-width:0;
+  min-height:24px;
+  gap:0;
+  padding:3px 6px;
+  border-radius:6px;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-price-summary small{
+  display:none;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-price-summary strong{
+  font-size:7px!important;
+  letter-spacing:-.1px;
+}
+
+@media(max-width:760px){
+  .plan-fullscreen.is-mobile-device .restaurant-detail-backdrop,
+  .plan-fullscreen.is-mobile-device .stop-picker-backdrop,
+  .plan-fullscreen.is-mobile-device .stop-composer-backdrop{padding:0;background:#fffdf9;backdrop-filter:none}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-modal,
+  .plan-fullscreen.is-mobile-device .stop-picker-modal,
+  .plan-fullscreen.is-mobile-device .stop-composer-modal{border:0;border-radius:0;box-shadow:none}
+  .plan-fullscreen.is-mobile-device .route-place-options>button{display:block;min-height:0}
+  .plan-fullscreen.is-mobile-device .route-place-options>button>img,
+  .plan-fullscreen.is-mobile-device .route-place-photo-fallback{width:100%;height:170px;min-height:170px;padding:0;object-fit:cover;object-position:center}
+  .plan-fullscreen.is-mobile-device .route-place-options>button>span{min-height:90px;padding:12px 13px}
+  .plan-fullscreen.is-mobile-device .route-place-options>button i{top:9px;right:9px}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-hero img{object-fit:contain;object-position:center}
+  .plan-fullscreen.is-mobile-device .restaurant-menu-list article{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:5px 12px;padding:12px 0}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-price-summary{min-width:0;min-height:27px;gap:0;padding:4px 7px}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-price-summary small{display:none}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-price-summary strong{font-size:9px!important}
+}
+
 /* 일정 편집은 상단의 한 개 CTA와 카드 하단의 명시적 작업 영역으로 정리합니다. */
 .full-day-title .itinerary-editor-bar{display:flex;flex:1 0 100%;align-items:center;justify-content:space-between;gap:18px;padding:14px 15px;border:1px solid #cae3da;border-radius:13px;background:linear-gradient(105deg,#f5fbf8 0%,#fffdfa 100%);box-shadow:0 7px 18px rgba(26,96,86,.06)}
 .itinerary-editor-bar>span{display:grid;grid-template-columns:auto auto;align-items:center;justify-content:start;gap:2px 7px;color:#1b6f67}
@@ -5783,17 +5924,6 @@ footer .footer-legal {
 .itinerary-editor-bar>span>small{color:#728b85;font-size:9px;font-weight:650}
 .full-day-title .itinerary-editor-bar .itinerary-add-button{display:inline-flex;min-height:42px;flex:none;align-items:center;justify-content:center;gap:7px;padding:0 16px;border:1px solid #087c72;border-radius:10px;background:linear-gradient(135deg,#0c8b7e,#087269);box-shadow:0 8px 18px rgba(8,120,110,.18);color:#fff;font-size:11px;font-weight:900}
 .full-day-title .itinerary-editor-bar .itinerary-add-button:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(8,120,110,.24)}
-.full-timeline .stop-place-heading{display:flex;min-width:0;align-items:center;justify-content:space-between;gap:12px}
-.full-timeline .stop-place-heading>b{min-width:0}
-.full-timeline .stop-place-heading .dining-price{display:grid;flex:none;justify-items:end;gap:1px;padding:6px 9px;border:1px solid #f0d4ad;border-radius:9px;background:linear-gradient(135deg,#fff8e8,#fff1d7);font-style:normal;box-shadow:0 3px 9px rgba(178,107,31,.08)}
-.full-timeline .stop-place-heading .dining-price small{color:#a96a24;font:800 7px Inter,Pretendard,sans-serif;letter-spacing:.04em}
-.full-timeline .stop-place-heading .dining-price strong{color:#bf5b23;font:900 12px Inter,Pretendard,sans-serif;white-space:nowrap}
-.full-timeline .stop-card-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:7px;margin-top:13px;padding-top:11px;border-top:1px solid #e8f0ed}
-.full-timeline .stop-card-actions button{position:static!important;display:inline-flex;width:auto!important;min-width:0;min-height:33px;align-items:center;justify-content:center;gap:5px;margin:0!important;padding:7px 11px!important;border:1px solid #c4ded6;border-radius:8px;background:#f8fcfa;color:#176f67;font-size:9px;font-weight:850;line-height:1;transform:none!important;box-shadow:none}
-.full-timeline .stop-card-actions .stop-detail-action{border-color:#9fcfc3;background:#edf8f4;color:#0c776e}
-.full-timeline .stop-card-actions .stop-change{border-color:#65b7a5;background:#fff;color:#08766d}
-.full-timeline .stop-card-actions .stop-remove-action{margin-left:auto!important;border-color:transparent;background:transparent;color:#8a6d67}
-.full-timeline .stop-card-actions .stop-remove-action:hover{border-color:#efc9bf;background:#fff5f2;color:#b64f36}
 .full-timeline .itinerary-stop{margin-bottom:48px}
 .full-timeline .itinerary-stop:last-child{margin-bottom:12px}
 .full-timeline .stop-route-leg{left:82px;bottom:-39px;gap:8px!important;padding:0!important;border:0;background:transparent;box-shadow:none}
@@ -5815,11 +5945,6 @@ footer .footer-legal {
   .full-day-title .itinerary-editor-bar{align-items:stretch;flex-direction:column;gap:10px;padding:12px}
   .full-day-title .itinerary-editor-bar .itinerary-add-button{width:100%;min-height:40px}
   .itinerary-editor-bar>span>small{font-size:8px;line-height:1.4}
-  .full-timeline .stop-place-heading{align-items:flex-start;flex-direction:column;gap:7px}
-  .full-timeline .stop-place-heading .dining-price{justify-items:start;padding:5px 7px}
-  .full-timeline .stop-card-actions{justify-content:flex-start;gap:5px;margin-top:9px;padding-top:8px}
-  .full-timeline .stop-card-actions button{min-height:30px;padding:6px 8px!important;font-size:8px}
-  .full-timeline .stop-card-actions .stop-remove-action{margin-left:0!important}
   .full-timeline .itinerary-stop{margin-bottom:44px}
   .full-timeline .stop-route-leg{left:51px;bottom:-36px}
   .full-timeline .stop-route-leg .route-leg-arrow{width:21px;height:25px}
@@ -5830,8 +5955,6 @@ footer .footer-legal {
 .plan-fullscreen.mobile-preview .full-day-title .itinerary-editor-bar{display:flex;padding:9px}
 .plan-fullscreen.mobile-preview .itinerary-editor-bar>span{display:none}
 .plan-fullscreen.mobile-preview .full-day-title .itinerary-editor-bar .itinerary-add-button{min-height:32px;padding:0 10px;font-size:8px!important}
-.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions{gap:4px;margin-top:6px;padding-top:6px}
-.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions button{min-height:25px;padding:5px 6px!important;font-size:6px}
 .plan-fullscreen.mobile-preview .full-timeline .itinerary-stop{margin-bottom:37px}
 .plan-fullscreen.mobile-preview .full-timeline .stop-route-leg{left:43px;bottom:-31px}
 .plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-arrow{width:18px;height:21px}
@@ -5860,6 +5983,196 @@ footer .footer-legal {
 .restaurant-detail-hero.is-landscape{background:radial-gradient(circle at 50% 45%,#426b63 0,#1b403c 58%,#0d2b28 100%)}
 .restaurant-detail-hero.is-landscape img{object-fit:contain;filter:saturate(1.04) contrast(1.02)}
 
+/* 상세 일정 카드: 정보는 왼쪽, 주요 동작은 오른쪽에 모아 높이와 시선 이동을 줄입니다. */
+.full-timeline .itinerary-stop{
+  min-height:116px;
+  padding:14px 20px 14px 18px;
+}
+.full-timeline .itinerary-stop>div{
+  min-width:0;
+  padding-right:216px;
+}
+.full-timeline .stop-title-row{
+  align-items:flex-start;
+  justify-content:flex-start;
+}
+.full-timeline .stop-place-heading{
+  display:flex;
+  min-width:0;
+  align-items:center;
+  justify-content:flex-start;
+  gap:15px;
+}
+.full-timeline .stop-place-heading>b{
+  min-width:0;
+  margin:0;
+  font-size:16px;
+  line-height:1.28;
+}
+.full-timeline .stop-price-summary{
+  display:inline-flex;
+  min-width:112px;
+  min-height:34px;
+  flex:none;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:5px 9px;
+  border:1px solid #efd8b7;
+  border-radius:8px;
+  background:linear-gradient(135deg,#fffaf0,#fff4df);
+  box-shadow:0 3px 9px rgba(164,101,30,.07);
+  font-style:normal;
+  white-space:nowrap;
+}
+.full-timeline .stop-price-summary small{
+  color:#a16c35;
+  font-size:7px;
+  font-weight:850;
+  letter-spacing:.01em;
+}
+.full-timeline .stop-price-summary strong{
+  color:#bd5b25;
+  font:900 11px/1 Inter,Pretendard,sans-serif;
+  letter-spacing:-.25px;
+}
+.full-timeline .stop-card-actions{
+  position:absolute;
+  top:50%;
+  right:22px;
+  display:grid;
+  width:190px;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  align-items:center;
+  gap:7px;
+  margin:0;
+  padding:0;
+  border:0;
+  transform:translateY(-50%);
+}
+.full-timeline .stop-card-actions button{
+  position:static!important;
+  width:100%!important;
+  min-width:0!important;
+  min-height:38px;
+  margin:0!important;
+  padding:8px 9px!important;
+  border:1px solid #b7dacf;
+  border-radius:8px;
+  background:#fff;
+  box-shadow:0 3px 9px rgba(20,91,81,.06);
+  color:#176f67;
+  font-size:9px;
+  font-weight:850;
+  line-height:1.15;
+  transform:none!important;
+}
+.full-timeline .stop-card-actions .stop-detail-action{
+  border-color:#c7ded7;
+  background:#f4faf7;
+}
+.full-timeline .stop-card-actions .stop-change{
+  border-color:#6ebdab;
+  background:#fff;
+  color:#08766d;
+}
+.full-timeline .stop-card-actions:not(.has-detail) .stop-change{
+  grid-column:1/-1;
+}
+.full-timeline .stop-card-actions .stop-remove-action{
+  grid-column:1/-1;
+  justify-self:end;
+  width:auto!important;
+  min-height:22px;
+  padding:2px 3px!important;
+  border:0;
+  background:transparent;
+  box-shadow:none;
+  color:#8b7771;
+  font-size:8px;
+}
+.full-timeline .stop-card-actions .stop-remove-action:hover{
+  background:transparent;
+  color:#b34f38;
+  text-decoration:underline;
+  text-underline-offset:3px;
+}
+.full-timeline .itinerary-stop>div>p{
+  max-width:calc(100% - 4px);
+  margin-top:7px;
+}
+
+@media(max-width:760px){
+  .full-timeline .itinerary-stop{
+    min-height:0;
+    padding:12px 10px;
+  }
+  .full-timeline .itinerary-stop>div{
+    padding-right:0;
+  }
+  .full-timeline .stop-place-heading{
+    align-items:flex-start;
+    gap:7px;
+  }
+  .full-timeline .stop-price-summary{
+    min-width:0;
+    min-height:30px;
+    padding:4px 7px;
+  }
+  .full-timeline .stop-price-summary small{
+    display:none;
+  }
+  .full-timeline .stop-price-summary strong{
+    font-size:9px;
+  }
+  .full-timeline .stop-card-actions{
+    position:static;
+    width:100%;
+    grid-template-columns:repeat(2,minmax(0,1fr));
+    gap:6px;
+    margin-top:9px;
+    padding-top:8px;
+    border-top:1px solid #e8f0ed;
+    transform:none;
+  }
+  .full-timeline .stop-card-actions button{
+    min-height:32px;
+    padding:6px 8px!important;
+    font-size:8px;
+  }
+}
+
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop>div{
+  padding-right:0;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-price-summary{
+  min-width:0;
+  min-height:24px;
+  gap:3px;
+  padding:3px 5px;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-price-summary small{
+  display:none;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-price-summary strong{
+  font-size:7px;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions{
+  position:static;
+  width:100%;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:4px;
+  margin-top:6px;
+  padding-top:6px;
+  border-top:1px solid #e8f0ed;
+  transform:none;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions button{
+  min-height:25px;
+  padding:5px 6px!important;
+  font-size:6px;
+}
+
 /* 일정 블록을 직접 추가·삭제하는 편집 컨트롤 */
 .stop-block-actions{position:absolute;z-index:5;top:7px;right:67px;display:flex;gap:5px}
 .stop-block-actions button{display:grid;width:27px;height:27px;place-items:center;padding:0;border:1px solid #c9dfd7;border-radius:8px;background:#fff;color:#19766e;box-shadow:0 3px 9px rgba(17,82,73,.08);cursor:pointer}
@@ -5876,53 +6189,3 @@ footer .footer-legal {
 .stop-composer-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stop-composer-submit{min-height:45px;border:0;border-radius:11px;background:#087d73;color:#fff;font-size:11px;font-weight:900;cursor:pointer}
 .stop-composer-submit:disabled{cursor:default;opacity:.48}
-
-/* 이미지가 없거나 로드에 실패해도 깨진 이미지 대신 일관된 Dining 표지를 표시 */
-.restaurant-detail-hero.is-fallback{display:grid;place-items:center;background:radial-gradient(circle at 30% 20%,#f1b778 0,transparent 34%),linear-gradient(145deg,#123f3b,#2d766d)}
-.restaurant-detail-hero.is-fallback::before{position:relative;z-index:2;padding:12px 16px;border:1px solid rgba(255,255,255,.42);border-radius:999px;color:#fff;content:'TRIPBUDDY DINING';font:900 11px 'DM Mono',monospace;letter-spacing:.14em}
-
-/* 모바일 미리보기의 모든 추가 레이어는 iPhone 15 Pro 프레임 안에서 한 번만 스크롤 */
-.plan-fullscreen.mobile-preview .stop-picker-backdrop,
-.plan-fullscreen.mobile-preview .restaurant-detail-backdrop,
-.plan-fullscreen.mobile-preview .stop-composer-backdrop{
-  position:absolute;
-  inset:auto;
-  top:calc(78px + var(--phone-preview-top) + var(--iphone-bezel));
-  left:50%;
-  box-sizing:border-box;
-  width:var(--iphone-viewport-width);
-  height:var(--iphone-viewport-height);
-  padding:8px;
-  overflow:hidden;
-  border-radius:37px;
-  transform:translateX(-50%);
-}
-.plan-fullscreen.mobile-preview .stop-picker-modal,
-.plan-fullscreen.mobile-preview .restaurant-detail-modal,
-.plan-fullscreen.mobile-preview .stop-composer-modal{
-  box-sizing:border-box;
-  width:100%;
-  height:100%;
-  max-height:none;
-  margin:0;
-  overflow-x:hidden;
-  overflow-y:auto;
-  border-radius:30px;
-  overscroll-behavior:contain;
-  scrollbar-width:thin;
-}
-.plan-fullscreen.mobile-preview .stop-picker-modal{display:block;padding:23px 14px 16px}
-.plan-fullscreen.mobile-preview .route-place-options{grid-template-columns:1fr;gap:9px}
-.plan-fullscreen.mobile-preview .route-place-options>button{display:grid;grid-template-columns:112px minmax(0,1fr);min-height:104px}
-.plan-fullscreen.mobile-preview .route-place-options>button>img,
-.plan-fullscreen.mobile-preview .route-place-photo-fallback{width:112px;height:104px}
-.plan-fullscreen.mobile-preview .route-place-options>button>span{min-height:104px}
-.plan-fullscreen.mobile-preview .restaurant-detail-modal{display:block}
-.plan-fullscreen.mobile-preview .restaurant-detail-content{padding:18px 14px 22px}
-.plan-fullscreen.mobile-preview .restaurant-menu-list{max-height:none;overflow:visible}
-.plan-fullscreen.mobile-preview .restaurant-detail-hero{height:176px;min-height:176px}
-.plan-fullscreen.mobile-preview .stop-composer-modal{align-content:start;gap:12px;padding:25px 16px}
-.plan-fullscreen.mobile-preview .stop-composer-modal h3{font-size:23px}
-.plan-fullscreen.mobile-preview .stop-composer-grid{grid-template-columns:1fr}
-.plan-fullscreen.mobile-preview .stop-block-actions{top:7px;right:7px;gap:4px}
-.plan-fullscreen.mobile-preview .stop-block-actions button{width:25px;height:25px;border-radius:7px}
