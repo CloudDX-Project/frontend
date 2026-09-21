@@ -63,8 +63,15 @@ VITE_USE_MOCK=false
 
 ## 운영 빌드
 
+운영 배포 전에는 `.env.production.local`에 카카오 JavaScript 키만 설정합니다. API 주소를 적지 않으면 CloudFront의 같은 주소 아래 `/api`를 사용합니다.
+
+```text
+VITE_KAKAO_MAP_JS_KEY=발급받은_JavaScript_키
+VITE_USE_MOCK=false
+```
+
 ```powershell
-npm run build
+npm run build:release
 ```
 
 빌드 결과는 `dist` 폴더에 생성됩니다. 운영 빌드에서는 로컬 개발 주소를 사용하지 않으며, 현재 CloudFront 주소의 `/api` 경로를 통해 백엔드에 연결합니다. 별도 API 도메인을 사용하는 환경이라면 빌드 전에 운영 전용 환경변수로 `VITE_API_BASE_URL`을 지정해야 합니다.
@@ -78,7 +85,7 @@ npm run build
 node --test tests/*.test.mjs
 ```
 
-현재 기준으로 운영 빌드와 프론트 자동 테스트 23개가 통과합니다. 운영 빌드 결과에 `localhost:8080`이 포함되지 않는지도 함께 확인해야 합니다.
+현재 기준으로 운영 빌드와 프론트 자동 테스트 23개가 통과합니다. `npm run build:release`는 운영 번들에 `localhost:8080`이 포함되거나 카카오 지도 키가 빠지면 실패하므로, 잘못된 파일이 배포되는 것을 사전에 차단합니다.
 
 ## 백엔드 연결
 
@@ -99,8 +106,8 @@ API 규격과 데이터 연결 설명은 `BACKEND_INTEGRATION_GUIDE.md`를 참�
 
 ```powershell
 npm install
-npm run build
-node --test tests/*.test.mjs
+npm run build:release
+npm test
 ```
 
 개인 환경값은 백업에 포함되지 않으므로 `.env.example`을 복사해 `.env.development.local`을 다시 작성합니다.

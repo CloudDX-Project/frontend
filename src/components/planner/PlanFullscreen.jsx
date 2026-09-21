@@ -29,6 +29,84 @@ function normalizedRouteName(value) {
   return String(value || "").replace(/\s+/g, "").toLowerCase();
 }
 
+const CURATED_EVENT_DETAILS = [
+  {
+    match: /스탠포드호텔앤리조트\s*제주|스탠포드.*제주/i,
+    describe: () => "애월 바다와 가까운 리조트에서 객실과 부대시설을 이용하며 여유롭게 하루를 시작해요.",
+  },
+  {
+    match: /언덕집국수/i,
+    describe: ({ cost }) => `제주식 고기국수와 비빔국수를 맛볼 수 있는 곳으로, 식비는 ${cost || "1인 약 10,000원"}이에요.`,
+  },
+  {
+    match: /수목원테마공원|수목원테마파크|아이스뮤지엄/i,
+    describe: ({ cost }) => `아이스뮤지엄과 체험 공간, 야간 LED 정원을 한곳에서 즐길 수 있으며 입장·체험비는 ${cost || "1인 약 20,000원"}이에요.`,
+  },
+  {
+    match: /수제.*과일.*모찌|과일모찌/i,
+    describe: ({ cost }) => `제철 과일을 넣은 수제 찹쌀모찌가 인기인 디저트 매장으로, 음료와 디저트 예산은 ${cost || "1인 약 9,000원"}이에요.`,
+  },
+  {
+    match: /작산.*흑돼지|흑돼지.*작산/i,
+    describe: ({ cost }) => `숙성 제주 흑돼지와 제주식 곁들임 메뉴를 함께 맛볼 수 있으며 예상 식비는 ${cost || "1인 약 33,000원"}이에요.`,
+  },
+  {
+    match: /애월갈치.*암행어사|암행어사/i,
+    describe: ({ cost }) => `제주 갈치조림과 구이를 중심으로 한 상차림을 즐길 수 있으며 예상 식비는 ${cost || "1인 약 20,000원"}이에요.`,
+  },
+  {
+    match: /고집돌우럭/i,
+    describe: ({ cost }) => `우럭조림과 옥돔구이 등 제주식 해산물 한 상이 대표 메뉴이며 예상 식비는 ${cost || "1인 약 30,000원"}이에요.`,
+  },
+  {
+    match: /카멜리아힐/i,
+    describe: ({ cost }) => `계절마다 달라지는 동백과 수국 정원을 산책하고 포토존을 둘러볼 수 있으며 입장료는 ${cost || "1인 약 10,000원"}이에요.`,
+  },
+  {
+    match: /오설록.*뮤지엄/i,
+    describe: () => "녹차밭과 전시 공간을 무료로 둘러보고, 녹차 디저트와 기념품도 함께 즐길 수 있어요.",
+  },
+  {
+    match: /새별오름/i,
+    describe: () => "완만한 오름길을 따라 올라 제주 중산간과 억새 풍경을 감상할 수 있는 무료 자연 명소예요.",
+  },
+  {
+    match: /애월\s*카페\s*거리|한담해안산책로/i,
+    describe: () => "현무암 해안과 애월 바다를 따라 산책하고 오션뷰 카페에서 쉬어가기 좋은 코스예요.",
+  },
+  {
+    match: /성산일출봉/i,
+    describe: ({ cost }) => `정상에서 제주 동부 해안과 분화구 전망을 감상할 수 있으며 입장료는 ${cost || "현장 기준으로 확인"}할 수 있어요.`,
+  },
+];
+
+function consumerEventDetail({ name, detail, eventType, price, money, metadata = {} }) {
+  const cost = Number(price) > 0 ? `1인 약 ${money(price)}원` : "";
+  const curated = CURATED_EVENT_DETAILS.find(({ match }) => match.test(String(name || "")));
+  if (curated) return curated.describe({ cost });
+
+  const original = String(detail || "").trim();
+  const isInternalCopy = !original
+    || /recommendationScore|최종 일정|시간 기준|동선 (?:반영|계산)|다시 계산|좌표 기반|이동 가능|일정을 시작|AI가|필수 목적지/i.test(original);
+  if (!isInternalCopy) return original;
+
+  const representativeMenu = String(metadata.representativeMenu || "").trim();
+  if (eventType === "식사") {
+    return `${representativeMenu || "지역 대표 메뉴"}를 맛볼 수 있는 곳으로, 예상 식비는 ${cost || "메뉴 선택에 따라 달라져요"}.`;
+  }
+  if (eventType === "카페") {
+    return `${representativeMenu || "대표 음료와 디저트"}를 즐기며 쉬어가기 좋은 곳으로, 예상 비용은 ${cost || "메뉴 선택에 따라 달라져요"}.`;
+  }
+  if (eventType === "숙소") {
+    return "숙소의 객실과 부대시설을 이용하고 충분히 휴식한 뒤 다음 일정을 시작해요.";
+  }
+  if (eventType === "교통" || eventType === "이동 준비") {
+    return "예약한 교통편을 확인하고 탑승·수령 절차를 마친 뒤 다음 장소로 이동해요.";
+  }
+
+  return `${name}의 대표 볼거리와 체험을 여유롭게 즐겨요${cost ? ` · 예상 입장·체험비는 ${cost}이에요.` : "."}`;
+}
+
 function costGroupDescription(group, travelers) {
   if (/개인 교통비/.test(group || "")) {
     return "항공·기차·버스처럼 탑승자마다 따로 발생하는 교통비예요.";
@@ -599,6 +677,14 @@ function PlanFullscreen({
                         : /공항|항공|탑승|역·터미널/.test(name || "")
                           ? "교통"
                           : "관광";
+                const consumerDetail = consumerEventDetail({
+                  name,
+                  detail,
+                  eventType,
+                  price,
+                  money,
+                  metadata,
+                });
                 return (
                   <Draggable
                     key={eventId}
@@ -665,7 +751,7 @@ function PlanFullscreen({
                           )}
                         </div>
                       )}
-                      <p>{detail}</p>
+                      <p>{consumerDetail}</p>
                       {!metadata.isLocked && (
                         <div
                           className={`stop-card-actions${isDiningPlace || hasAttractionDetail ? " has-detail" : ""}`}
