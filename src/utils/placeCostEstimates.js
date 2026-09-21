@@ -17,7 +17,7 @@ const CURATED_PLACE_COSTS = [
   { match: /수목원테마파크|아이스뮤지엄/, price: 20000, source: "대표 입장권 공개가 기준" },
   { match: /카멜리아힐/, price: 10000, source: "성인 입장권 공개가 기준" },
   { match: /오설록.*뮤지엄/, price: 0, source: "무료 입장 관광지" },
-  { match: /제주올레길|올레길|순례길|산지천|한담해안산책로|새별오름/, price: 0, source: "무료 개방 관광지" },
+  { match: /제주올레길|올레길|순례길|산지천|한담해안산책로|새별오름|고내봉|그린비즈/, price: 0, source: "무료 개방 관광지" },
 ];
 
 export function getPlaceCostEstimate(name, metadata = {}) {

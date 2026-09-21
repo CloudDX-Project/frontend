@@ -5721,8 +5721,144 @@ footer .footer-legal {
 .plan-fullscreen.mobile-preview .stop-composer-modal{align-content:start;gap:12px;padding:25px 16px}
 .plan-fullscreen.mobile-preview .stop-composer-modal h3{font-size:23px}
 .plan-fullscreen.mobile-preview .stop-composer-grid{grid-template-columns:1fr}
+
+/* Route cards: make price and the time spent travelling as visible as the stay time. */
+.full-timeline .itinerary-stop{grid-template-columns:68px 38px minmax(0,1fr);margin-bottom:34px;overflow:visible}
+.full-timeline .itinerary-stop:last-child{margin-bottom:12px}
+.full-timeline .restaurant-detail-trigger{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center}
+.full-timeline .restaurant-detail-trigger .dining-price{display:grid;justify-items:end;gap:1px;padding:6px 9px;border:1px solid #f0d4ad;border-radius:9px;background:linear-gradient(135deg,#fff8e8,#fff1d7);font-style:normal;box-shadow:0 3px 9px rgba(178,107,31,.08)}
+.full-timeline .restaurant-detail-trigger .dining-price small{color:#a96a24;font:800 7px Inter,Pretendard,sans-serif;letter-spacing:.04em}
+.full-timeline .restaurant-detail-trigger .dining-price strong{color:#bf5b23;font:900 12px Inter,Pretendard,sans-serif;white-space:nowrap}
+.full-timeline .stop-route-leg{position:absolute;z-index:2;left:106px;bottom:-27px;display:flex!important;width:max-content!important;align-items:center;gap:6px!important;padding:5px 10px!important;border:1px solid #c9e2db;border-radius:999px;background:#f5fbf8;color:#557b74;box-shadow:0 3px 10px rgba(24,91,81,.07);font:750 9px Inter,Pretendard,sans-serif;pointer-events:none}
+.full-timeline .stop-route-leg svg{color:#0d8177}
+.full-timeline .stop-route-leg span{color:#6a8882}
+.full-timeline .stop-route-leg b{display:inline;margin:0;color:#126f67;font-size:9px}
+
+/* Actual phones and the desktop phone preview use the same full-screen sheets. */
+@media (max-width:760px){
+  .plan-fullscreen.is-mobile-device .restaurant-detail-backdrop,
+  .plan-fullscreen.is-mobile-device .stop-picker-backdrop,
+  .plan-fullscreen.is-mobile-device .stop-composer-backdrop{position:fixed;z-index:2100;inset:0;display:block;width:100vw;height:100dvh;padding:8px;overflow:hidden;border:0;border-radius:0;background:rgba(13,48,44,.68);transform:none}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-modal,
+  .plan-fullscreen.is-mobile-device .stop-picker-modal,
+  .plan-fullscreen.is-mobile-device .stop-composer-modal{box-sizing:border-box;width:100%;height:100%;max-width:none;max-height:none;margin:0;padding:20px 15px max(22px,env(safe-area-inset-bottom));overflow-x:hidden;overflow-y:auto;border-radius:24px;overscroll-behavior:contain}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-modal{display:block;padding:0}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-hero{width:100%;height:210px;min-height:210px}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-content{display:block;overflow:visible;padding:20px 16px max(24px,env(safe-area-inset-bottom))}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-content>header{display:block}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-content>header>strong{width:max-content;margin-top:10px}
+  .plan-fullscreen.is-mobile-device .restaurant-menu-list{max-height:none;overflow:visible}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-content>footer{align-items:stretch;flex-direction:column}
+  .plan-fullscreen.is-mobile-device .restaurant-detail-content>footer a{width:100%}
+  .plan-fullscreen.is-mobile-device .stop-picker-modal>h3{padding-right:34px;font-size:23px;line-height:1.16}
+  .plan-fullscreen.is-mobile-device .route-place-options{grid-template-columns:1fr;gap:9px}
+  .plan-fullscreen.is-mobile-device .route-place-options>button{display:grid;grid-template-columns:118px minmax(0,1fr);min-height:118px}
+  .plan-fullscreen.is-mobile-device .route-place-options>button img{width:118px;height:100%;min-height:118px}
+  .plan-fullscreen.is-mobile-device .stop-composer-grid{grid-template-columns:1fr}
+  .full-timeline .itinerary-stop{grid-template-columns:47px 34px minmax(0,1fr);margin-bottom:32px}
+  .full-timeline .restaurant-detail-trigger{grid-template-columns:minmax(0,1fr) auto;gap:7px}
+  .full-timeline .restaurant-detail-trigger>span{grid-column:1/-1;justify-self:start}
+  .full-timeline .restaurant-detail-trigger .dining-price{padding:5px 7px}
+  .full-timeline .restaurant-detail-trigger .dining-price strong{font-size:10px}
+  .full-timeline .stop-route-leg{left:55px;bottom:-25px;padding:4px 8px!important;font-size:8px}
+  .full-timeline .stop-route-leg b{font-size:8px}
+}
+
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop{margin-bottom:27px}
+.plan-fullscreen.mobile-preview .full-timeline .restaurant-detail-trigger{grid-template-columns:minmax(0,1fr) auto;gap:4px}
+.plan-fullscreen.mobile-preview .full-timeline .restaurant-detail-trigger>span{grid-column:1/-1;justify-self:start}
+.plan-fullscreen.mobile-preview .full-timeline .restaurant-detail-trigger .dining-price{padding:3px 5px;border-radius:6px}
+.plan-fullscreen.mobile-preview .full-timeline .restaurant-detail-trigger .dining-price small{font-size:5px}
+.plan-fullscreen.mobile-preview .full-timeline .restaurant-detail-trigger .dining-price strong{font-size:7px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg{left:48px;bottom:-22px;padding:3px 6px!important;font-size:6px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg b{font-size:6px}
 .plan-fullscreen.mobile-preview .stop-block-actions{top:7px;right:7px;gap:4px}
 .plan-fullscreen.mobile-preview .stop-block-actions button{width:25px;height:25px;border-radius:7px}
+
+/* 일정 편집은 상단의 한 개 CTA와 카드 하단의 명시적 작업 영역으로 정리합니다. */
+.full-day-title .itinerary-editor-bar{display:flex;flex:1 0 100%;align-items:center;justify-content:space-between;gap:18px;padding:14px 15px;border:1px solid #cae3da;border-radius:13px;background:linear-gradient(105deg,#f5fbf8 0%,#fffdfa 100%);box-shadow:0 7px 18px rgba(26,96,86,.06)}
+.itinerary-editor-bar>span{display:grid;grid-template-columns:auto auto;align-items:center;justify-content:start;gap:2px 7px;color:#1b6f67}
+.itinerary-editor-bar>span>svg{grid-row:1/3;color:#249486}
+.itinerary-editor-bar>span>b{font-size:11px;font-weight:900}
+.itinerary-editor-bar>span>small{color:#728b85;font-size:9px;font-weight:650}
+.full-day-title .itinerary-editor-bar .itinerary-add-button{display:inline-flex;min-height:42px;flex:none;align-items:center;justify-content:center;gap:7px;padding:0 16px;border:1px solid #087c72;border-radius:10px;background:linear-gradient(135deg,#0c8b7e,#087269);box-shadow:0 8px 18px rgba(8,120,110,.18);color:#fff;font-size:11px;font-weight:900}
+.full-day-title .itinerary-editor-bar .itinerary-add-button:hover{transform:translateY(-1px);box-shadow:0 10px 22px rgba(8,120,110,.24)}
+.full-timeline .stop-place-heading{display:flex;min-width:0;align-items:center;justify-content:space-between;gap:12px}
+.full-timeline .stop-place-heading>b{min-width:0}
+.full-timeline .stop-place-heading .dining-price{display:grid;flex:none;justify-items:end;gap:1px;padding:6px 9px;border:1px solid #f0d4ad;border-radius:9px;background:linear-gradient(135deg,#fff8e8,#fff1d7);font-style:normal;box-shadow:0 3px 9px rgba(178,107,31,.08)}
+.full-timeline .stop-place-heading .dining-price small{color:#a96a24;font:800 7px Inter,Pretendard,sans-serif;letter-spacing:.04em}
+.full-timeline .stop-place-heading .dining-price strong{color:#bf5b23;font:900 12px Inter,Pretendard,sans-serif;white-space:nowrap}
+.full-timeline .stop-card-actions{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:7px;margin-top:13px;padding-top:11px;border-top:1px solid #e8f0ed}
+.full-timeline .stop-card-actions button{position:static!important;display:inline-flex;width:auto!important;min-width:0;min-height:33px;align-items:center;justify-content:center;gap:5px;margin:0!important;padding:7px 11px!important;border:1px solid #c4ded6;border-radius:8px;background:#f8fcfa;color:#176f67;font-size:9px;font-weight:850;line-height:1;transform:none!important;box-shadow:none}
+.full-timeline .stop-card-actions .stop-detail-action{border-color:#9fcfc3;background:#edf8f4;color:#0c776e}
+.full-timeline .stop-card-actions .stop-change{border-color:#65b7a5;background:#fff;color:#08766d}
+.full-timeline .stop-card-actions .stop-remove-action{margin-left:auto!important;border-color:transparent;background:transparent;color:#8a6d67}
+.full-timeline .stop-card-actions .stop-remove-action:hover{border-color:#efc9bf;background:#fff5f2;color:#b64f36}
+.full-timeline .itinerary-stop{margin-bottom:48px}
+.full-timeline .itinerary-stop:last-child{margin-bottom:12px}
+.full-timeline .stop-route-leg{left:82px;bottom:-39px;gap:8px!important;padding:0!important;border:0;background:transparent;box-shadow:none}
+.full-timeline .stop-route-leg .route-leg-arrow{display:grid;width:24px;height:28px;place-items:center;border:1px solid #c5ded7;border-radius:999px;background:#fff;color:#118077;box-shadow:0 3px 9px rgba(20,91,81,.08)}
+.full-timeline .stop-route-leg>svg{box-sizing:content-box;padding:7px;border-radius:50%;background:#e9f7f2;color:#087c72}
+.full-timeline .stop-route-leg .route-leg-copy{display:grid;gap:1px;padding:5px 10px 5px 0;color:#637f79}
+.full-timeline .stop-route-leg .route-leg-copy small{color:#819690;font:700 7px Inter,Pretendard,sans-serif}
+.full-timeline .stop-route-leg .route-leg-copy b{color:#0b756c;font-size:10px}
+
+/* 장소·메뉴 사진은 모바일에서 잘라내지 않고 전체 구도를 보여줍니다. */
+.plan-fullscreen.mobile-preview .route-place-options>button>img,
+.plan-fullscreen.is-mobile-device .route-place-options>button>img{box-sizing:border-box;object-fit:contain;object-position:center;padding:4px;background:radial-gradient(circle at 50% 42%,#f8fcfa 0,#e2eeea 100%)}
+.plan-fullscreen.mobile-preview .restaurant-detail-hero,
+.plan-fullscreen.is-mobile-device .restaurant-detail-hero{background:radial-gradient(circle at 50% 42%,#426b63 0,#1b403c 60%,#0d2b28 100%)}
+.plan-fullscreen.mobile-preview .restaurant-detail-hero img,
+.plan-fullscreen.is-mobile-device .restaurant-detail-hero img{object-fit:contain;object-position:center;filter:saturate(1.03) contrast(1.02)}
+
+@media(max-width:760px){
+  .full-day-title .itinerary-editor-bar{align-items:stretch;flex-direction:column;gap:10px;padding:12px}
+  .full-day-title .itinerary-editor-bar .itinerary-add-button{width:100%;min-height:40px}
+  .itinerary-editor-bar>span>small{font-size:8px;line-height:1.4}
+  .full-timeline .stop-place-heading{align-items:flex-start;flex-direction:column;gap:7px}
+  .full-timeline .stop-place-heading .dining-price{justify-items:start;padding:5px 7px}
+  .full-timeline .stop-card-actions{justify-content:flex-start;gap:5px;margin-top:9px;padding-top:8px}
+  .full-timeline .stop-card-actions button{min-height:30px;padding:6px 8px!important;font-size:8px}
+  .full-timeline .stop-card-actions .stop-remove-action{margin-left:0!important}
+  .full-timeline .itinerary-stop{margin-bottom:44px}
+  .full-timeline .stop-route-leg{left:51px;bottom:-36px}
+  .full-timeline .stop-route-leg .route-leg-arrow{width:21px;height:25px}
+  .full-timeline .stop-route-leg>svg{padding:6px}
+  .full-timeline .stop-route-leg .route-leg-copy{padding-right:5px}
+}
+
+.plan-fullscreen.mobile-preview .full-day-title .itinerary-editor-bar{display:flex;padding:9px}
+.plan-fullscreen.mobile-preview .itinerary-editor-bar>span{display:none}
+.plan-fullscreen.mobile-preview .full-day-title .itinerary-editor-bar .itinerary-add-button{min-height:32px;padding:0 10px;font-size:8px!important}
+.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions{gap:4px;margin-top:6px;padding-top:6px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions button{min-height:25px;padding:5px 6px!important;font-size:6px}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop{margin-bottom:37px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg{left:43px;bottom:-31px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-arrow{width:18px;height:21px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg>svg{width:10px;height:10px;padding:4px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-copy{padding:2px 4px 2px 0}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-copy small{font-size:5px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-copy b{font-size:7px}
+
+/* Lodging cards expose price as the primary comparison value. */
+.stay-picker .hotel-catalog>button{border-color:#d8e6e1;background:linear-gradient(180deg,#fff 0%,#fbfdfc 100%);box-shadow:0 8px 22px rgba(27,75,68,.055)}
+.stay-picker .hotel-catalog>button>div{display:flex;min-height:188px;flex-direction:column;gap:7px;padding:15px 14px 14px}
+.stay-picker .hotel-catalog .stay-card-area{width:max-content;padding:4px 7px;border-radius:999px;background:#fff1e9;color:#d86236;font:900 8px/1 'DM Mono',monospace;letter-spacing:.04em}
+.stay-picker .hotel-catalog .stay-card-name{display:-webkit-box;min-height:43px;overflow:hidden;color:#153f3c;font-size:16px;font-weight:950;line-height:1.32;letter-spacing:-.55px;-webkit-box-orient:vertical;-webkit-line-clamp:2}
+.stay-picker .hotel-catalog .stay-distance{margin-top:0}
+.stay-picker .hotel-catalog>button .hotel-rating{margin-top:1px}
+.stay-picker .hotel-catalog .stay-card-price{display:flex;min-height:63px;align-items:center;justify-content:space-between;gap:10px;margin:3px -5px -5px;padding:11px 10px;border:1px solid #d8ebe5;border-radius:10px;background:linear-gradient(135deg,#eff9f5 0%,#f8fcfa 62%,#fff8ee 100%)}
+.stay-picker .hotel-catalog .stay-card-price-copy{display:grid;gap:4px;color:inherit;font:inherit}
+.stay-picker .hotel-catalog .stay-card-price-copy>small{min-height:0;color:#315f59;font-size:9px;font-weight:900;line-height:1}
+.stay-picker .hotel-catalog .stay-card-price-copy>em{color:#879c97;font-size:7px;font-style:normal;font-weight:700;white-space:nowrap}
+.stay-picker .hotel-catalog .stay-card-price>strong{margin:0;color:#006e66;font:950 20px/1 Inter,Pretendard,sans-serif;letter-spacing:-.8px;text-align:right;white-space:nowrap}
+.stay-picker .hotel-catalog>button:hover .stay-card-name{color:#08776e}
+.stay-picker .hotel-catalog>button.selected{border-color:#09857b;box-shadow:0 0 0 2px rgba(9,133,123,.12),0 12px 28px rgba(20,99,88,.13)}
+.stay-picker .hotel-catalog>button.selected .stay-card-price{border-color:#f0c6ad;background:linear-gradient(135deg,#fff3e9,#fffaf5)}
+.stay-picker .hotel-catalog>button.selected .stay-card-price>strong{color:#d8562e}
+@media(max-width:760px){.stay-picker .hotel-catalog>button>div{min-height:168px;padding:12px 11px 11px}.stay-picker .hotel-catalog .stay-card-name{min-height:38px;font-size:14px}.stay-picker .hotel-catalog .stay-card-price{min-height:56px;padding:9px 8px}.stay-picker .hotel-catalog .stay-card-price>strong{font-size:17px}.stay-picker .hotel-catalog .stay-card-price-copy>em{display:none}}
+.restaurant-detail-hero.is-landscape{background:radial-gradient(circle at 50% 45%,#426b63 0,#1b403c 58%,#0d2b28 100%)}
+.restaurant-detail-hero.is-landscape img{object-fit:contain;filter:saturate(1.04) contrast(1.02)}
 
 /* 일정 블록을 직접 추가·삭제하는 편집 컨트롤 */
 .stop-block-actions{position:absolute;z-index:5;top:7px;right:67px;display:flex;gap:5px}

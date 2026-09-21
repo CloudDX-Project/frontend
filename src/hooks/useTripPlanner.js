@@ -1699,6 +1699,12 @@ function useTripPlanner() {
     );
 
 
+  const generationInFlightRef =
+    useRef(
+      false,
+    );
+
+
   useEffect(
     () => {
       backendPlanRef.current =
@@ -6410,6 +6416,10 @@ function useTripPlanner() {
     previousStayOverride = null,
   } = {}) => {
 
+  if (generationInFlightRef.current) {
+    return;
+  }
+
   const effectiveStay = stayOverride || selectedStay;
 
   /*
@@ -6846,6 +6856,9 @@ function useTripPlanner() {
    * ==========================================
    */
 
+  generationInFlightRef.current =
+    true;
+
   setPlanningMode(
     mode,
   );
@@ -7129,6 +7142,9 @@ function useTripPlanner() {
         ? `${error?.message || "새 숙소 기준 일정을 생성하지 못했습니다."} 기존 숙소 일정을 유지합니다.`
         : error?.message || "여행 일정을 생성하지 못했습니다.",
     );
+  } finally {
+    generationInFlightRef.current =
+      false;
   }
 };
 

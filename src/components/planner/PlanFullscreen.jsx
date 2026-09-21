@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { DragDropContext, Draggable, Droppable } from "@hello-pangea/dnd";
-import { ExternalLink, MapPin, Minus, Monitor, Plus, Smartphone, Star, X } from "lucide-react";
+import { ArrowDown, CarFront, ExternalLink, GripVertical, MapPin, Minus, Monitor, Plus, Smartphone, Star, X } from "lucide-react";
 import { contentApi } from "../../api/contentApi";
 import { dateLabel, getPlaceAlternatives, locationLabel, timeLabel } from "../../data/mockData";
 import TransitionIcon from "../common/TransitionIcon";
@@ -8,7 +8,7 @@ import BrandPolygon from "../icons/BrandPolygon";
 import CampusTimetable from "./CampusTimetable";
 import RouteMap from "./RouteMap";
 import AttractionDetailModal from "./AttractionDetailModal";
-import { eventClock } from "../../utils/planTime.js";
+import { eventClock, eventMinutes } from "../../utils/planTime.js";
 import { hasJejuAttractionDetail } from "../../data/jejuAttractionDetails.js";
 
 
@@ -16,6 +16,17 @@ import { hasJejuAttractionDetail } from "../../data/jejuAttractionDetails.js";
 function formatFlightClock(value) {
   const match = String(value || "").match(/T(\d{2}:\d{2})/);
   return match?.[1] || null;
+}
+
+function durationMinutes(value, metadata = {}) {
+  const direct = Number(metadata.stayMinutes);
+  if (Number.isFinite(direct) && direct >= 0) return direct;
+  const parsed = Number.parseInt(String(value || ""), 10);
+  return Number.isFinite(parsed) ? Math.max(0, parsed) : 0;
+}
+
+function normalizedRouteName(value) {
+  return String(value || "").replace(/\s+/g, "").toLowerCase();
 }
 
 function costGroupDescription(group, travelers) {
@@ -140,8 +151,12 @@ function PlanFullscreen({
   const [attractionDetailTarget, setAttractionDetailTarget] = useState(null);
   const [restaurantDetailType, setRestaurantDetailType] = useState("RESTAURANT");
   const [restaurantHeroFailed, setRestaurantHeroFailed] = useState(false);
+  const [restaurantHeroLandscape, setRestaurantHeroLandscape] = useState(false);
   const [restaurantLoading, setRestaurantLoading] = useState(false);
   const [restaurantError, setRestaurantError] = useState("");
+  const restaurantFallbackPrice = restaurantDetail
+    ? eventCost(restaurantDetail.name, { type: restaurantDetailType })
+    : 0;
   const placeOptions = getPlaceAlternatives(destinationLocation, placePicker?.item);
   const destinationName = locationLabel(destinationLocation);
   const originName = locationLabel(originLocation, "출발지");
@@ -274,6 +289,7 @@ function PlanFullscreen({
     setRestaurantLoading(true);
     setRestaurantError("");
     setRestaurantHeroFailed(false);
+    setRestaurantHeroLandscape(false);
 
     const request = {
       placeId: metadata.placeId || metadata.externalId || metadata.referenceId || metadata.id,
@@ -301,7 +317,7 @@ function PlanFullscreen({
   };
   return (
     <section
-      className={`plan-fullscreen ${stayChange ? "plan-rebuilt" : ""}${mobilePreview ? " mobile-preview" : ""}${scheduleView === "budget" ? " budget-mode" : ""}`}
+      className={`plan-fullscreen ${stayChange ? "plan-rebuilt" : ""}${mobilePreview ? " mobile-preview" : ""}${isMobile ? " is-mobile-device" : ""}${scheduleView === "budget" ? " budget-mode" : ""}`}
       role="dialog"
       aria-modal="true"
       aria-label={`${destinationName} 전체 여행 일정`}
@@ -455,6 +471,32 @@ function PlanFullscreen({
                   숙소 변경 내용 보기
                 </button>
               )}
+              {scheduleView === "timeline" && (
+                <div className="itinerary-editor-bar">
+                  <span>
+                    <GripVertical size={16} aria-hidden="true" />
+                    <b>일정 편집</b>
+                    <small>카드를 끌어 순서를 바꾸거나 원하는 위치를 골라 추가하세요.</small>
+                  </span>
+                  <button
+                    type="button"
+                    className="itinerary-add-button"
+                    onClick={() => {
+                      const lastIndex = Math.max(0, day[2].length - 1);
+                      const lastEvent = day[2][lastIndex];
+                      setStopComposer({
+                        afterEventId: lastEvent?.[6]?.id || (lastEvent ? `day-${activeDay + 1}-stop-${lastIndex + 1}` : ""),
+                        name: "",
+                        type: "ATTRACTION",
+                        stayMinutes: 60,
+                      });
+                    }}
+                  >
+                    <Plus size={17} aria-hidden="true" />
+                    원하는 일정 추가
+                  </button>
+                </div>
+              )}
               <div className="stay-question">
                 <b>혹시 숙소를 변경하고 싶으신가요?</b>
                 <button type="button" className="subtle" onClick={onOpenStay}>
@@ -512,12 +554,40 @@ function PlanFullscreen({
                     : "";
                 const displayTime = eventClock(time, metadata);
                 const displayStay = isArrivalAirport && !(metadata.stayMinutes > 0) ? "도착" : stay;
+                const nextEvent = day[2][index + 1];
+                const activeRoute = routeResults.find((route, routeIndex) =>
+                  Number(route?.dayIndex ?? routeIndex) === activeDay
+                    || Number(route?.dayNumber) === activeDay + 1,
+                );
+                const currentRouteName = normalizedRouteName(name);
+                const nextRouteName = normalizedRouteName(nextEvent?.[2]);
+                const matchingSegment = (activeRoute?.segments || []).find((segment) => {
+                  const departureName = normalizedRouteName(segment?.departureName);
+                  const arrivalName = normalizedRouteName(segment?.arrivalName);
+                  return currentRouteName && nextRouteName
+                    && (departureName.includes(currentRouteName) || currentRouteName.includes(departureName))
+                    && (arrivalName.includes(nextRouteName) || nextRouteName.includes(arrivalName));
+                });
+                const nextStartMinutes = nextEvent ? eventMinutes(nextEvent[0], nextEvent[6] || {}) : null;
+                const currentStartMinutes = eventMinutes(time, metadata);
+                const scheduleGap = nextStartMinutes != null && currentStartMinutes != null
+                  ? nextStartMinutes - currentStartMinutes - durationMinutes(stay, metadata)
+                  : 0;
+                const travelAfter = Math.max(0, Math.round(
+                  Number(travel)
+                    || Number(metadata.travelMinutes)
+                    || Number(matchingSegment?.durationMinutes)
+                    || scheduleGap
+                    || 0,
+                ));
                 const isCafe = backendPlaceType === "CAFE"
                   || (!backendPlaceType && (/☕/.test(icon || "") || /카페|커피|디저트|베이커리/.test(name || "")));
                 const isRestaurant = backendPlaceType === "RESTAURANT"
                   || (!backendPlaceType && /🍽|🍜|🍴|🍲|🥘|🍱|🍣|🍖|🍗|🥩|🍛|🍚/.test(icon || ""))
                   || (!backendPlaceType && /식당|국수|스시|초밥|고기|김밥|돈가스|쌈밥|흑돼지|전복/.test(name || ""));
                 const isDiningPlace = isRestaurant || isCafe;
+                const hasAttractionDetail = backendPlaceType === "ATTRACTION"
+                  && (/^[1-9]\d*$/.test(String(metadata.placeId ?? "")) || hasJejuAttractionDetail(name));
                 const eventType = isRentalStop
                   ? "이동 준비"
                   : isCafe
@@ -548,39 +618,6 @@ function PlanFullscreen({
                     }}
                     className={`itinerary-stop${metadata.isLocked ? "" : " is-draggable"}${dragSnapshot.isDragging ? " is-dragging" : ""}`}
                   >
-                    <div className="stop-block-actions" onPointerDown={(event) => event.stopPropagation()}>
-                      {!metadata.isLocked && (
-                        <button
-                          type="button"
-                          className="is-remove"
-                          onClick={(event) => {
-                            event.stopPropagation();
-                            onRemoveStop?.(activeDay, eventId);
-                          }}
-                          aria-label={`${name} 일정 삭제`}
-                          title="이 일정 삭제"
-                        >
-                          <Minus size={14} aria-hidden="true" />
-                        </button>
-                      )}
-                      <button
-                        type="button"
-                        className="is-add"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setStopComposer({
-                            afterEventId: eventId,
-                            name: "",
-                            type: "ATTRACTION",
-                            stayMinutes: 60,
-                          });
-                        }}
-                        aria-label={`${name} 다음에 일정 추가`}
-                        title="이 다음에 일정 추가"
-                      >
-                        <Plus size={14} aria-hidden="true" />
-                      </button>
-                    </div>
                     <time>{displayTime}</time>
                     <span>{icon}</span>
                     <div>
@@ -590,29 +627,14 @@ function PlanFullscreen({
                       </small>
                       <div className="stop-title-row">
                         {isDiningPlace ? (
-                          <button
-                            type="button"
-                            className="restaurant-detail-trigger"
-                            onPointerDown={(event) => event.stopPropagation()}
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              openRestaurantDetail({ name, metadata, placeType: isCafe ? "CAFE" : "RESTAURANT" });
-                            }}
-                            aria-label={`${name} 메뉴와 후기 보기`}
-                          >
+                          <div className="stop-place-heading">
+                            <b>{name}</b>
+                            {costLabel && <em className="dining-price"><small>예상 식사비</small><strong>{costLabel}</strong></em>}
+                          </div>
+                        ) : hasAttractionDetail ? (
+                          <div className="stop-place-heading">
                             <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
-                            <span>메뉴·후기 보기</span>
-                          </button>
-                        ) : backendPlaceType === "ATTRACTION" && (/^[1-9]\d*$/.test(String(metadata.placeId ?? "")) || hasJejuAttractionDetail(name)) ? (
-                          <button type="button" className="restaurant-detail-trigger"
-                            onPointerDown={event => event.stopPropagation()}
-                            onClick={event => {
-                              event.stopPropagation();
-                              setAttractionDetailTarget({ id: metadata.placeId, name });
-                            }} aria-label={`${name} 관광지 상세보기`}>
-                            <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>
-                            <span>상세보기</span>
-                          </button>
+                          </div>
                         ) : <b>{name}{costLabel && <em className="stop-price">{costLabel}</em>}</b>}
                         {hasPartnerBooking && liveBookingUrl ? (
                           <a
@@ -645,26 +667,59 @@ function PlanFullscreen({
                         </div>
                       )}
                       <p>{detail}</p>
-                      {!metadata.isLocked ? <button
-                        type="button"
-                        className="stop-change"
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          setPlacePicker({ eventId, name, item: { icon, name, detail, ...metadata } });
-                        }}
-                      >
-                        장소 변경
-                      </button> : null}
+                      {!metadata.isLocked && (
+                        <div className="stop-card-actions" onPointerDown={(event) => event.stopPropagation()}>
+                          {isDiningPlace && (
+                            <button
+                              type="button"
+                              className="stop-detail-action"
+                              onClick={(event) => {
+                                event.stopPropagation();
+                                openRestaurantDetail({ name, metadata, placeType: isCafe ? "CAFE" : "RESTAURANT" });
+                              }}
+                            >
+                              메뉴·후기 보기
+                            </button>
+                          )}
+                          {hasAttractionDetail && (
+                            <button type="button" className="stop-detail-action" onClick={(event) => {
+                              event.stopPropagation();
+                              setAttractionDetailTarget({ id: metadata.placeId, name });
+                            }}>
+                              상세보기
+                            </button>
+                          )}
+                          <button
+                            type="button"
+                            className="stop-change"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              setPlacePicker({ eventId, name, item: { icon, name, detail, ...metadata } });
+                            }}
+                          >
+                            장소 변경
+                          </button>
+                          <button
+                            type="button"
+                            className="stop-remove-action"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              onRemoveStop?.(activeDay, eventId);
+                            }}
+                            aria-label={`${name} 일정에서 제외`}
+                          >
+                            <Minus size={13} aria-hidden="true" /> 일정 제외
+                          </button>
+                        </div>
+                      )}
                     </div>
-                    <i>
-                      {index === 0
-                        ? "여행 시작"
-                        : index === day[2].length - 1
-                          ? "일정 마무리"
-                          : Number(travel) > 0
-                            ? `이동 ${travel}분 반영`
-                            : "동선 반영"}
-                                        </i>
+                    {nextEvent && travelAfter > 0 && (
+                      <div className="stop-route-leg" aria-label={`다음 장소까지 이동시간 ${travelAfter}분`}>
+                        <span className="route-leg-arrow"><ArrowDown size={13} aria-hidden="true" /></span>
+                        <CarFront size={14} aria-hidden="true" />
+                        <span className="route-leg-copy"><small>다음 일정으로</small><b>이동 {travelAfter}분</b></span>
+                      </div>
+                    )}
                   </article>
                   )}
                   </Draggable>
@@ -722,7 +777,7 @@ function PlanFullscreen({
       {attractionDetailTarget && (
         <AttractionDetailModal key={String(attractionDetailTarget.id)}
           attractionId={attractionDetailTarget.id} name={attractionDetailTarget.name}
-          compact={mobilePreview}
+          compact={mobilePreview || isMobile}
           onClose={() => setAttractionDetailTarget(null)} />
       )}
       {restaurantDetail && (
@@ -737,10 +792,11 @@ function PlanFullscreen({
               <div className="restaurant-detail-error"><h3>{restaurantDetail.name}</h3><p>{restaurantError}</p><button type="button" onClick={() => setRestaurantDetail(null)}>닫기</button></div>
             ) : (
               <>
-                <div className={`restaurant-detail-hero${restaurantHeroFailed || !(restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]) ? " is-fallback" : ""}`}>
+                <div className={`restaurant-detail-hero${restaurantHeroLandscape ? " is-landscape" : ""}${restaurantHeroFailed || !(restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]) ? " is-fallback" : ""}`}>
                   {!restaurantHeroFailed && (restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]) && <img
                     src={restaurantDetail.representativeImageUrl || restaurantDetail.imageUrls?.[0]}
                     alt={`${restaurantDetail.name} 대표 이미지`}
+                    onLoad={(event) => setRestaurantHeroLandscape(event.currentTarget.naturalWidth / Math.max(1, event.currentTarget.naturalHeight) > 1.08)}
                     onError={() => setRestaurantHeroFailed(true)}
                   />}
                   <span>{restaurantDetail.category || (restaurantDetailType === "CAFE" ? "추천 카페" : "추천 식당")}</span>
@@ -772,7 +828,7 @@ function PlanFullscreen({
                     <div className="restaurant-menu-list">
                       {restaurantDetail.menus?.map((menu) => <article key={menu.id || menu.name}>
                         <div><b>{menu.name}{menu.isSignature && <em>대표</em>}</b><p>{menu.description}</p></div>
-                        <strong>{menu.price == null ? "가격 확인" : `${money(menu.price)}원`}</strong>
+                        <strong>{menu.price == null ? `약 ${money(restaurantFallbackPrice || (restaurantDetailType === "CAFE" ? 9000 : 20000))}원` : `${money(menu.price)}원`}</strong>
                       </article>)}
                     </div>
                   </section>
@@ -815,6 +871,16 @@ function PlanFullscreen({
             <p>✦ TripBuddy · SCHEDULE EDIT</p>
             <h3>이 다음에 어떤 일정을<br />추가할까요?</h3>
             <span>장소를 찾은 뒤 이후 시간과 지도 동선을 함께 다시 맞춥니다.</span>
+            <label>
+              <b>추가 위치</b>
+              <select value={stopComposer.afterEventId} onChange={(event) => setStopComposer((current) => ({ ...current, afterEventId: event.target.value }))}>
+                <option value="">첫 일정으로 추가</option>
+                {day[2].map((item, index) => {
+                  const optionId = item[6]?.id || `day-${activeDay + 1}-stop-${index + 1}`;
+                  return <option value={optionId} key={optionId}>{index + 1}. {item[2]} 다음</option>;
+                })}
+              </select>
+            </label>
             <label>
               <b>장소 이름</b>
               <input autoFocus value={stopComposer.name} onChange={(event) => setStopComposer((current) => ({ ...current, name: event.target.value }))} placeholder="예: 애월 해안도로" />

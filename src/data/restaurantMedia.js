@@ -10,6 +10,13 @@ const CURATED_RESTAURANT_MEDIA = [
     ],
   },
   {
+    match: /김희선.*(?:제주)?(?:흑돼지)?두루치기|김희선제주두루치기/,
+    representativeImageUrl: "https://media.triple.guide/triple-cms/c_limit%2Cf_auto%2Ch_2048%2Cw_2048/60e9f80e-6306-4e7e-b19a-3f724d92c317.jpeg",
+    imageUrls: [
+      "https://media.triple.guide/triple-cms/c_limit%2Cf_auto%2Ch_2048%2Cw_2048/60e9f80e-6306-4e7e-b19a-3f724d92c317.jpeg",
+    ],
+  },
+  {
     match: /^꽃밥$/,
     representativeImageUrl: VISIT_JEJU_FLOWER_MEAL,
     imageUrls: [
