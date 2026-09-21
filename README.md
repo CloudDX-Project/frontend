@@ -85,7 +85,7 @@ npm run build
 node --test tests/*.test.mjs
 ```
 
-현재 기준으로 운영 빌드와 프론트 자동 테스트 23개가 통과합니다. `npm run build:release`는 운영 번들에 `localhost:8080`이 포함되거나 카카오 지도 키가 빠지면 실패하므로, 잘못된 파일이 배포되는 것을 사전에 차단합니다.
+현재 기준으로 운영 빌드와 프론트 자동 테스트 29개가 통과합니다. 제주 대표 명소 15곳의 일정 요청 이름과 좌표도 자동으로 검사합니다. `npm run build:release`는 운영 번들에 `localhost:8080`이 포함되거나 카카오 지도 키가 빠지면 실패하므로, 잘못된 파일이 배포되는 것을 사전에 차단합니다.
 
 ## 백엔드 연결
 
@@ -99,6 +99,8 @@ node --test tests/*.test.mjs
 - 식당·카페 상세: `contentApi.js`
 
 API 규격과 데이터 연결 설명은 `BACKEND_INTEGRATION_GUIDE.md`를 참고합니다. 렌터카와 일부 가격 데이터는 제휴 API가 없으므로 프론트의 활성 목업 데이터를 유지합니다.
+
+숙소·관광지·식당·카페의 데이터 출처와 필터링 순서, 일정 생성 원리는 `RECOMMENDATION_DATA_LOGIC_KO.md`에 비전공자도 이해할 수 있는 표현으로 정리했습니다.
 
 ## 백업 복원
 

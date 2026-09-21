@@ -6170,6 +6170,7 @@ footer .footer-legal {
 
 /* 데스크톱에서는 다음 장소까지의 이동 시간을 시간 축 바로 아래에 배치합니다. */
 @media(min-width:761px){
+  .full-timeline .stop-place-heading{gap:22px}
   .full-timeline .itinerary-stop{margin-bottom:18px}
   .full-timeline .itinerary-stop:last-child{margin-bottom:12px}
   .full-timeline .stop-route-leg{
@@ -6180,11 +6181,11 @@ footer .footer-legal {
     gap:4px!important;
     justify-content:flex-start;
   }
-  .full-timeline .stop-route-leg .route-leg-arrow{display:none}
-  .full-timeline .stop-route-leg>svg{width:10px;height:10px;padding:4px}
+  .full-timeline .stop-route-leg .route-leg-arrow{display:grid;width:17px;height:20px}
+  .full-timeline .stop-route-leg>svg{display:none}
   .full-timeline .stop-route-leg .route-leg-copy{padding:0}
   .full-timeline .stop-route-leg .route-leg-copy small{display:none}
-  .full-timeline .stop-route-leg .route-leg-copy b{font-size:8px;white-space:nowrap}
+  .full-timeline .stop-route-leg .route-leg-copy b{font-size:9px;white-space:nowrap}
   .full-timeline .stop-price-summary{
     min-width:128px;
     min-height:40px;
@@ -6264,11 +6265,20 @@ footer .footer-legal {
     justify-content:flex-start;
     padding:0!important;
   }
-  .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg .route-leg-arrow{display:none}
-  .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg>svg{width:9px;height:9px;padding:3px}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg{align-items:flex-start;flex-direction:column}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg .route-leg-arrow{display:grid;width:18px;height:19px}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg>svg{display:none}
   .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg .route-leg-copy{padding:0}
   .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg .route-leg-copy small{display:none}
-  .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg .route-leg-copy b{font-size:7px;white-space:nowrap}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg .route-leg-copy b{font-size:8px;white-space:nowrap}
+
+  .plan-fullscreen.is-mobile-device .stop-picker-modal.is-attraction-picker .route-place-options>button>img,
+  .plan-fullscreen.is-mobile-device .stop-picker-modal.is-attraction-picker .route-place-photo-fallback{
+    height:142px;
+    min-height:142px;
+    padding:0;
+    object-fit:cover;
+  }
 }
 
 .plan-fullscreen.mobile-preview .full-timeline .itinerary-stop{margin-bottom:11px}
@@ -6282,11 +6292,19 @@ footer .footer-legal {
   justify-content:flex-start;
   padding:0!important;
 }
-.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-arrow{display:none}
-.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg>svg{width:7px;height:7px;padding:2px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg{align-items:flex-start;flex-direction:column}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-arrow{display:grid;width:15px;height:16px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg>svg{display:none}
 .plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-copy{padding:0}
 .plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-copy small{display:none}
-.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-copy b{font-size:6px;white-space:nowrap}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg .route-leg-copy b{font-size:7px;white-space:nowrap}
+.plan-fullscreen.mobile-preview .stop-picker-modal.is-attraction-picker .route-place-options>button>img,
+.plan-fullscreen.mobile-preview .stop-picker-modal.is-attraction-picker .route-place-photo-fallback{
+  height:132px;
+  min-height:132px;
+  padding:0;
+  object-fit:cover;
+}
 .plan-fullscreen.mobile-preview .full-timeline .stop-card-actions button{
   min-height:25px;
   padding:5px 6px!important;

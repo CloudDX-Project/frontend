@@ -40,8 +40,14 @@ import {
   transportName,
 } from "../data/mockData";
 import { getPlaceCostEstimate } from "../utils/placeCostEstimates";
+import {
+  addPriceVariationBuffer,
+  stablePlanEstimate,
+  sumCostGroups,
+} from "../utils/costEstimate.js";
 import { buildPlanEditRequest } from "../utils/planEditPayload.js";
 import { isAirportRouteSegment } from "../utils/routeFilters.js";
+import { locationRequestName } from "../utils/locationPayload.js";
 
 
 const TRIP_COST_SNAPSHOT_KEY = "tripbuddy-trip-cost-snapshots-v1";
@@ -626,41 +632,6 @@ const FOOD_FROM_BACKEND = Object.fromEntries(
     .filter(([, code]) => Boolean(code))
     .map(([label, code]) => [code, label]),
 );
-
-
-const locationRequestName = (
-  location,
-) => {
-  if (!location) {
-    return "";
-  }
-
-  const first =
-    location.region ||
-    "";
-
-  const second =
-    location.detail ||
-    location.name ||
-    "";
-
-  /*
-   * "서울특별시 서울특별시"
-   * 중복 방지
-   */
-  return [
-    ...new Set(
-      [
-        first,
-        second,
-      ].filter(
-        Boolean,
-      ),
-    ),
-  ].join(
-    " ",
-  );
-};
 
 
 const toFlightCandidatePayload = (
@@ -1691,6 +1662,13 @@ function useTripPlanner() {
     useState(
       null,
     );
+
+  // 일정 생성 버튼을 누르기 직전에 안내한 금액을 보존합니다.
+  // 백엔드가 일부 가격 항목을 생략해도 생성 전후 총액이 갑자기 낮아지지 않습니다.
+  const [
+    announcedPlanEstimate,
+    setAnnouncedPlanEstimate,
+  ] = useState(0);
 
 
   const backendPlanRef =
@@ -3614,7 +3592,7 @@ function useTripPlanner() {
   }, 0);
 
 
-  const total =
+  const calculatedTotal =
     Number.isFinite(
       backendPerPerson,
     ) &&
@@ -3629,6 +3607,19 @@ function useTripPlanner() {
         ? backendGrandTotal /
           party + backendMissingCostAdjustment
         : mockTotal;
+
+
+  const detailedTotal = sumCostGroups(costDetails);
+
+
+  const total = stablePlanEstimate({
+    calculatedTotal,
+    announcedTotal: backendPlan ? announcedPlanEstimate : 0,
+    detailedTotal,
+  });
+
+
+  const reconciledCostDetails = addPriceVariationBuffer(costDetails, total);
 
 
   const confirmedTotal =
@@ -3662,7 +3653,7 @@ function useTripPlanner() {
     const tripId = backendPlan?.tripId || backendPlan?.id;
     if (!tripId || !Number.isFinite(Number(total)) || Number(total) <= 0) return;
 
-    const costItems = costDetails.flatMap((group) =>
+    const costItems = reconciledCostDetails.flatMap((group) =>
       (group.rows || []).map(([name, value, note]) => ({
         name,
         perPerson: Number(value) || 0,
@@ -3692,7 +3683,7 @@ function useTripPlanner() {
         car: selectedRental.car,
       } : null,
     });
-  }, [backendPlan?.tripId, backendPlan?.id, total, party, costDetails, selectedStay, selectedRental]);
+  }, [backendPlan?.tripId, backendPlan?.id, total, party, reconciledCostDetails, selectedStay, selectedRental]);
 
 
   const notify =
@@ -5342,6 +5333,8 @@ function useTripPlanner() {
         setPlanEdits({});
         setPlanOrders({});
         setPlanCustomizations({});
+        setBackendPlan(null);
+        setAnnouncedPlanEstimate(0);
         setShowPlan(false);
         setPlanViewOpen(false);
         setLocalTransport("");
@@ -6421,6 +6414,15 @@ function useTripPlanner() {
   }
 
   const effectiveStay = stayOverride || selectedStay;
+  const previousAnnouncedPlanEstimate = announcedPlanEstimate;
+  const effectiveStayTotal = effectiveStay?.priceAvg != null
+    ? (Number(effectiveStay.priceAvg) * nights * rooms) / party
+    : 0;
+  const estimateAtGeneration = Math.round(
+    mode === "stay-revision"
+      ? Math.max(0, total - stayTotal + effectiveStayTotal)
+      : total,
+  );
 
   /*
    * ==========================================
@@ -6859,6 +6861,8 @@ function useTripPlanner() {
   generationInFlightRef.current =
     true;
 
+  setAnnouncedPlanEstimate(estimateAtGeneration);
+
   setPlanningMode(
     mode,
   );
@@ -7136,6 +7140,8 @@ function useTripPlanner() {
       setPlanViewOpen(true);
     }
 
+    setAnnouncedPlanEstimate(previousAnnouncedPlanEstimate);
+
 
     notify(
       mode === "stay-revision"
@@ -7155,6 +7161,7 @@ function useTripPlanner() {
     }
 
     const savedCostSnapshot = getTripCostSnapshot(savedTrip.id);
+    setAnnouncedPlanEstimate(Number(savedCostSnapshot?.totalPerPerson) || 0);
 
     const nextDestination = {
       id: `saved-destination-${savedTrip.id}`,
@@ -7540,7 +7547,7 @@ function useTripPlanner() {
 
     stayAreas,
 
-    costDetails,
+    costDetails: reconciledCostDetails,
 
     total,
 

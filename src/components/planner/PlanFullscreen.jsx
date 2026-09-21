@@ -1001,7 +1001,7 @@ function PlanFullscreen({
       {placePicker && (
         <div className="stop-picker-backdrop" role="presentation">
           <section
-            className="stop-picker-modal"
+            className={`stop-picker-modal${String(placePicker.item?.type || "").toUpperCase() === "ATTRACTION" ? " is-attraction-picker" : ""}`}
             role="dialog"
             aria-modal="true"
             aria-label="장소 변경"
