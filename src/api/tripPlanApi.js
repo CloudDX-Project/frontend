@@ -1,4 +1,5 @@
 import { apiClient } from "./apiClient.js";
+import { isAirportName } from "../utils/routeFilters.js";
 
 
 const ITEM_ICON = {
@@ -651,7 +652,7 @@ function normalizedDisplayName(value) {
 
 
 function isAirportDisplayName(value) {
-  return /공항|airport/i.test(String(value || ""));
+  return isAirportName(value);
 }
 
 
@@ -1388,9 +1389,21 @@ const isHardTransportAnchor = (event) => {
   const type = String(metadata.type || "").toUpperCase();
   const category = String(metadata.category || "").toUpperCase();
   const name = String(event?.[2] || "");
-  return ["DEPARTURE", "AIRPORT", "FLIGHT", "RENTAL", "RENT_CAR", "CAR_RENTAL", "RENTAL_CAR"].includes(type)
-    || /ARRIVAL_AIRPORT|DEPARTURE_AIRPORT/.test(category)
-    || /공항|항공|탑승|렌터카/.test(name);
+
+  if (["DEPARTURE", "AIRPORT", "FLIGHT", "RENTAL", "RENT_CAR", "CAR_RENTAL", "RENTAL_CAR"].includes(type)) {
+    return true;
+  }
+
+  if (/ARRIVAL_AIRPORT|DEPARTURE_AIRPORT/.test(category)) {
+    return true;
+  }
+
+  // 타입이 명시된 일반 장소는 상호명에 "공항"이 들어가도 교통 앵커로 잠그지 않는다.
+  if (["ATTRACTION", "RESTAURANT", "CAFE", "ACCOMMODATION"].includes(type)) {
+    return false;
+  }
+
+  return isAirportName(name) || /항공|탑승|렌터카/.test(name);
 };
 
 /** Frontend-only display refinement: keep fixed travel anchors, reduce dead time, and fill a missing dinner slot. */

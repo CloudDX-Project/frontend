@@ -4315,7 +4315,7 @@ function useTripPlanner() {
       }
 
       notify(
-        "AI가 입력한 여행 취향을 일정 추천에 반영할게요.",
+        "지정한 관광지의 방문 일차를 일정 생성에 반영할게요.",
       );
     };
 
@@ -6955,6 +6955,10 @@ function useTripPlanner() {
 
         foodPreferences:
           backendFoodPreferences,
+
+        prompt:
+          prompt.trim() ||
+          null,
 
 
         /*

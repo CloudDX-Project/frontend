@@ -31,6 +31,7 @@ export async function createTrip({
   pace,
   preferences,
   foodPreferences,
+  prompt = null,
 
   /*
    * ========================================
@@ -88,6 +89,7 @@ export async function createTrip({
       pace,
       preferences,
       foodPreferences,
+      prompt,
 
       /*
        * ========================================
