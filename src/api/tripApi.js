@@ -24,6 +24,8 @@ export async function createTrip({
 
   mainTransportMode,
   localTransportMode,
+  fuelType = null,
+  vehicleEfficiencyKmpl = null,
 
   budget,
   mealBudgetPerPersonPerDay,
@@ -82,6 +84,8 @@ export async function createTrip({
 
       mainTransportMode,
       localTransportMode,
+      fuelType,
+      vehicleEfficiencyKmpl,
 
       budget,
       mealBudgetPerPersonPerDay,
