@@ -29,6 +29,36 @@ const LOCKED_TYPES = new Set([
 ]);
 
 
+const INTERNAL_PLAN_REASON_PATTERN =
+  /fallback|BACKEND_FALLBACK|BEDROCK|recommendationScore|최종 일정|시간 기준|동선 (?:반영|계산)|다시 계산|좌표 기반|이동 가능|AI가|필수 목적지/i;
+
+
+function userFacingPlanDetail(reason, category, type) {
+  const rawReason = String(reason || "").trim();
+
+  if (rawReason && !INTERNAL_PLAN_REASON_PATTERN.test(rawReason)) {
+    return rawReason;
+  }
+
+  switch (type) {
+    case "CAFE":
+      return "여행 동선과 선호를 고려해 추천한 카페예요.";
+
+    case "RESTAURANT":
+      return "여행 동선과 식사 시간을 고려해 추천한 식당이에요.";
+
+    case "ATTRACTION":
+      return "여행 동선을 고려해 추천한 관광지예요.";
+
+    case "ACCOMMODATION":
+      return "선택한 숙소";
+
+    default:
+      return String(category || "").trim();
+  }
+}
+
+
 /**
  * 백엔드에서 stayMinutes가 없는 경우
  * 현재 UI가 깨지지 않도록 사용하는 추정치.
@@ -391,15 +421,11 @@ const eventId =
    * ==============================
    */
 
-  const detail =
-    event?.reason ||
-    event?.category ||
-    (
-      type ===
-      "ACCOMMODATION"
-        ? "선택한 숙소"
-        : ""
-    );
+  const detail = userFacingPlanDetail(
+    event?.reason,
+    event?.category,
+    type,
+  );
 
 
   return [

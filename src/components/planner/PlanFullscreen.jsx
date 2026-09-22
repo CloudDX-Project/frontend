@@ -88,7 +88,7 @@ function consumerEventDetail({ name, detail, eventType, price, money, metadata =
 
   const original = String(detail || "").trim();
   const isInternalCopy = !original
-    || /recommendationScore|최종 일정|시간 기준|동선 (?:반영|계산)|다시 계산|좌표 기반|이동 가능|일정을 시작|AI가|필수 목적지/i.test(original);
+    || /fallback|BACKEND_FALLBACK|BEDROCK|recommendationScore|최종 일정|시간 기준|동선 (?:반영|계산)|다시 계산|좌표 기반|이동 가능|일정을 시작|AI가|필수 목적지/i.test(original);
   if (!isInternalCopy) return original;
 
   const representativeMenu = String(metadata.representativeMenu || "").trim();
