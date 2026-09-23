@@ -6327,3 +6327,115 @@ footer .footer-legal {
 .stop-composer-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .stop-composer-submit{min-height:45px;border:0;border-radius:11px;background:#087d73;color:#fff;font-size:11px;font-weight:900;cursor:pointer}
 .stop-composer-submit:disabled{cursor:default;opacity:.48}
+
+/* 생성된 일정 카드: 장소명, 예상 비용, 다음 이동 순서로 읽히도록 정리합니다. */
+.full-timeline .itinerary-stop.is-dining-stop{
+  border-left-color:#de9b6b;
+  background:linear-gradient(105deg,#fff 0%,#fffdfa 100%);
+}
+.full-timeline .itinerary-stop.is-attraction-stop{
+  border-left-color:#67b7a8;
+  background:linear-gradient(105deg,#fff 0%,#f9fdfb 100%);
+}
+.full-timeline .itinerary-stop.is-dining-stop>span{background:#fff1e7;color:#a65c35}
+.full-timeline .itinerary-stop.is-attraction-stop>span{background:#e7f6f1;color:#087e73}
+.full-timeline .stop-place-heading{
+  flex-wrap:wrap;
+  column-gap:30px;
+  row-gap:7px;
+}
+.full-timeline .stop-place-heading>b{
+  color:#153f3b;
+  font-size:17px;
+  font-weight:850;
+  letter-spacing:-.45px;
+}
+.full-timeline .stop-price-summary{
+  border-color:#ead4b8;
+  border-radius:9px;
+  background:#fffaf2;
+  box-shadow:0 3px 10px rgba(118,74,31,.06);
+}
+.full-timeline .stop-price-summary small{color:#946742}
+.full-timeline .stop-price-summary strong{color:#aa4f28}
+.full-timeline .itinerary-stop>div>p{
+  margin-top:10px;
+  color:#58756f;
+  line-height:1.6;
+}
+@media(min-width:761px){
+  .full-timeline .itinerary-stop{min-height:124px;padding-top:17px;padding-bottom:17px}
+  .full-timeline .stop-place-heading{column-gap:34px}
+  .full-timeline .stop-route-leg{top:auto;bottom:17px}
+  .full-timeline .stop-route-leg .route-leg-copy b{font-size:10px}
+  .full-timeline .stop-price-summary{
+    min-height:37px;
+    border-color:#ead4b8;
+    background:#fffaf2;
+    box-shadow:0 3px 10px rgba(118,74,31,.06);
+  }
+  .full-timeline .stop-price-summary small{color:#946742}
+  .full-timeline .stop-price-summary strong{color:#aa4f28}
+}
+@media(max-width:760px){
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-place-heading{column-gap:12px;row-gap:6px}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-route-leg{top:auto;bottom:11px}
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-place-heading{column-gap:9px;row-gap:4px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-route-leg{top:auto;bottom:9px}
+
+/* 편집 동작은 충분한 글자 크기와 명확한 중요도 차이로 구분합니다. */
+.full-timeline .stop-card-actions{gap:8px}
+.full-timeline .stop-card-actions button{
+  min-height:41px;
+  border-radius:10px;
+  font-size:10px;
+  font-weight:850;
+  letter-spacing:-.1px;
+}
+.full-timeline .stop-card-actions .stop-detail-action{
+  border-color:#b8d8cf;
+  background:#f5fbf8;
+  color:#145e58;
+}
+.full-timeline .stop-card-actions .stop-change{
+  border-color:#0c8075;
+  background:#0c8075;
+  color:#fff;
+  box-shadow:0 5px 11px rgba(12,128,117,.16);
+}
+.full-timeline .stop-card-actions .stop-change:hover{
+  border-color:#086c64;
+  background:#086c64;
+  color:#fff;
+}
+.full-timeline .stop-card-actions .stop-remove-action{
+  min-height:28px;
+  padding:5px 9px!important;
+  border:1px solid #ecd7d1;
+  border-radius:7px;
+  background:#fff9f7;
+  color:#965c50;
+  font-size:9px;
+  text-decoration:none;
+}
+.full-timeline .stop-card-actions .stop-remove-action:hover{
+  border-color:#dfa99c;
+  background:#fff0eb;
+  color:#a94736;
+  text-decoration:none;
+}
+.full-timeline .stop-card-actions button:focus-visible{
+  outline:3px solid rgba(12,128,117,.24);
+  outline-offset:2px;
+}
+@media(min-width:761px){
+  .full-timeline .itinerary-stop>div{padding-right:230px}
+  .full-timeline .stop-card-actions{width:202px}
+}
+@media(max-width:760px){
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-card-actions button{min-height:34px;font-size:9px}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-card-actions .stop-remove-action{min-height:28px;font-size:8px}
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions button{min-height:29px;font-size:8px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions .stop-remove-action{min-height:25px;font-size:7px}

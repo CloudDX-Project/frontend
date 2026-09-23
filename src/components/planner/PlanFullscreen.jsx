@@ -672,11 +672,16 @@ function PlanFullscreen({
                     ? "카페"
                     : isRestaurant
                       ? "식사"
-                      : /체크인|체크아웃|호텔|숙소|짐 정리/.test(name || "")
+                      : backendPlaceType === "ACCOMMODATION" || /체크인|체크아웃|호텔|숙소|짐 정리/.test(name || "")
                         ? "숙소"
                         : /공항|항공|탑승|역·터미널/.test(name || "")
                           ? "교통"
                           : "관광";
+                const showStopPrice = Boolean(costLabel)
+                  && !isRentalStop
+                  && !isAirportStop
+                  && !/(?:국제)?공항$|항공편|탑승/.test(name || "")
+                  && eventType !== "숙소";
                 const consumerDetail = consumerEventDetail({
                   name,
                   detail,
@@ -702,7 +707,7 @@ function PlanFullscreen({
                       ...(!metadata.isLocked ? dragProvided.dragHandleProps?.style : {}),
                       cursor: metadata.isLocked ? "default" : undefined,
                     }}
-                    className={`itinerary-stop${metadata.isLocked ? "" : " is-draggable"}${dragSnapshot.isDragging ? " is-dragging" : ""}`}
+                    className={`itinerary-stop${isDiningPlace ? " is-dining-stop" : eventType === "관광" ? " is-attraction-stop" : ""}${metadata.isLocked ? "" : " is-draggable"}${dragSnapshot.isDragging ? " is-dragging" : ""}`}
                   >
                     <time>{displayTime}</time>
                     <span>{icon}</span>
@@ -714,9 +719,9 @@ function PlanFullscreen({
                       <div className="stop-title-row">
                         <div className="stop-place-heading">
                           <b>{name}</b>
-                          {costLabel && (
+                          {showStopPrice && (
                             <em className="stop-price-summary">
-                              <small>{isRentalStop ? "렌터카 총액" : isDiningPlace ? "예상 식비" : "예상 금액"}</small>
+                              <small>{isDiningPlace ? "예상 식비" : "예상 금액"}</small>
                               <strong>{costLabel}</strong>
                             </em>
                           )}
