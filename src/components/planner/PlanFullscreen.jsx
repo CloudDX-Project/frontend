@@ -10,6 +10,7 @@ import RouteMap from "./RouteMap";
 import AttractionDetailModal from "./AttractionDetailModal";
 import { eventClock, eventMinutes } from "../../utils/planTime.js";
 import { hasJejuAttractionDetail } from "../../data/jejuAttractionDetails.js";
+import { isAirportName } from "../../utils/routeFilters.js";
 
 
 
@@ -87,7 +88,7 @@ function consumerEventDetail({ name, detail, eventType, price, money, metadata =
 
   const original = String(detail || "").trim();
   const isInternalCopy = !original
-    || /recommendationScore|최종 일정|시간 기준|동선 (?:반영|계산)|다시 계산|좌표 기반|이동 가능|일정을 시작|AI가|필수 목적지/i.test(original);
+    || /fallback|BACKEND_FALLBACK|BEDROCK|recommendationScore|최종 일정|시간 기준|동선 (?:반영|계산)|다시 계산|좌표 기반|이동 가능|일정을 시작|AI가|필수 목적지/i.test(original);
   if (!isInternalCopy) return original;
 
   const representativeMenu = String(metadata.representativeMenu || "").trim();
@@ -618,7 +619,7 @@ function PlanFullscreen({
                   || /렌터카/.test(name);
                 const isAirportStop =
                   backendPlaceType === "AIRPORT"
-                  || (!backendPlaceType && /(?:국제)?공항$|항공편|탑승/.test(name || ""));
+                  || (!backendPlaceType && (isAirportName(name) || /항공편|탑승/.test(name || "")));
                 const isArrivalAirport =
                   backendPlaceType === "AIRPORT" && backendCategory.includes("ARRIVAL_AIRPORT");
                 const hasPartnerBooking = isRentalStop || (isAirportStop && !isArrivalAirport);
@@ -674,7 +675,7 @@ function PlanFullscreen({
                       ? "식사"
                       : backendPlaceType === "ACCOMMODATION" || /체크인|체크아웃|호텔|숙소|짐 정리/.test(name || "")
                         ? "숙소"
-                        : /공항|항공|탑승|역·터미널/.test(name || "")
+                        : isAirportStop || /항공|탑승|역·터미널/.test(name || "")
                           ? "교통"
                           : "관광";
                 const showStopPrice = Boolean(costLabel)
