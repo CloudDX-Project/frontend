@@ -905,19 +905,6 @@ function PlanFullscreen({
                       <small>TRIPBUDDY DINING GUIDE</small>
                       <h2>{restaurantDetail.name}</h2>
                       <p>{restaurantDetail.address}</p>
-                      <div className="restaurant-detail-place-links">
-                        {/^https?:\/\//i.test(restaurantDetail.placeUrl || "") && (
-                          <a href={restaurantDetail.placeUrl} target="_blank" rel="noreferrer noopener">
-                            <MapPin size={14} /> 카카오플레이스 <ExternalLink size={12} />
-                          </a>
-                        )}
-                        {!/^https?:\/\//i.test(restaurantDetail.placeUrl || "") &&
-                          /^https?:\/\//i.test(restaurantDetail.naverMapUrl || "") && (
-                            <a href={restaurantDetail.naverMapUrl} target="_blank" rel="noreferrer noopener">
-                              <MapPin size={14} /> 네이버 지도 <ExternalLink size={12} />
-                            </a>
-                          )}
-                      </div>
                     </div>
                     {restaurantDetail.rating != null && <strong><Star size={15} fill="currentColor" /> {restaurantDetail.rating.toFixed(1)} <small>후기 {restaurantDetail.reviewCount?.toLocaleString("ko-KR")}개</small></strong>}
                   </header>
@@ -930,9 +917,9 @@ function PlanFullscreen({
                       </article>)}
                     </div>
                   </section>
-                  <section className="restaurant-review-section">
+                  <section className="restaurant-review-section" id="restaurant-review-summary">
                     <div className="restaurant-section-title"><span>후기 한눈에 보기</span><small>{restaurantDetail.isMock ? "시연용 요약" : restaurantDetail.sourceLabel}</small></div>
-                    <p>{restaurantDetail.reviewSummary}</p>
+                    <p>{restaurantDetail.reviewSummary || "후기 내용은 카카오플레이스에서 확인해 주세요."}</p>
                     <div>{restaurantDetail.reviewKeywords?.map((keyword) => <span key={keyword}>#{keyword}</span>)}</div>
                     <div className="restaurant-review-action">
                       {/^https?:\/\//i.test(restaurantDetail.placeUrl || "") ? (
@@ -946,12 +933,20 @@ function PlanFullscreen({
                       ) : null}
                     </div>
                   </section>
-                  <footer>
-                    <div>
-                      <b>{restaurantDetail.businessHours || "영업시간은 카카오플레이스에서 확인해 주세요."}</b>
-                      <small>{restaurantDetail.sourceLabel || (restaurantDetail.isMock ? "시연용 상세 정보" : "백엔드 상세 정보")}</small>
-                    </div>
-                  </footer>
+                  <div className="restaurant-detail-bottom-actions">
+                    <button type="button" onClick={() => document.getElementById("restaurant-review-summary")?.scrollIntoView({ behavior: "smooth", block: "start" })}>
+                      후기 보기
+                    </button>
+                    {/^https?:\/\//i.test(restaurantDetail.placeUrl || "") ? (
+                      <a href={restaurantDetail.placeUrl} target="_blank" rel="noreferrer noopener">
+                        <MapPin size={14} /> 카카오플레이스 <ExternalLink size={12} />
+                      </a>
+                    ) : /^https?:\/\//i.test(restaurantDetail.naverMapUrl || "") ? (
+                      <a href={restaurantDetail.naverMapUrl} target="_blank" rel="noreferrer noopener">
+                        <MapPin size={14} /> 네이버 지도 <ExternalLink size={12} />
+                      </a>
+                    ) : null}
+                  </div>
                 </div>
               </>
             )}

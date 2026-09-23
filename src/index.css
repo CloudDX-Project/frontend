@@ -6446,3 +6446,86 @@ footer .footer-legal {
   width:22px;
   height:22px;
 }
+
+/* 휴대폰 일정 카드는 데스크톱과 별개로 세로 밀도를 조정합니다. */
+@media(max-width:760px){
+  .plan-fullscreen.is-mobile-device .full-timeline .itinerary-stop{
+    min-height:118px;
+    padding:10px 9px;
+  }
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-meta{margin-bottom:3px}
+  .plan-fullscreen.is-mobile-device .full-timeline .itinerary-stop>div>p{margin-top:5px}
+  .plan-fullscreen.is-mobile-device .full-timeline .stop-card-actions{
+    margin-top:6px;
+    padding-top:6px;
+  }
+  .plan-fullscreen.is-mobile-device .full-timeline .itinerary-stop>.stop-remove-action{
+    top:8px;
+    right:8px;
+  }
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop{
+  min-height:116px;
+  padding:9px;
+}
+.plan-fullscreen.mobile-preview .full-timeline .stop-meta{
+  min-height:18px;
+  margin-bottom:2px;
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop>div>p{margin-top:4px}
+.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions{
+  margin-top:5px;
+  padding-top:5px;
+}
+
+/* 데스크톱 식당 상세는 후기와 장소 링크를 하단의 같은 동작 영역에 모읍니다. */
+.restaurant-detail-bottom-actions{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+  padding-top:18px;
+}
+.restaurant-detail-bottom-actions button,
+.restaurant-detail-bottom-actions a{
+  display:inline-flex;
+  min-height:42px;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  padding:9px 12px;
+  border:1px solid #b9d9d1;
+  border-radius:10px;
+  background:#f3faf7;
+  color:#176f66;
+  font-size:10px;
+  font-weight:850;
+  text-decoration:none;
+  cursor:pointer;
+}
+.restaurant-detail-bottom-actions a{
+  border-color:#0c8075;
+  background:#0c8075;
+  color:#fff;
+}
+.restaurant-detail-bottom-actions button:hover{background:#e7f5ef}
+.restaurant-detail-bottom-actions a:hover{background:#096e65}
+.restaurant-detail-bottom-actions :is(button,a):focus-visible{
+  outline:3px solid rgba(12,128,117,.24);
+  outline-offset:2px;
+}
+
+/* 모바일 식당 상세는 외부 후기 링크에서 자연스럽게 마무리합니다. */
+@media(max-width:760px){
+  .restaurant-detail-bottom-actions{display:none}
+  .plan-fullscreen.is-mobile-device .restaurant-review-section{
+    padding-bottom:0;
+    border-bottom:0;
+  }
+  .plan-fullscreen.is-mobile-device .restaurant-detail-content{padding-bottom:max(20px,env(safe-area-inset-bottom))}
+}
+.plan-fullscreen.mobile-preview .restaurant-detail-bottom-actions{display:none}
+.plan-fullscreen.mobile-preview .restaurant-review-section{
+  padding-bottom:0;
+  border-bottom:0;
+}
+.plan-fullscreen.mobile-preview .restaurant-detail-content{padding-bottom:18px}
