@@ -6079,24 +6079,6 @@ footer .footer-legal {
 .full-timeline .stop-card-actions:not(.has-detail) .stop-change{
   grid-column:1/-1;
 }
-.full-timeline .stop-card-actions .stop-remove-action{
-  grid-column:1/-1;
-  justify-self:end;
-  width:auto!important;
-  min-height:22px;
-  padding:2px 3px!important;
-  border:0;
-  background:transparent;
-  box-shadow:none;
-  color:#8b7771;
-  font-size:8px;
-}
-.full-timeline .stop-card-actions .stop-remove-action:hover{
-  background:transparent;
-  color:#b34f38;
-  text-decoration:underline;
-  text-underline-offset:3px;
-}
 .full-timeline .itinerary-stop>div>p{
   max-width:calc(100% - 4px);
   margin-top:7px;
@@ -6409,22 +6391,6 @@ footer .footer-legal {
   background:#086c64;
   color:#fff;
 }
-.full-timeline .stop-card-actions .stop-remove-action{
-  min-height:28px;
-  padding:5px 9px!important;
-  border:1px solid #ecd7d1;
-  border-radius:7px;
-  background:#fff9f7;
-  color:#965c50;
-  font-size:9px;
-  text-decoration:none;
-}
-.full-timeline .stop-card-actions .stop-remove-action:hover{
-  border-color:#dfa99c;
-  background:#fff0eb;
-  color:#a94736;
-  text-decoration:none;
-}
 .full-timeline .stop-card-actions button:focus-visible{
   outline:3px solid rgba(12,128,117,.24);
   outline-offset:2px;
@@ -6435,7 +6401,48 @@ footer .footer-legal {
 }
 @media(max-width:760px){
   .plan-fullscreen.is-mobile-device .full-timeline .stop-card-actions button{min-height:34px;font-size:9px}
-  .plan-fullscreen.is-mobile-device .full-timeline .stop-card-actions .stop-remove-action{min-height:28px;font-size:8px}
 }
 .plan-fullscreen.mobile-preview .full-timeline .stop-card-actions button{min-height:29px;font-size:8px}
-.plan-fullscreen.mobile-preview .full-timeline .stop-card-actions .stop-remove-action{min-height:25px;font-size:7px}
+
+/* 제외는 작은 보조 동작으로 카드 상단에 분리하고, 본 동작은 카드 중앙에 둡니다. */
+.full-timeline .itinerary-stop>.stop-remove-action{
+  position:absolute;
+  z-index:3;
+  top:11px;
+  right:13px;
+  display:grid;
+  width:27px;
+  height:27px;
+  place-items:center;
+  padding:0;
+  border:1px solid #ead8d2;
+  border-radius:8px;
+  background:#fffaf8;
+  color:#a36659;
+  box-shadow:0 2px 6px rgba(108,71,59,.05);
+  cursor:pointer;
+  transition:background .16s ease,border-color .16s ease,color .16s ease;
+}
+.full-timeline .itinerary-stop>.stop-remove-action:hover{
+  border-color:#dba89b;
+  background:#fff0eb;
+  color:#a64433;
+}
+.full-timeline .itinerary-stop>.stop-remove-action:focus-visible{
+  outline:3px solid rgba(166,68,51,.22);
+  outline-offset:2px;
+}
+@media(max-width:760px){
+  .plan-fullscreen.is-mobile-device .full-timeline .itinerary-stop>.stop-remove-action{
+    top:8px;
+    right:8px;
+    width:25px;
+    height:25px;
+  }
+}
+.plan-fullscreen.mobile-preview .full-timeline .itinerary-stop>.stop-remove-action{
+  top:7px;
+  right:7px;
+  width:22px;
+  height:22px;
+}

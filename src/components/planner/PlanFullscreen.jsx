@@ -793,20 +793,24 @@ function PlanFullscreen({
                           >
                             장소 변경
                           </button>
-                          <button
-                            type="button"
-                            className="stop-remove-action"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              onRemoveStop?.(activeDay, eventId);
-                            }}
-                            aria-label={`${name} 일정에서 제외`}
-                          >
-                            <Minus size={13} aria-hidden="true" /> 일정 제외
-                          </button>
                         </div>
                       )}
                     </div>
+                    {!metadata.isLocked && (
+                      <button
+                        type="button"
+                        className="stop-remove-action"
+                        onPointerDown={(event) => event.stopPropagation()}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          onRemoveStop?.(activeDay, eventId);
+                        }}
+                        aria-label={`${name} 일정에서 제외`}
+                        title={`${name} 일정에서 제외`}
+                      >
+                        <Minus size={14} aria-hidden="true" />
+                      </button>
+                    )}
                     {nextEvent && travelAfter > 0 && (
                       <div className="stop-route-leg" aria-label={`다음 장소까지 이동시간 ${travelAfter}분`}>
                         <span className="route-leg-arrow"><ArrowDown size={13} aria-hidden="true" /></span>
