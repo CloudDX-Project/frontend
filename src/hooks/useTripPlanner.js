@@ -751,6 +751,11 @@ function useTripPlanner() {
       readInitialDraft,
     );
 
+  const savedTravelerCount = Number(initialDraft.travelers);
+  const initialTravelerCount = Number.isFinite(savedTravelerCount) && savedTravelerCount >= 1
+    ? Math.min(20, Math.floor(savedTravelerCount))
+    : null;
+
   const initialBookingSelection =
     initialDraft.bookingSelection && typeof initialDraft.bookingSelection === "object"
       ? initialDraft.bookingSelection
@@ -935,8 +940,7 @@ function useTripPlanner() {
     setTravelers,
   ] =
     useState(
-      initialDraft.travelers ||
-        null,
+      initialTravelerCount,
     );
 
 
@@ -944,7 +948,7 @@ function useTripPlanner() {
     travelerInput,
     setTravelerInput,
   ] =
-    useState("");
+    useState(initialTravelerCount == null ? "" : String(initialTravelerCount));
 
 
   const [
